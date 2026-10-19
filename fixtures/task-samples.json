@@ -1,0 +1,114 @@
+{
+  "fixtureFormatVersion": 1,
+  "description": "T03 人工构造的两条独立关联样例，供字段和界面讨论；不是运行时完整业务快照，也不代表真实模型或设备验证结果。",
+  "samples": [
+    {
+      "sampleId": "exact-deadline",
+      "userConfirmedInputs": {
+        "priority": "normal",
+        "remainingMinutes": 120
+      },
+      "notice": {
+        "id": "notice-sample-001",
+        "rawText": "数据库实验报告请于2026年11月6日23:59前提交，材料包括PDF报告和源代码，上传学习通。",
+        "sourceLabel": "数据库课程群（人工样例）",
+        "publishedAt": "2026-11-01T09:00:00+08:00",
+        "importedAt": "2026-11-01T09:05:00+08:00",
+        "timezone": "Asia/Shanghai",
+        "contentHash": "631a48e572a005d5a83e26c24f67e8fe4d15306563e0360a4e6f38ede31bf180"
+      },
+      "task": {
+        "id": "task-sample-001",
+        "title": "提交数据库实验报告",
+        "course": "数据库",
+        "kind": "report",
+        "deadlinePrecision": "exact",
+        "deadlineDate": null,
+        "dueAt": "2026-11-06T23:59:00+08:00",
+        "timezone": "Asia/Shanghai",
+        "priority": "normal",
+        "status": "todo",
+        "remainingMinutes": 120,
+        "submissionChannel": "学习通",
+        "noticeIds": [
+          "notice-sample-001"
+        ],
+        "version": 1,
+        "createdAt": "2026-11-01T09:07:00+08:00",
+        "updatedAt": "2026-11-01T09:07:00+08:00"
+      },
+      "checklistItems": [
+        {
+          "id": "checklist-sample-001",
+          "taskId": "task-sample-001",
+          "label": "PDF 报告",
+          "state": "pending",
+          "sourceNoticeId": "notice-sample-001",
+          "confirmedAt": null
+        },
+        {
+          "id": "checklist-sample-002",
+          "taskId": "task-sample-001",
+          "label": "源代码",
+          "state": "pending",
+          "sourceNoticeId": "notice-sample-001",
+          "confirmedAt": null
+        }
+      ]
+    },
+    {
+      "sampleId": "date-only-deadline",
+      "userConfirmedInputs": {
+        "priority": "high",
+        "remainingMinutes": 45
+      },
+      "notice": {
+        "id": "notice-sample-002",
+        "rawText": "高等数学作业请于2026年11月8日当天提交，需准备作业PDF和解题过程截图，上传课程平台。",
+        "sourceLabel": "高等数学课程群（人工样例）",
+        "publishedAt": "2026-11-02T10:00:00+08:00",
+        "importedAt": "2026-11-02T10:03:00+08:00",
+        "timezone": "Asia/Shanghai",
+        "contentHash": "35e4ba0a9c77468a2b736657172d7f895021f7dbf148fda989ab7fe1c2964a6d"
+      },
+      "task": {
+        "id": "task-sample-002",
+        "title": "提交高等数学作业",
+        "course": "高等数学",
+        "kind": "assignment",
+        "deadlinePrecision": "date_only",
+        "deadlineDate": "2026-11-08",
+        "dueAt": null,
+        "timezone": "Asia/Shanghai",
+        "priority": "high",
+        "status": "in_progress",
+        "remainingMinutes": 45,
+        "submissionChannel": "课程平台",
+        "noticeIds": [
+          "notice-sample-002"
+        ],
+        "version": 2,
+        "createdAt": "2026-11-02T10:05:00+08:00",
+        "updatedAt": "2026-11-02T10:30:00+08:00"
+      },
+      "checklistItems": [
+        {
+          "id": "checklist-sample-003",
+          "taskId": "task-sample-002",
+          "label": "作业 PDF",
+          "state": "prepared",
+          "sourceNoticeId": "notice-sample-002",
+          "confirmedAt": "2026-11-02T10:25:00+08:00"
+        },
+        {
+          "id": "checklist-sample-004",
+          "taskId": "task-sample-002",
+          "label": "解题过程截图",
+          "state": "pending",
+          "sourceNoticeId": "notice-sample-002",
+          "confirmedAt": null
+        }
+      ]
+    }
+  ]
+}
