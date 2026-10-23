@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+// Explicit import lets ACE include the Android router adapter in the package.
+import router from '@ohos.router';
+
 @Entry
 @Component
 struct Index {
@@ -24,6 +27,13 @@ struct Index {
         Text(this.message)
           .fontSize(50)
           .fontWeight(FontWeight.Bold)
+        Button('T08 存储验证（开发用）')
+          .margin({ top: 24 })
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/StorageCheck' }).catch(() => {
+              this.message = '无法打开存储验证页';
+            });
+          })
       }
       .width('100%')
     }
