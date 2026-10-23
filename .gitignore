@@ -18,6 +18,8 @@ node_modules/
 .gradle/
 .cxx/
 .externalNativeBuild/
+xcuserdata/
+*.xcuserstate
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -26,6 +28,13 @@ pnpm-debug.log*
 # 构建输出与安装包
 /client/**/build/
 /client/**/dist/
+# ACE regenerates these assets, runtime libraries and machine-specific bridge scripts.
+/client/.arkui-x/android/app/libs/
+/client/.arkui-x/android/app/src/main/assets/arkui-x/
+/client/.arkui-x/android/buildArkTS
+/client/.arkui-x/android/buildArkTS.bat
+/client/.arkui-x/ios/arkui-x/
+/client/.arkui-x/ios/buildArkTS.sh
 /server/build/
 /server/dist/
 *.egg-info/
