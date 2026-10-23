@@ -1,6 +1,6 @@
 # ArkUI-X 共享客户端
 
-T06 从 ArkUI-X SDK 26.0.0.28 Beta2 随附 ACE 的 `app` 模板创建。当前页面为 `Hello World`，尚未接入模型、任务或本地存储。鸿蒙与 Android 复用同一份 `entry/src/main/ets/` 页面和 Ability；Android Java 文件仅负责承载 ArkUI-X 页面。
+T06 从 ArkUI-X SDK 26.0.0.28 Beta2 随附 ACE 的 `app` 模板创建。主入口保留 `Hello World`，T08 分支增加共享存储基础及开发验证入口，尚未接入模型或任务业务。鸿蒙与 Android 复用同一份 `entry/src/main/ets/` 页面和 Ability；Android Java 文件仅负责承载 ArkUI-X 页面。
 
 ## 工程入口
 
@@ -18,6 +18,8 @@ client/
 
 ## 构建与运行
 
+T08 开发验证入口为“T08 存储验证（开发用）”，只写隔离的人工数据目录。当前 Android 真机已验证写入、停止进程/重启后读取、离线读取、替换与恢复；鸿蒙仍待真机验证。接口与完整证据见 [T08 记录](../docs/setup/T08-本地存储基础与验证.md)，不要将基础 save 直接暴露为 Agent 写入工具。
+
 先按 [T01 环境记录](../docs/setup/T01-环境安装与复核.md) 配置 ACE、SDK、JDK 17 和 Node/OHPM 路径，在本目录运行：
 
 ```powershell
@@ -31,6 +33,8 @@ ace build apk --debug --target-platform arm64
 详细步骤见 [鸿蒙构建与签名](../docs/build-harmony.md)、[Android 构建与安装](../docs/build-android.md)，实际证据与待验收项见 [T06 记录](../docs/setup/T06-共享工程与双端验证.md)。DevEco Studio 打开本目录即可查看共享工程，ArkUI-X SDK 位置按本机环境配置。
 
 不要只执行 Android 的 `gradlew assembleDebug` 来代替完整跨端构建：模板默认关闭独立 Gradle 触发 ArkTS 编译，可能打入旧资源。ACE 自动生成的运行库、跨端资源和包含本机路径的 `buildArkTS` 脚本均已忽略；每台电脑由 ACE 重新生成。`oh-package-lock.json5` 和 Gradle wrapper 属于共享源码。
+
+T08 实测还发现增量构建可能遗漏新增 API 原生库。新增原生 API 或真机出现模块缺失时，先 `devecocli build clean` 再完整 ACE 构建，并从 client/ 执行 `& ../scripts/check-storage-apk.ps1` 检查文件/路由依赖库；不手工修改 SDK 或向源码提交运行库。
 
 当前鸿蒙模板的 `compatibleSdkVersion` 为 API 26（`26.0.0`），本轮使用 API 26 SDK 编译；模板未显式设置 target，构建保留相应提示。接入真机时必须先核对系统/API，不能把编译通过当作该手机可安装的证据。Android 当前为 min API 26、target/compile API 33、arm64 调试包。
 
