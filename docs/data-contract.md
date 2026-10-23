@@ -145,3 +145,9 @@ unknown 的字段组合见第 5 节，缺项追问、补充通知及重复导入
 | C | 根据共同反馈维护类型、关系、样例与保存约束 | 在 T08、T14、T16、T22 中逐步实现并提供验证记录 |
 
 T03 资料交付：三类字段表、两条关联样例、本地保存方案均已提供。A、B 的实际评审意见与两端验证结果在发生后记录，不预先标记通过。
+
+## 11. T08 存储基础接续（2026-10-23）
+
+共享客户端已添加 LocalStore 和 SessionStore 基础接口，详见 [T08 实现与验证](setup/T08-本地存储基础与验证.md)。它们返回 success/data/errorCode/message，并对候选快照作基本结构与引用校验；save(candidate, expectedRevision) 返回真实已保存内容。
+
+当前未提供任务 Repository、完整日历校验、operationId 或确认记录校验；不得将基础 save 直接作为模型写入工具。全局业务 revision、单任务 version、会话文档自身 revision 与 schemaVersion 仍需分开使用。
