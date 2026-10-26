@@ -8,21 +8,27 @@
 
 ## 1. 候选模型选型
 
-### 1.1 候选：通义千问 Qwen（阿里云百炼 DashScope）
+### 1.1 候选：DeepSeek（深度求索）
 
 | 项 | 内容 | 状态 |
 |---|---|---|
-| 账号/API Key | DashScope控制台申请，Key放在服务端环境变量 | 待B本人申请 |
-| 调用方式 | OpenAI兼容模式 HTTP 接口：`POST /v1/chat/completions` | 待T07实测 |
-| 结构化能力 | 支持 `response_format={"type":"json_object"}` 强制JSON | 待T07实测中文效果 |
-| 工具调用 | 支持function calling；本项目采用结构化动作协议（见第4节） | 待T07实测 |
-| 中文效果 | 对中文校园通知提取优先考察 | 待T07实测 |
+| 账号/API Key | DeepSeek 开放平台（platform.deepseek.com）申请，Key 放在服务端环境变量 | 待B本人申请 |
+| 官方文档 | https://api-docs.deepseek.com/ | 待B本人查阅确认 |
+| 调用方式 | OpenAI 兼容模式 HTTP 接口：`POST /v1/chat/completions`，base_url 建议 `https://api.deepseek.com`（兼容 OpenAI 的 `/v1` 路径也可用） | 待T07实测 |
+| 地域/访问 | 国内可直接访问，无地域选择项 | 待T07实测 |
+| 模型选择 | 首选 `deepseek-chat`（V3 系列）；`deepseek-reasoner`（R1 推理系列）不支持工具调用与 JSON 输出，本项目不用 | 待T07实测确认版本与能力 |
+| 结构化能力 | 支持 `response_format={"type":"json_object"}` 强制JSON；需在提示词中包含 "json" 字样 | 待T07实测中文效果 |
+| 工具调用 | 支持 function calling（仅 `deepseek-chat`）；本项目采用结构化动作协议（见第4节） | 待T07实测 |
+| 中文效果 | 中文理解与生成好，对中文校园通知提取优先考察 | 待T07实测 |
 | 成本/延迟/频率限制 | 以T07真实调用记录为准 | 待T07实测 |
+
+说明：`response_format={"type":"json_object"}` 只保证输出是**合法 JSON（格式层）**，不代表字段取值正确或动作合法；字段类型、枚举、动作名与参数的**业务校验是独立一层**，由客户端/工具层完成（见第4节），二者要分开看待。
 
 ### 1.2 选型理由与备选
 
-- 选通义千问作首选：国内网络稳定、中文效果好、支持强制JSON结构化输出，适配本项目"通知文本→结构化任务"的核心诉求。
-- 备选：DeepSeek（推理与长上下文好）。正式切换需重走T07验证。
+- 选 DeepSeek 作首选：OpenAI 兼容接口便于 FastAPI 网关统一接入、国内可访问、中文效果好、支持强制JSON结构化输出与 function calling、成本低，适配本项目"通知文本→结构化任务"的核心诉求。
+- 备选：通义千问 Qwen（阿里云百炼 DashScope），同为 OpenAI 兼容接口。正式切换需重走T07验证。
+- 注意模型系列区分：`deepseek-reasoner`（R1 推理模型）不支持 function calling 与 JSON 输出，只适合纯文本问答，不满足本项目的结构化动作协议；因此统一使用 `deepseek-chat`（V3 系列），具体版本与能力在 T07 实测后确定。
 - **不在客户端直连大模型**：API Key只放服务端FastAPI网关（`server/`），客户端只访问网关。这样符合安全加分项，也符合总纲"模型网关+密钥管理"设计。
 
 ## 2. 三大Agent业务闭环
@@ -73,7 +79,7 @@ flowchart TD
     E --> F[返回无法容纳的任务及缺口]
     F --> G[展示调整前后差异和简短理由, 允许用户修改]
     G --> H{用户确认}
-    H -->|确认| I[保存新安排, 保留已完成块, 替换选定范围未完成安排]
+    H -->|确认| I[保存新安排, 保留已完成与锁定块, 仅替换未完成且未锁定安排, 保留块计为已占用]
     H -->|取消| J[保留原计划]
     I --> K[下次反馈从已保存状态继续推进]
 ```
@@ -134,6 +140,14 @@ stateDiagram-v2
 
 **错误码约定**：NOT_FOUND、AMBIGUOUS_TARGET、INVALID_ARGUMENT、VERSION_CONFLICT、STORAGE_FAILED、CAPACITY_EXCEEDED（对齐总纲6.2）。
 
+**结构化动作协议（草案，T17再定稿）**：模型返回结构化动作而非自然语言，网关/客户端校验 `action` 是否为白名单工具、`params` 是否合法。最小示例：
+
+```json
+{ "action": "get_tasks", "params": { "course": "数据库" } }
+```
+
+只有 `apply_confirmed_proposal` 且由**客户端确认事件**触发时才正式写入；其余工具只查询或保存草案（见上表"是否写入"列），模型不能伪造用户确认。
+
 ## 5. 与A对齐：网关调用方式
 
 | 项 | 约定 |
@@ -163,5 +177,5 @@ stateDiagram-v2
 
 1. 【需C评审】核对Notice/Task/ChecklistItem字段、Repository方法与工具返回、错误码。
 2. 【需A配合】确认 `/api/model/turn` 请求响应示例、超时与错误反馈格式。
-3. 【T07】搭建最小FastAPI网关，完成一次真实通义千问调用，实测JSON结构化、中文效果、延迟与费用。
+3. 【T07】搭建最小FastAPI网关，完成一次真实 DeepSeek 调用，实测JSON结构化、中文效果、延迟与费用。
 4. 【T12】实现通知提取与多轮补齐，产出可编辑任务草案。
