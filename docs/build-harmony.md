@@ -1,12 +1,14 @@
 # 鸿蒙模板构建、签名与运行
 
-负责人 A，T06。当前已构建未签名 HAP；签名、安装和真机启动尚未验证。汇总见 [T06 验证记录](setup/T06-共享工程与双端验证.md)。
+负责人 A，T06。2026-10-26 已补做从提交导出到新目录的未签名 HAP 构建复核；新接入 Pura 70 为 HarmonyOS 4.2，与当前工具链不匹配，签名、安装和真机启动仍未通过。汇总见 [T06 验证记录](setup/T06-共享工程与双端验证.md)。
 
 ## 1. 版本与设备条件
 
 本轮使用 DevEco Studio 26.0.0.821、内置 HarmonyOS SDK API 26（26.0.0.105 Release）、ArkUI-X 26.0.0.28 Beta2、Studio Node 24.14.1、OHPM 26.0.0.630。跨端插件固定为 `@ohos/hvigor-ohos-arkui-x-plugin` 4.24.1，来自此次 ACE 模板。
 
 `client/build-profile.json5` 的 `compatibleSdkVersion` 为 `26.0.0`，本轮使用 API 26 SDK 编译；模板未显式设置 target，构建有相应提示。该默认产品目前要求 API 26 真机；需先读取实际手机系统/API。如果手机低于此版本，必须另行核对并验证最低兼容版本或正式版工具链组合，不能直接宣称支持。Android 兼容要求见另一份构建说明。
+
+2026-10-26 实际接入 ADY-AL10 / HarmonyOS 4.2.0.245，连接为 ADB，HDC 无目标。ADB 显示的 Android API 31 属于兼容层，不能与本工程的鸿蒙 API 26 直接比较。先确定更换系统/设备或旧版工具链评估路线，再执行签名安装；不要把 APK 在该手机上的 Android 兼容运行当作本工程鸿蒙 HAP 验证。
 
 每次在本机已有终端中构建前加载 T01 配置的环境。尤其要保留标准 Windows `OS=Windows_NT`，并确保 Node/OHPM 与 Studio 路径正确，详见 [OHPM 问题说明](setup/T01-环境安装与复核.md#4-ohpm-启动问题的真实原因)。本机路径记录在仓库外。
 
