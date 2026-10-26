@@ -34,8 +34,10 @@ ace build apk --debug --target-platform arm64
 
 当前鸿蒙模板的 `compatibleSdkVersion` 为 API 26（`26.0.0`），本轮使用 API 26 SDK 编译；模板未显式设置 target，构建保留相应提示。接入真机时必须先核对系统/API，不能把编译通过当作该手机可安装的证据。Android 当前为 min API 26、target/compile API 33、arm64 调试包。
 
+2026-10-26 已在 Pura 70（固件 7.0.0.109，原生 API 26）完成调试签名、HAP 安装、Hello World 和强制停止后的重新启动；Android 一加 Ace 3 的相同模板验证已通过。已核对两次设备验证之间 `client/` 无源码差异；本机导出目录只增加个人签名配置，未回写仓库。T06 技术证据已齐，仍待相关成员评审，不代表 T08 存储或后续业务通过。
+
 ## 模板与许可
 
 工程来自 [ArkUI-X ACE Tools](https://github.com/arkui-x/cli) 的默认跨端模板，保留源文件中的华为版权及 Apache 2.0 声明。模板 Apache 2.0 原文保存在 [third_party/Apache-2.0.txt](third_party/Apache-2.0.txt)；此记录不替项目整体选择许可证。Gradle wrapper 来自模板，Gradle 分发包已对照发布方 SHA-256 校验并固定；Hypium 1.0.6 依赖由 OHPM 锁文件记录。
 
-APK 中 ArkUI-X 的原生库和 Java adapter 来自所选 SDK，由 ACE 在本机打包，不提交二进制运行库。模板自带的测试示例仅保留为模板内容，本次未执行设备测试，不能作为业务功能或两端运行证据。
+APK 中 ArkUI-X 的原生库和 Java adapter 来自所选 SDK，由 ACE 在本机打包，不提交二进制运行库。模板自带的测试示例仅保留为模板内容，本次未执行 Hypium 设备自动化测试；两端模板的真实安装运行证据见 T06 记录，不将测试目标编译成功当作业务测试通过。
