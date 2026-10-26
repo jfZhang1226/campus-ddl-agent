@@ -22,20 +22,20 @@
 - [T06 验证记录](docs/setup/T06-共享工程与双端验证.md)：双端构建结果、版本及待完成验收项。
 - [鸿蒙构建与签名](docs/build-harmony.md)、[Android 构建与安装](docs/build-android.md)：可复现命令和设备条件。
 
-鸿蒙已生成未签名 HAP；Android 已在一加 Ace 3（Android 16 / API 36）安装、显示 Hello World，并通过重新启动检查。鸿蒙签名和真机运行仍待完成，T06 未标记验收通过。
+鸿蒙已在 Pura 70（7.0.0.109 / 原生 API 26）完成调试签名、HAP 安装、Hello World 和停止后重新启动；Android 已在一加 Ace 3（Android 16 / API 36）通过相同模板验证。源码新目录的双端构建也已复核。T06 经 C 复查通过后，已于 2026-10-27 通过 [PR #4](https://github.com/jfZhang1226/campus-ddl-agent/pull/4) Squash 合入 `main`，提交为 `9f08105`。
 
 ### 组员先行使用
 
-当前以进行中的基础工程发布在 `feat/a-t06-arkui-x` 分支，供 B、C、D 接入后续模块。鸿蒙真机验证暂时延后，T06 保持部分完成；这份代码可作为开发起点，不代表两端最终验收通过。工程未合并进 `main`，请明确选择任务分支：
+T06 基础工程已进入 `main`，供 B、C、D 接入后续模块；原 `feat/a-t06-arkui-x` 分支保留。新任务从最新 `main` 创建任务分支：
 
 ```sh
-git clone --branch feat/a-t06-arkui-x https://github.com/jfZhang1226/campus-ddl-agent.git
+git clone --branch main https://github.com/jfZhang1226/campus-ddl-agent.git
 cd campus-ddl-agent
 ```
 
-已克隆仓库的组员先保存自己的改动，再 `git fetch origin`，切到 `feat/a-t06-arkui-x` 查看源码；开发自己的任务时，从该基线创建个人任务分支，保留依赖关系，不直接覆盖他人的分支。DevEco Studio 打开 `client/`，在自己电脑配置实际 SDK 与工具路径，按 [客户端说明](client/README.md) 构建。B、C、D 可在共享 `entry/src/main/ets/` 中接入各自模块，平台能力以两端实测为准。
+已克隆仓库的组员先保存自己的改动，再 `git fetch origin`，同步本机 `main` 后创建个人任务分支；进行中的任务应按协作方案合入最新 `main`，不直接覆盖他人的分支。DevEco Studio 打开 `client/`，在自己电脑配置实际 SDK 与工具路径，按 [客户端说明](client/README.md) 构建。B、C、D 可在共享 `entry/src/main/ets/` 中接入各自模块，平台能力以两端实测为准。
 
-仍待完成：鸿蒙手机系统/API 与当前 API 26 compatible 的核对、调试签名、安装启动和截图，以及从源码在新目录的构建复核。后续补齐证据并通过相关成员评审后再合并。
+T06 的模板验收不代表 T08 存储或后续业务通过。签名和设备标识只保留在验证者本机；组员需要为自己的设备配置调试签名，见 [鸿蒙构建说明](docs/build-harmony.md)。
 
 ## C 的 T03 交付
 
@@ -45,6 +45,6 @@ cd campus-ddl-agent
 
 ## C 的 T08 存储基础（进行中）
 
-`feat/c-t08-local-store` 基于尚未合并的 T06 工程，实现共享文件适配、LocalStore、会话存储基础、备份与显式恢复，并提供隔离人工数据的开发验证页。26 项主机检查和 Android 真机写入、停止进程后/离线读取、替换与恢复检查通过；鸿蒙真机仍待执行。接口、截图、构建依据和剩余待办见 [T08 实现与验证](docs/setup/T08-本地存储基础与验证.md)。
+`feat/c-t08-local-store` 已同步包含 T06 的 `main`，实现共享文件适配、LocalStore、会话存储基础、备份与显式恢复，并提供隔离人工数据的开发验证页；[T08 草稿 PR #5](https://github.com/jfZhang1226/campus-ddl-agent/pull/5) 面向 `main` 交付。26 项主机检查和 Android 真机写入、停止进程后/离线读取、替换与恢复检查通过；鸿蒙真机仍待执行。接口、截图、构建依据和剩余待办见 [T08 实现与验证](docs/setup/T08-本地存储基础与验证.md)。
 
 当前已有现行设计文档、T01 环境配置、T03 资料初稿、T06 客户端模板与 T08 存储基础。任务业务、模型网关和语音尚未实现；T08 双端持久化验收仍待设备证据。样例和主机检查不代表真实模型或两端设备验证通过。
