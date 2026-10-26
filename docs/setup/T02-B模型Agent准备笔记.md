@@ -4,7 +4,7 @@
 > 依据：项目设计与开发总纲 v0.3（第4、6、9、14节）；四人分工与交付清单
 > 评审人：C｜分支：docs/b-agent
 > 状态：草案，待C评审后定稿
-> 说明：本文是T02资料交付，仅描述设计与计划；真实调用、结构化输出质量、延迟和费用需在T07最小网关中实际验证后再定稿。
+> 说明：本文是T02资料交付，仅描述设计与计划；真实调用、JSON结构化输出、function calling、中文效果、延迟已由T07实测（见T07文档），费用与 `deepseek-v4-pro` 待补。
 
 ## 1. 候选模型选型
 
@@ -12,16 +12,16 @@
 
 | 项 | 内容 | 状态 |
 |---|---|---|
-| 账号/API Key | DeepSeek 开放平台（platform.deepseek.com）申请，Key 放在服务端环境变量 | 待B本人申请 |
-| 官方文档 | https://api-docs.deepseek.com/ | 待B本人查阅确认 |
-| 调用方式 | OpenAI 兼容模式 HTTP 接口：`POST /v1/chat/completions`，base_url 建议 `https://api.deepseek.com`（兼容 OpenAI 的 `/v1` 路径也可用） | 待T07实测 |
-| 地域/访问 | 国内可直接访问，无地域选择项 | 待T07实测 |
-| 模型选择 | 首选 `deepseek-v4-pro`（非思考模式），备选 `deepseek-flash`；旧模型名 `deepseek-chat` / `deepseek-reasoner` 已于 2026-07-24 停用，不再使用 | 待T07实测确认实际型号 |
-| 模式选择 | 首版默认非思考模式（具体模式名以官方文档为准），控制延迟与流程复杂度；需要长链推理时再评估思考模式 | 待T07实测 |
-| 结构化能力 | 支持 JSON 输出（如 `response_format={"type":"json_object"}`）；具体启用条件与限制按所选型号/模式核对 | 待T07实测中文效果 |
-| 工具调用 | 支持 function calling；本项目采用结构化动作协议（见第4节） | 待T07实测 |
-| 中文效果 | 中文理解与生成好，对中文校园通知提取优先考察 | 待T07实测 |
-| 成本/延迟/频率限制 | 以T07真实调用记录为准 | 待T07实测 |
+| 账号/API Key | DeepSeek 开放平台（platform.deepseek.com）申请，Key 放在服务端 `.env` | 已申请 |
+| 官方文档 | https://api-docs.deepseek.com/ | 已查阅（入门文档） |
+| 调用方式 | OpenAI 兼容接口：`POST https://api.deepseek.com/chat/completions`，base_url `https://api.deepseek.com` | 已T07实测 |
+| 地域/访问 | 国内可直接访问，无地域选择项 | 已T07实测 |
+| 模型选择 | 首选 `deepseek-v4-pro`（非思考模式），备选 `deepseek-flash`；旧模型名 `deepseek-chat` / `deepseek-reasoner` 已于 2026-07-24 停用，不再使用 | `deepseek-flash` 已T07实测；`deepseek-v4-pro` 待补测 |
+| 模式选择 | 首版默认非思考模式（具体模式名以官方文档为准），控制延迟与流程复杂度；需要长链推理时再评估思考模式 | 待确认（T07 观察到未设 `thinking` 仍产生推理） |
+| 结构化能力 | 支持 JSON 输出（如 `response_format={"type":"json_object"}`）；具体启用条件与限制按所选型号/模式核对 | 已T07实测（JSON 输出与中文提取通过） |
+| 工具调用 | 支持 function calling；本项目采用结构化动作协议（见第4节） | 已T07实测 |
+| 中文效果 | 中文理解与生成好，对中文校园通知提取优先考察 | 已T07实测 |
+| 成本/延迟/频率限制 | 以T07真实调用记录为准 | 已T07记录延迟与用量；费用待官方定价 |
 
 说明：`response_format={"type":"json_object"}` 只保证输出是**合法 JSON（格式层）**，不代表字段取值正确或动作合法；字段类型、枚举、动作名与参数的**业务校验是独立一层**，由客户端/工具层完成（见第4节），二者要分开看待。
 
@@ -179,5 +179,5 @@ stateDiagram-v2
 
 1. 【需C评审】核对Notice/Task/ChecklistItem字段、Repository方法与工具返回、错误码。
 2. 【需A配合】确认 `/api/model/turn` 请求响应示例、超时与错误反馈格式。
-3. 【T07】搭建最小FastAPI网关，完成一次真实 DeepSeek 调用，实测JSON结构化、中文效果、延迟与费用。
+3. 【T07】✅ 已完成：搭建 FastAPI 网关，真实 DeepSeek 调用通过，JSON结构化、function calling、中文效果、延迟已实测；费用待官方定价。
 4. 【T12】实现通知提取与多轮补齐，产出可编辑任务草案。
