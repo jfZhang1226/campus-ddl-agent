@@ -34,7 +34,8 @@ def health():
 def model_turn(req: TurnRequest):
     if not API_KEY:
         raise HTTPException(status_code=500, detail="DEEPSEEK_API_KEY 未配置")
-    body = {"model": MODEL, "messages": [{"role": "user", "content": req.message}], "stream": False}
+    # 默认关闭思考：实测 thinking=disabled 去掉 reasoning_content，降低延迟与费用
+    body = {"model": MODEL, "messages": [{"role": "user", "content": req.message}], "thinking": {"type": "disabled"}, "stream": False}
     if req.tools:
         body["tools"] = req.tools
     start = time.time()
