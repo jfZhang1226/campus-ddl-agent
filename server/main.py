@@ -8,6 +8,7 @@ from collections import deque
 
 import requests
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -71,6 +72,29 @@ def _error(request_id: str, code: str, message: str, status: int, start: float) 
         content={
             "type": "error",
             "errorCode": code,
+            "message": message,
+            "requestId": request_id,
+            "elapsedMs": round((time.time() - start) * 1000),
+        },
+    )
+
+
+@app.exception_handler(RequestValidationError)
+def validation_error_handler(request: Request, exc: RequestValidationError):
+    """请求体校验失败也走统一错误协议，避免 FastAPI 默认 422/detail 泄漏字段与原文。"""
+    request_id = uuid.uuid4().hex[:12]
+    start = time.time()
+    details = []
+    for err in exc.errors():
+        loc = ".".join(str(part) for part in err.get("loc", ()))
+        msg = err.get("msg", "字段校验失败")
+        details.append(f"{loc or 'body'}: {msg}")
+    message = "请求体不符合接口约定：" + ("；".join(details) if details else "字段缺失或类型错误")
+    return JSONResponse(
+        status_code=400,
+        content={
+            "type": "error",
+            "errorCode": "INVALID_REQUEST",
             "message": message,
             "requestId": request_id,
             "elapsedMs": round((time.time() - start) * 1000),
@@ -200,43 +224,50 @@ def model_turn(req: TurnRequest, request: Request):
 
     usage = data.get("usage", {})
 
-    if msg.get("tool_calls"):
+    if "tool_calls" in msg and msg["tool_calls"] is not None:
         tool_calls = msg["tool_calls"]
         if not isinstance(tool_calls, list):
             return _error(request_id, "MODEL_ERROR", "上游 tool_calls 不是数组", 502, start)
-        calls = []
-        for c in tool_calls:
-            if not isinstance(c, dict) or not isinstance(c.get("function"), dict):
-                return _error(request_id, "MODEL_ERROR", "上游工具调用结构异常", 502, start)
-            fn = c["function"]
-            name = fn.get("name")
-            if not isinstance(name, str) or not name:
-                return _error(request_id, "MODEL_ERROR", "上游工具调用缺少 name", 502, start)
-            # 空参数字符串/null 归一为 "{}"，其余字符串需为合法 JSON 且解析为对象
-            raw_args = fn.get("arguments") or "{}"
-            try:
-                args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
-            except (ValueError, TypeError):
-                return _error(request_id, "MODEL_ERROR", "上游工具参数解析失败", 502, start)
-            # 工具参数必须是对象；字符串/数组等非法参数不当作正常工具调用下发
-            if not isinstance(args, dict):
-                return _error(request_id, "MODEL_ERROR", "上游工具参数不是对象", 502, start)
-            calls.append({
-                "id": c.get("id") or f"call_{uuid.uuid4().hex[:8]}",
-                "action": name,
-                "params": args,
+        if tool_calls:
+            calls = []
+            for c in tool_calls:
+                if not isinstance(c, dict) or not isinstance(c.get("function"), dict):
+                    return _error(request_id, "MODEL_ERROR", "上游工具调用结构异常", 502, start)
+                fn = c["function"]
+                name = fn.get("name")
+                if not isinstance(name, str) or not name:
+                    return _error(request_id, "MODEL_ERROR", "上游工具调用缺少 name", 502, start)
+                # 仅缺失、null、空字符串归一为 "{}"；数组/布尔/数值等原生值保留类型并拒绝
+                raw_args = fn.get("arguments")
+                if raw_args is None or raw_args == "":
+                    raw_args = "{}"
+                try:
+                    args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
+                except (ValueError, TypeError):
+                    return _error(request_id, "MODEL_ERROR", "上游工具参数解析失败", 502, start)
+                # 工具参数必须是对象；字符串/数组等非法参数不当作正常工具调用下发
+                if not isinstance(args, dict):
+                    return _error(request_id, "MODEL_ERROR", "上游工具参数不是对象", 502, start)
+                calls.append({
+                    "id": c.get("id") or f"call_{uuid.uuid4().hex[:8]}",
+                    "action": name,
+                    "params": args,
+                })
+            return JSONResponse(status_code=200, content={
+                "type": "tool_calls",
+                "calls": calls,
+                "usage": usage,
+                "requestId": request_id,
+                "elapsedMs": ms,
             })
-        return JSONResponse(status_code=200, content={
-            "type": "tool_calls",
-            "calls": calls,
-            "usage": usage,
-            "requestId": request_id,
-            "elapsedMs": ms,
-        })
+        # 空 tool_calls 数组表示本轮无工具调用，落入下方文本回答分支
 
+    content = msg.get("content")
+    if not isinstance(content, str) or not content.strip():
+        return _error(request_id, "MODEL_ERROR", "上游未返回有效文本回答", 502, start)
     return JSONResponse(status_code=200, content={
         "type": "answer",
-        "text": msg.get("content") or "",
+        "text": content,
         "usage": usage,
         "requestId": request_id,
         "elapsedMs": ms,

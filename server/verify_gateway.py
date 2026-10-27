@@ -13,6 +13,7 @@ import os
 import sys
 import json
 import importlib
+import asyncio
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -91,6 +92,45 @@ def call(req_dict, auth=GOOD_AUTH):
     req = main.TurnRequest(**req_dict)
     resp = main.model_turn(req, StubRequest(auth))
     return resp, json.loads(resp.body)
+
+
+def asgi_request(path, body_bytes, auth=None):
+    """经 ASGI 入口发送原始请求，覆盖 FastAPI 路由与请求体校验路径（不经 model_turn 直接调用）。"""
+    headers = [(b"content-type", b"application/json")]
+    if auth is not None:
+        headers.append((b"authorization", auth.encode()))
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": "2.3"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": path,
+        "raw_path": path.encode(),
+        "query_string": b"",
+        "headers": headers,
+        "client": ("127.0.0.1", 12345),
+        "server": ("127.0.0.1", 8000),
+        "root_path": "",
+    }
+    received = []
+    sent = []
+
+    async def receive():
+        if not received:
+            received.append(True)
+            return {"type": "http.request", "body": body_bytes, "more_body": False}
+        return {"type": "http.disconnect"}
+
+    async def send(message):
+        sent.append(message)
+
+    asyncio.run(main.app(scope, receive, send))
+
+    status = sent[0]["status"]
+    headers_out = {k.decode(): v.decode() for k, v in sent[0].get("headers", [])}
+    body = b"".join(m.get("body", b"") for m in sent if m["type"] == "http.response.body")
+    return status, headers_out, body
 
 
 def reset_limiter():
@@ -253,6 +293,60 @@ resp, body = call({"message": "hi"}, GOOD_AUTH)
 check("正常 answer -> 200 且含 requestId",
       resp.status_code == 200 and body["type"] == "answer" and body["text"] == "好的，已记录"
       and bool(body.get("requestId")), body)
+
+# ---------------------------------------------------------------- HTTP 入口校验（P2-1）
+# 请求体在进入 model_turn 前就被 FastAPI 校验，需走 RequestValidationError 处理器而非 422/detail。
+status, _, raw = asgi_request("/api/model/turn", b"{}", GOOD_AUTH)
+body = json.loads(raw)
+check("HTTP 缺字段 -> 400 INVALID_REQUEST 统一错误结构",
+      status == 400 and body["type"] == "error" and body["errorCode"] == "INVALID_REQUEST"
+      and bool(body.get("requestId")) and "elapsedMs" in body and "detail" not in body, body)
+
+status, _, raw = asgi_request("/api/model/turn", json.dumps({"message": 123}).encode(), GOOD_AUTH)
+body = json.loads(raw)
+check("HTTP message 错类型 -> 400 INVALID_REQUEST 统一错误结构",
+      status == 400 and body["type"] == "error" and body["errorCode"] == "INVALID_REQUEST", body)
+
+status, _, raw = asgi_request("/api/model/turn", json.dumps({"message": "hi", "context": "x"}).encode(), GOOD_AUTH)
+body = json.loads(raw)
+check("HTTP context 错类型 -> 400 INVALID_REQUEST 统一错误结构",
+      status == 400 and body["type"] == "error" and body["errorCode"] == "INVALID_REQUEST", body)
+
+status, _, raw = asgi_request("/api/model/turn", b'{"message":', GOOD_AUTH)
+body = json.loads(raw)
+check("HTTP 截断 JSON -> 400 INVALID_REQUEST 统一错误结构",
+      status == 400 and body["type"] == "error" and body["errorCode"] == "INVALID_REQUEST"
+      and "detail" not in body, body)
+
+# ---------------------------------------------------------------- 原生非对象工具参数（P2-2）
+for label, native in [("空数组", []), ("布尔 false", False), ("数值 0", 0)]:
+    install_post(json_body={"choices": [{"message": {"tool_calls": [
+        {"id": "c7", "function": {"name": "get_tasks", "arguments": native}}
+    ]}}], "usage": {}})
+    resp, body = call({"message": "hi"}, GOOD_AUTH)
+    check(f"原生非对象参数 {label} -> 502 MODEL_ERROR 而非归一为 {{}}",
+          resp.status_code == 502 and body["errorCode"] == "MODEL_ERROR", body)
+
+# ---------------------------------------------------------------- 回答文本边界（P2-3）
+install_post(json_body={"choices": [{"message": {"content": {"a": 1}}}]})
+resp, body = call({"message": "hi"}, GOOD_AUTH)
+check("content 为对象 -> 502 MODEL_ERROR 而非 answer",
+      resp.status_code == 502 and body["errorCode"] == "MODEL_ERROR", body)
+
+install_post(json_body={"choices": [{"message": {"content": ["x"]}}]})
+resp, body = call({"message": "hi"}, GOOD_AUTH)
+check("content 为数组 -> 502 MODEL_ERROR 而非 answer",
+      resp.status_code == 502 and body["errorCode"] == "MODEL_ERROR", body)
+
+install_post(json_body={"choices": [{"message": {}}]})
+resp, body = call({"message": "hi"}, GOOD_AUTH)
+check("缺 content 且无工具调用 -> 502 MODEL_ERROR 而非空 answer",
+      resp.status_code == 502 and body["errorCode"] == "MODEL_ERROR", body)
+
+install_post(json_body={"choices": [{"message": {"tool_calls": {}}}]})
+resp, body = call({"message": "hi"}, GOOD_AUTH)
+check("tool_calls 为空对象 -> 502 MODEL_ERROR 而非落入 answer",
+      resp.status_code == 502 and body["errorCode"] == "MODEL_ERROR", body)
 
 # ---------------------------------------------------------------- 汇总
 print("\n" + "=" * 60)
