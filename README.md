@@ -26,7 +26,7 @@
 
 ### 组员先行使用
 
-当前基础工程和 T07 网关已合入 `main`。组员从最新 main 创建自己的任务分支；A 的 T10 正在 `feat/a-t10-text-chat` 开发，尚未合并：
+当前基础工程和 T07 网关已合入 `main`。组员从最新 main 创建自己的任务分支；A 的 T10 在 `feat/a-t10-text-chat` 等待 B 评审，尚未合并：
 
 ```sh
 git clone https://github.com/jfZhang1226/campus-ddl-agent.git
