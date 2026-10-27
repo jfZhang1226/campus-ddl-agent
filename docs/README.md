@@ -41,6 +41,17 @@ T06 基础工程在 `feat/a-t06-arkui-x` 分支共享，两端模板技术证据
 
 T03 中的 `kind`、`priority` 取值和个别字段的空值约定是接口细化草案。A 检查页面是否能使用，B 检查模型及工具协议是否能对接，D 参考相同字段制作卡片和样例；需要调整时同步修改字段说明与 JSON 示例。
 
+## D 的 T04 原型与 T05 需求准备
+
+| 交付 | 内容 | 状态 |
+|---|---|---|
+| [首批交付与评审入口](setup/d-experience.md) | 两张可编辑 SVG、离线可点击原型、A/B/C 核对清单与复现方式 | T04 初稿待评审，非 ArkUI-X 应用 |
+| [合成开发样例](../fixtures/development/d-notice-samples.json) / [需求收集模板](setup/d-research-template.md) | 五条人工样例及访谈、脱敏通知记录模板 | 真实通知 0 条、访谈 0 人；T05 未完成 |
+| [UI/语音对接草案](ui-and-speech.md) / [T09 探测表](setup/d-speech-probe.md) | 输入、取消、错误反馈和语音生命周期的协作约定 | 待接口评审；真实语音未验证 |
+| [原型验证记录](validation/2026-10-27-d-experience.md) | 10 项确定性检查与本机浏览器操作、窄屏观察 | 无真实模型、持久化、系统提醒或跨端验收 |
+
+原型只处理预设合成场景，任务在页面内存中，刷新会重置。请克隆分支后打开 `docs/prototypes/d-experience/index.html`；单看 GitHub 源码页面不能运行交互。
+
 ## 维护约定
 
 - 后续在本仓库的 `docs/` 中维护现行文档，通过任务分支和 PR 对齐修改。
