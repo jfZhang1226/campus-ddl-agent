@@ -5,6 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '../..');
 const M = require('../../docs/prototypes/d-experience/model.js');
+const F = require('../../docs/prototypes/d-experience/form.js');
 const fixture = require('../../fixtures/development/d-notice-samples.json');
 const samples = fixture.samples;
 
@@ -97,4 +98,70 @@ test('user edits and material preparation are distinct from source and submissio
   assert.equal(result.tasks[0].status, 'todo');
   result.tasks[0].title = 'later mutation';
   assert.notEqual(s.drafts[0].title, result.tasks[0].title);
+});
+
+test('time-first editing survives failed confirmation and completes only when the date is valid', () => {
+  let session = M.makeSession(samples[2], 10);
+  const fields = F.deadlineFields(session.drafts[0]);
+  Object.assign(fields, { precision: 'exact', time: '19:30' });
+  F.applyDeadline(session.drafts[0], fields);
+  const blocked = M.confirm(session, []);
+  assert.equal(blocked.changed, false);
+  assert.equal(blocked.tasks.length, 0);
+  assert.equal(blocked.session.drafts[0].dueAt, null);
+  assert.equal(fields.time, '19:30');
+  assert.equal(fields.date, '');
+  session = blocked.session;
+  fields.date = '2026-02-30';
+  F.applyDeadline(session.drafts[0], fields);
+  assert.equal(M.confirm(session, []).changed, false);
+  fields.date = '2026-11-12';
+  F.applyDeadline(session.drafts[0], fields);
+  assert.equal(M.confirm(session, []).tasks[0].dueAt, '2026-11-12T19:30:00+08:00');
+});
+
+test('clearing a date preserves the original time, including a failed save and retry', () => {
+  let session = M.makeSession(samples[0], 11);
+  const fields = F.deadlineFields(session.drafts[0]);
+  fields.date = '';
+  F.applyDeadline(session.drafts[0], fields);
+  assert.equal(M.confirm(session, []).changed, false);
+  assert.equal(fields.time, '18:00');
+  fields.date = '2026-11-13';
+  F.applyDeadline(session.drafts[0], fields);
+  session = M.confirm(session, [], { failSave: true }).session;
+  assert.equal(fields.time, '18:00');
+  assert.equal(M.confirm(session, []).tasks[0].dueAt, '2026-11-13T18:00:00+08:00');
+});
+
+test('a date without a time stays editable but cannot be confirmed as exact', () => {
+  const session = M.makeSession(samples[0], 12);
+  const fields = F.deadlineFields(session.drafts[0]);
+  fields.time = '';
+  F.applyDeadline(session.drafts[0], fields);
+  assert.equal(fields.date, '2026-11-06');
+  assert.equal(session.drafts[0].dueAt, null);
+  assert.equal(M.confirm(session, []).changed, false);
+  fields.time = '00:00';
+  F.applyDeadline(session.drafts[0], fields);
+  assert.equal(M.confirm(session, []).tasks[0].dueAt, '2026-11-06T00:00:00+08:00');
+});
+
+test('precision changes keep hidden UI values separate from date-only and unknown task fields', () => {
+  const session = M.makeSession(samples[0], 13), draft = session.drafts[0];
+  const fields = F.deadlineFields(draft);
+  fields.precision = 'date_only';
+  F.applyDeadline(draft, fields);
+  assert.equal(draft.deadlineDate, '2026-11-06');
+  assert.equal(draft.dueAt, null);
+  assert.equal(M.confirm(session, []).changed, true);
+  fields.precision = 'unknown';
+  F.applyDeadline(draft, fields);
+  const unknown = M.confirm(session, []).tasks[0];
+  assert.equal(unknown.deadlineDate, null);
+  assert.equal(unknown.dueAt, null);
+  assert.equal('time' in unknown, false);
+  fields.precision = 'exact';
+  F.applyDeadline(draft, fields);
+  assert.equal(M.confirm(session, []).tasks[0].dueAt, '2026-11-06T18:00:00+08:00');
 });

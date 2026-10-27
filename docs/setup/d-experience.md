@@ -64,9 +64,10 @@ D-001 与 D-005 是同一人工通知序列。今后若划分模型评测集合�
 node scripts/build-d-prototype.cjs
 node --test tests/prototypes/d-experience.test.cjs
 node --check docs/prototypes/d-experience/app.js
+node --check docs/prototypes/d-experience/form.js
 ```
 
-生成脚本只使用 Node 内置模块，从同一 JSON 生成浏览器样例与两张 SVG，无网络、无模型调用。10 项确定性检查覆盖原文依据、样例同步、取消不写、批量确认、重复点击、失败重试、日期精度、适用对象、无效日期及字段副本。
+生成脚本只使用 Node 内置模块，从同一 JSON 生成浏览器样例与两张 SVG，无网络、无模型调用。14 项确定性检查覆盖原文依据、样例同步、取消不写、批量确认、重复点击、失败重试、日期精度、适用对象、无效日期、字段副本及未完成日期表单值保留。
 
 本轮实际执行与浏览器验证结果另见 [验证记录](../validation/2026-10-27-d-experience.md)。这些不是模型准确率、T16 幂等或鸿蒙语音/持久化验收。
 

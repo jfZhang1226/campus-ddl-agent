@@ -1,10 +1,11 @@
 (function () {
   'use strict';
   const M = window.DExperienceModel;
+  const F = window.DExperienceForm;
   const samples = window.DExperienceSamples.samples;
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
-  let sample = samples[0], session = null, tasks = [], token = 0;
+  let sample = samples[0], session = null, tasks = [], token = 0, deadlineInputs = [];
   $('sample-select').innerHTML = samples.map(s => `<option value="${s.id}">${s.id} · ${esc(s.label)}</option>`).join('');
   function feedback(text, error = false) {
     $('input-feedback').textContent = text;
@@ -24,6 +25,7 @@
   function loadSample() {
     token++;
     session = null;
+    deadlineInputs = [];
     $('extract-button').disabled = false;
     $('notice-input').disabled = false;
     sample = samples.find(s => s.id === $('sample-select').value) || samples[0];
@@ -34,8 +36,7 @@
     page('assistant');
   }
   function cardMarkup(d, i) {
-    const date = d.deadlinePrecision === 'exact' ? d.dueAt.slice(0,10) : (d.deadlineDate || '');
-    const time = d.deadlinePrecision === 'exact' ? d.dueAt.slice(11,16) : '';
+    const { date, time } = deadlineInputs[i];
     return `<section class="draft-card"><label for="title-${i}">任务名称</label><input id="title-${i}" data-field="title" data-index="${i}" type="text" value="${esc(d.title)}"><div class="field-pair"><div><label for="course-${i}">课程</label><input id="course-${i}" data-field="course" data-index="${i}" type="text" value="${esc(d.course)}"></div><div><label for="precision-${i}">截止日期精度</label><select id="precision-${i}" data-field="precision" data-index="${i}">${[['exact','精确到时刻'],['date_only','只有日期'],['unknown','待补充']].map(([v,t])=>`<option value="${v}" ${d.deadlinePrecision===v?'selected':''}>${t}</option>`).join('')}</select></div></div><div class="field-pair" ${d.deadlinePrecision==='unknown'?'hidden':''}><div><label for="date-${i}">截止日期</label><input id="date-${i}" data-field="date" data-index="${i}" type="date" value="${date}"></div><div ${d.deadlinePrecision!=='exact'?'hidden':''}><label for="time-${i}">截止时刻</label><input id="time-${i}" data-field="time" data-index="${i}" type="time" value="${time}"></div></div><p class="deadline-hint">${esc(M.deadlineLabel(d))}</p><p class="material-line">提交渠道：${esc(d.submissionChannel || '待补充')}<br>材料：${esc(d.materials.join('、') || '原通知未列出')}<br>准备状态与实际提交分别记录</p>${sourceMarkup(sample.notice, d.evidenceQuote)}</section>`;
   }
   function renderDraft() {
@@ -58,12 +59,7 @@
     $('confirm-draft').onclick = () => {
       // Capture the current form values even when a platform has not emitted blur/change yet.
       session.drafts.forEach((draft, i) => {
-        draft.title = $('title-'+i).value;
-        draft.course = $('course-'+i).value.trim() || null;
-        const precision = $('precision-'+i).value;
-        draft.deadlinePrecision = precision;
-        draft.deadlineDate = precision === 'date_only' ? $('date-'+i).value : null;
-        draft.dueAt = precision === 'exact' ? $('date-'+i).value+'T'+$('time-'+i).value+':00+08:00' : null;
+        captureDraft(i);
       });
       const result = M.confirm(session, tasks, { failSave: $('save-failure').checked });
       session = result.session; tasks = result.tasks;
@@ -80,19 +76,17 @@
       } else input.addEventListener('change', editDraft);
     });
   }
-  function editDraft(event) {
+  function captureDraft(i) {
+    const draft = session.drafts[i];
+    draft.title = $('title-'+i).value;
+    draft.course = $('course-'+i).value.trim() || null;
+    const fields = { precision: $('precision-'+i).value, date: $('date-'+i).value, time: $('time-'+i).value };
+    deadlineInputs[i] = fields;
+    F.applyDeadline(draft, fields);
+  }
+  function editDraft() {
     if (!session || session.state !== 'draft') return;
-    const input = event.target, i = Number(input.dataset.index), d = session.drafts[i];
-    if (input.dataset.field === 'title') d.title = input.value;
-    else if (input.dataset.field === 'course') d.course = input.value.trim() || null;
-    else {
-      const precision = $('precision-'+i).value;
-      const date = $('date-'+i).value;
-      const time = $('time-'+i).value;
-      d.deadlinePrecision = precision;
-      d.deadlineDate = precision === 'date_only' ? date : null;
-      d.dueAt = precision === 'exact' ? date+'T'+time+':00+08:00' : null;
-    }
+    session.drafts.forEach((draft, i) => captureDraft(i));
     session.error = null;
     renderDraft();
   }
@@ -108,7 +102,7 @@
       feedback('本原型只预演所选合成样例，不分析任意文本。请重新选择样例；修改后的文字不会发送到外部。', true); return;
     }
     const current = ++token;
-    session = null; $('draft-area').replaceChildren();
+    session = null; deadlineInputs = []; $('draft-area').replaceChildren();
     $('extract-button').disabled = true; $('notice-input').disabled = true;
     feedback('正在理解通知（预设返回）…');
     setTimeout(() => {
@@ -116,6 +110,7 @@
       $('extract-button').disabled = false; $('notice-input').disabled = false;
       if ($('network-failure').checked) { feedback('请求未完成，原文已保留。关闭失败演示后可以重试。', true); return; }
       session = M.makeSession(sample, current);
+      deadlineInputs = session.drafts.map(F.deadlineFields);
       feedback('请核对以下内容；确认前不会改变任务列表。');
       renderDraft();
     }, 350);
