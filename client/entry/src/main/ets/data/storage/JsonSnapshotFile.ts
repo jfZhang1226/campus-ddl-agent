@@ -1,6 +1,6 @@
 import { StorageCoordinator } from './StorageCoordinator';
 import {
-  SnapshotCodec, StorageFailure, StorageResult, VersionedDocument, checkHeader,
+  SnapshotCodec, StorageFailure, StorageResult, VersionedDocument,
   isStorageId, storageError, storageSuccess
 } from './StorageTypes';
 
@@ -141,7 +141,6 @@ export class JsonSnapshotFile<T extends VersionedDocument> {
       throw new StorageFailure('NOT_FOUND', '记录尚未保存。');
     }
     const empty: T = this.codec.empty();
-    checkHeader(empty);
     return this.codec.decode(JSON.stringify(empty));
   }
 

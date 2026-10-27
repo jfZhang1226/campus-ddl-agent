@@ -5,6 +5,7 @@ export interface VersionedDocument {
 
 export interface SnapshotCodec<T extends VersionedDocument> {
   empty(): T;
+  // Each codec validates its own supported schema versions, including empty().
   decode(text: string): T;
 }
 
@@ -50,12 +51,12 @@ export function requireStorage(condition: boolean, message: string): void {
   }
 }
 
-export function checkHeader(document: VersionedDocument): void {
+export function checkHeader(document: VersionedDocument, supportedVersions: number[] = [1]): void {
   requireStorage(document !== null && typeof document === 'object' && !Array.isArray(document),
     '存储内容不是有效对象。');
   requireStorage(Number.isInteger(document.schemaVersion) && document.schemaVersion > 0,
     '缺少有效的存储结构版本。');
-  if (document.schemaVersion !== 1) {
+  if (!supportedVersions.includes(document.schemaVersion)) {
     throw new StorageFailure('UNSUPPORTED_SCHEMA', '存储结构版本不受支持，原文件已保留。');
   }
   requireStorage(Number.isSafeInteger(document.revision) && document.revision >= 0,

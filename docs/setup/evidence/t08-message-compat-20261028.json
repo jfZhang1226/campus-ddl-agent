@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-28",
+  "kind": "session-codec-host-and-build-validation",
+  "baseline": "bd41e21a1c0b1b207e31fbbe55fbdb9a26fbede4",
+  "deviceOperationPerformed": false,
+  "realModelCalled": false,
+  "strictTypecheckFiles": 10,
+  "hostTests": {
+    "total": 76,
+    "passed": 76,
+    "failed": 0,
+    "existing": 26,
+    "added": 50
+  },
+  "sourceSha256": {
+    "client/entry/src/main/ets/domain/StorageModels.ts": "afb274b7c41de1dfd7fc9f88b2edbeda0d1f613d56701a98537290cfa3088385",
+    "client/entry/src/main/ets/data/SessionStore.ts": "7df35c944a73b853fa2d434203987af7428773304f7def9a8e78071d076493d1",
+    "client/entry/src/main/ets/data/storage/MessageCodec.ts": "1860cf9332cca6c9869f33283cef1dc2c545fed9006f55497d7ed290c29c2270",
+    "client/entry/src/main/ets/data/storage/StorageTypes.ts": "84ee91e9c0f866d001054af1dd41dd362786a0c520560ee663c99e2228cb9fb9",
+    "client/entry/src/main/ets/data/storage/SnapshotCodecs.ts": "5496bb9a8a7aaf9eb080b61c311f46a893d04760685dcd7d5f457b979342d971",
+    "client/entry/src/main/ets/data/storage/JsonSnapshotFile.ts": "26266a30aabea515382cae794fd9cacd49407b95ea575e3c89c7a7fd23efb4a6",
+    "client/entry/src/main/ets/data/diagnostics/StorageProbe.ets": "ffb81e84cf1de56e14952d5eefb624823cdecf1a191ea1eacd0937258862ab55"
+  },
+  "builds": {
+    "harmony": {
+      "result": "PASS",
+      "signed": false,
+      "sha256": "319ecd5d2adc8e40ac9211a23335e811c2f48c169c0a5cfdb20b8a72d7e9dcc2"
+    },
+    "android": {
+      "result": "PASS",
+      "abi": "arm64-v8a",
+      "adapterLibraries": 6,
+      "v2SignatureVerified": true,
+      "cleanRebuildRequired": true,
+      "sha256": "dc9c95e7e946c4ededd0e28d5de7631a83759bf7cc9a62c45833a3daeebb77d6"
+    }
+  },
+  "previousDeviceFilesOfflineDecode": {
+    "method": "Offline decoding of previously exported synthetic v1 device files. No device operation.",
+    "results": [
+      {
+        "platform": "android",
+        "sourceSchema": 1,
+        "decodedSchema": 2,
+        "revision": 6,
+        "messageCount": 1,
+        "bytesUnchanged": true,
+        "sourceSha256": "6a48f971560a9600c9cb0e9ca0460a61e5bf1368af0a86ac85ef03386444163f"
+      },
+      {
+        "platform": "harmony",
+        "sourceSchema": 1,
+        "decodedSchema": 2,
+        "revision": 1,
+        "messageCount": 1,
+        "bytesUnchanged": true,
+        "sourceSha256": "b10840e7cf56ba0ea15f7fbe873df2d9dd736e44a3e4b622eec0ae7f99fb0637"
+      }
+    ]
+  }
+}

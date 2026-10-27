@@ -59,11 +59,33 @@ export interface Session {
   pendingProposalId: string | null;
 }
 
+/** The gateway's normalized call shape, not the provider's function/arguments shape. */
+export interface MessageToolCall {
+  id: string;
+  action: string;
+  params: Object;
+}
+
+export interface MessageToolResult {
+  id: string;
+  action: string;
+  params: Object;
+  success: boolean;
+  data: Object | null;
+  errorCode: string | null;
+  message: string;
+}
+
 export interface Message {
   id: string;
   sessionId: string;
   role: string;
-  text: string;
+  // text / answer / clarification / tool_calls / tool_result / legacy_tool
+  type: string;
+  text: string | null;
+  calls: MessageToolCall[];
+  results: MessageToolResult[];
+  // Display hints retained for v1 history; never substitute for calls/results.
   toolName: string | null;
   toolResultSummary: string | null;
   status: string;
@@ -71,7 +93,7 @@ export interface Message {
 }
 
 export class SessionDocument {
-  schemaVersion: number = 1;
+  schemaVersion: number = 2;
   revision: number = 0;
   session: Session;
   messages: Message[] = [];

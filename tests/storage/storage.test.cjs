@@ -76,7 +76,8 @@ function sessionDocument(id = 'session-one') {
   const session = { id, title: '中文会话 🗓️', createdAt: '2026-10-23T10:00:00+08:00',
     updatedAt: '2026-10-23T10:01:00+08:00', pendingProposalId: null };
   const value = new SessionDocument(session);
-  value.messages.push({ id: 'message-one', sessionId: id, role: 'user', text: '周五交，但没有确切时刻。',
+  value.messages.push({ id: 'message-one', sessionId: id, role: 'user', type: 'text',
+    text: '周五交，但没有确切时刻。', calls: [], results: [],
     toolName: null, toolResultSummary: null, status: 'completed', createdAt: session.createdAt });
   return value;
 }
@@ -325,4 +326,255 @@ test('existing revision-zero session is not hidden as NOT_FOUND', async t => {
   const result = await new SessionStore(h.coordinator).read('session-one');
   assert.equal(result.success, true);
   assert.equal(result.data.messages.length, 1);
+});
+
+const legacyFixture = require('../../fixtures/sessions/message-v1.json');
+const structuredFixture = require('../../fixtures/sessions/message-v2.json');
+function structuredSession() { return structuredClone(structuredFixture); }
+async function seedLegacy(files, value = legacyFixture) {
+  await files.ensureDirectory('sessions');
+  const raw = JSON.stringify(value, null, 2) + '\n';
+  await files.writeText('sessions/' + value.session.id + '.json', raw);
+  return raw;
+}
+
+test('structured conversation round-trips clarification, multiple calls, null text and real result envelopes', async t => {
+  const h = await harness(t);
+  const input = structuredSession();
+  const saved = await new SessionStore(h.coordinator).save(input, 0);
+  assert.equal(saved.success, true, saved.message);
+  const actual = (await new SessionStore(new StorageCoordinator(new HostFiles(h.directory))).read(input.session.id)).data;
+  assert.deepEqual(actual, { ...input, revision: 1 });
+  assert.equal(actual.messages[1].type, 'clarification');
+  assert.equal(actual.messages[3].text, null);
+  assert.equal(actual.messages[3].calls.length, 2);
+  const task = actual.messages[4].results[0].data.tasks[0];
+  assert.equal(task.remainingMinutes, 0);
+  assert.equal(task.submitted, false);
+  assert.equal(task.dueAt, null);
+  assert.equal(actual.messages[5].results[0].success, false);
+});
+
+test('structured payloads freeze before enqueue and read/return objects cannot mutate disk', async t => {
+  const h = await harness(t);
+  const sessions = new SessionStore(h.coordinator), input = structuredSession();
+  const pending = sessions.save(input, 0);
+  input.messages[3].calls[0].params.course = 'must not leak';
+  const saved = await pending;
+  assert.equal(saved.success, true);
+  saved.data.messages[4].results[0].data.tasks[0].title = 'also must not leak';
+  const actual = (await sessions.read(input.session.id)).data;
+  assert.equal(actual.messages[3].calls[0].params.course, '数据库');
+  assert.equal(actual.messages[4].results[0].data.tasks[0].title, '合成作业 🗓️');
+});
+
+test('v1 read migrates only in memory, keeping original bytes, metadata and revision', async t => {
+  const h = await harness(t), raw = await seedLegacy(h.files);
+  const sessions = new SessionStore(h.coordinator);
+  const result = await sessions.read(legacyFixture.session.id);
+  assert.equal(result.success, true, result.message);
+  assert.equal(result.data.schemaVersion, 2);
+  assert.equal(result.data.revision, 7);
+  assert.deepEqual(result.data.session, legacyFixture.session);
+  for (let i = 0; i < legacyFixture.messages.length; i++) {
+    for (const key of Object.keys(legacyFixture.messages[i])) {
+      assert.deepEqual(result.data.messages[i][key], legacyFixture.messages[i][key]);
+    }
+  }
+  assert.equal(result.data.messages[0].type, 'text');
+  assert.equal(result.data.messages[1].type, 'legacy_tool');
+  assert.equal(result.data.messages[2].type, 'legacy_tool');
+  assert.deepEqual(result.data.messages[2].results, []);
+  assert.deepEqual(result.data.messages[1].calls, []);
+  assert.equal((await sessions.list()).data.sessions.length, 1);
+  assert.equal((await sessions.read(legacyFixture.session.id)).success, true);
+  assert.equal(await h.files.readText('sessions/session-legacy.json'), raw);
+  assert.deepEqual(await h.files.listNames('sessions'), ['session-legacy.json']);
+});
+
+test('explicit save upgrades v1 once with original bytes in backup and independent business schema', async t => {
+  const h = await harness(t), raw = await seedLegacy(h.files);
+  const sessions = new SessionStore(h.coordinator);
+  const input = (await sessions.read('session-legacy')).data;
+  const upgraded = await sessions.save(input, 7);
+  assert.equal(upgraded.success, true, upgraded.message);
+  assert.equal(upgraded.data.schemaVersion, 2);
+  assert.equal(upgraded.data.revision, 8);
+  assert.equal(await h.files.readText('sessions/session-legacy.backup.json'), raw);
+  assert.deepEqual(JSON.parse(await h.files.readText('sessions/session-legacy.json')), upgraded.data);
+  assert.equal((await sessions.save(input, 7)).errorCode, 'VERSION_CONFLICT');
+  const business = await new LocalStore(h.coordinator).read();
+  assert.equal(business.data.schemaVersion, 1);
+  assert.equal(business.data.revision, 0);
+});
+
+test('saving an original v1 candidate is compatible without modifying the caller', async t => {
+  const h = await harness(t);
+  const input = structuredClone(legacyFixture);
+  input.revision = 0;
+  const result = await new SessionStore(h.coordinator).save(input, 0);
+  assert.equal(result.success, true);
+  assert.equal(input.schemaVersion, 1);
+  assert.equal(input.messages[0].type, undefined);
+  assert.equal(result.data.schemaVersion, 2);
+});
+
+for (const checkpoint of ['write:sessions/session-legacy.tmp.json', 'flush:sessions/session-legacy.tmp.json',
+  'write:sessions/session-legacy.backup.tmp.json', 'flush:sessions/session-legacy.backup.tmp.json',
+  'replace:sessions/session-legacy.backup.json', 'replace:sessions/session-legacy.json']) {
+  test('failed v1 upgrade preserves legacy primary and supports same-revision retry: ' + checkpoint, async t => {
+    const h = await harness(t), raw = await seedLegacy(h.files);
+    const sessions = new SessionStore(h.coordinator), input = (await sessions.read('session-legacy')).data;
+    h.files.failNext = checkpoint;
+    const failed = await sessions.save(input, 7);
+    assert.equal(failed.success, false);
+    assert.equal(failed.errorCode, 'STORAGE_FAILED');
+    assert.equal(await h.files.readText('sessions/session-legacy.json'), raw);
+    const retried = await sessions.save(input, 7);
+    assert.equal(retried.success, true, retried.message);
+    assert.equal(retried.data.revision, 8);
+    assert.equal(await h.files.readText('sessions/session-legacy.backup.json'), raw);
+  });
+}
+
+test('concurrent v1 upgrades commit once and reject the stale candidate', async t => {
+  const h = await harness(t);
+  await seedLegacy(h.files);
+  const sessions = new SessionStore(h.coordinator), input = (await sessions.read('session-legacy')).data;
+  const results = await Promise.all([sessions.save(input, 7), sessions.save(input, 7)]);
+  assert.equal(results.filter(x => x.success).length, 1);
+  assert.equal(results.filter(x => x.errorCode === 'VERSION_CONFLICT').length, 1);
+  assert.equal((await sessions.read('session-legacy')).data.revision, 8);
+});
+
+test('explicit recovery accepts a v1 backup without rewriting it or losing damaged v2 bytes', async t => {
+  const h = await harness(t), raw = await seedLegacy(h.files);
+  const sessions = new SessionStore(h.coordinator), input = (await sessions.read('session-legacy')).data;
+  await sessions.save(input, 7);
+  const damaged = '{damaged v2 中文';
+  await h.files.writeText('sessions/session-legacy.json', damaged);
+  const recovered = await sessions.recoverBackup('session-legacy');
+  assert.equal(recovered.success, true);
+  assert.equal(recovered.data.schemaVersion, 2);
+  assert.equal(recovered.data.revision, 7);
+  assert.equal(await h.files.readText('sessions/session-legacy.json'), raw);
+  assert.equal(await h.files.readText('sessions/session-legacy.backup.json'), raw);
+  assert.equal(await h.files.readText('sessions/session-legacy.corrupt-0.json'), damaged);
+});
+
+test('a future session schema is preserved even with a valid older backup', async t => {
+  const h = await harness(t), old = await seedLegacy(h.files);
+  const future = JSON.stringify({ ...legacyFixture, schemaVersion: 3 });
+  await h.files.writeText('sessions/session-legacy.backup.json', old);
+  await h.files.writeText('sessions/session-legacy.json', future);
+  const sessions = new SessionStore(h.coordinator);
+  assert.equal((await sessions.read('session-legacy')).errorCode, 'UNSUPPORTED_SCHEMA');
+  assert.equal((await sessions.recoverBackup('session-legacy')).errorCode, 'UNSUPPORTED_SCHEMA');
+  assert.equal(await h.files.readText('sessions/session-legacy.json'), future);
+  assert.equal((await sessions.list()).data.issues[0].errorCode, 'UNSUPPORTED_SCHEMA');
+});
+
+for (const [label, mutate] of [
+  ['null legacy text', x => { x.messages[0].text = null; }],
+  ['ambiguous legacy extension', x => { x.messages[1].calls = []; }]
+]) {
+  test('invalid legacy data is reported without destructive migration: ' + label, async t => {
+    const h = await harness(t), input = structuredClone(legacyFixture);
+    mutate(input);
+    const raw = await seedLegacy(h.files, input);
+    const read = await new SessionStore(h.coordinator).read(input.session.id);
+    assert.equal(read.errorCode, 'CORRUPT_DATA');
+    assert.equal(await h.files.readText('sessions/session-legacy.json'), raw);
+  });
+}
+
+for (const [label, mutate] of [
+  ['missing turn type', x => { delete x.messages[3].type; }],
+  ['missing calls', x => { delete x.messages[3].calls; }],
+  ['empty calls', x => { x.messages[3].calls = []; }],
+  ['wrong call role', x => { x.messages[3].role = 'user'; }],
+  ['array params', x => { x.messages[3].calls[0].params = []; }],
+  ['duplicate call ID', x => { x.messages[3].calls[1].id = x.messages[3].calls[0].id; }],
+  ['orphan result', x => { x.messages[4].results[0].id = 'absent'; }],
+  ['result action mismatch', x => { x.messages[4].results[0].action = 'other'; }],
+  ['result params mismatch', x => { x.messages[4].results[0].params.course = 'other'; }],
+  ['wrong result role', x => { x.messages[4].role = 'assistant'; }],
+  ['result before call', x => { [x.messages[3], x.messages[4]] = [x.messages[4], x.messages[3]]; }],
+  ['duplicate completed result', x => { x.messages[5].results = structuredClone(x.messages[4].results); }],
+  ['success with errorCode', x => { x.messages[4].results[0].errorCode = 'STORAGE_FAILED'; }],
+  ['failure without errorCode', x => { x.messages[5].results[0].errorCode = null; }],
+  ['failure masquerading as data', x => { x.messages[5].results[0].data = {}; }],
+  ['null clarification text', x => { x.messages[1].text = null; }],
+  ['blank clarification', x => { x.messages[1].text = ' '; }],
+  ['unknown turn type', x => { x.messages[1].type = 'not-supported'; }]
+]) {
+  test('invalid structured candidate creates no file: ' + label, async t => {
+    const h = await harness(t), input = structuredSession();
+    mutate(input);
+    assert.equal((await new SessionStore(h.coordinator).save(input, 0)).errorCode, 'INVALID_ARGUMENT');
+    assert.deepEqual(await fs.readdir(h.directory), []);
+  });
+}
+
+test('invalid structured data on disk is preserved and reported separately from healthy sessions', async t => {
+  const h = await harness(t), input = structuredSession();
+  input.messages[4].results[0].id = 'orphan';
+  const raw = await seedLegacy(h.files, input);
+  const sessions = new SessionStore(h.coordinator);
+  assert.equal((await sessions.read(input.session.id)).errorCode, 'CORRUPT_DATA');
+  assert.equal(await h.files.readText('sessions/' + input.session.id + '.json'), raw);
+  assert.equal((await sessions.save(sessionDocument(), 0)).success, true);
+  const index = (await sessions.list()).data;
+  assert.equal(index.sessions.length, 1);
+  assert.equal(index.issues[0].errorCode, 'CORRUPT_DATA');
+});
+
+test('unresolved calls and out-of-order parallel results can be saved without inventing completions', async t => {
+  const h = await harness(t), input = structuredSession();
+  input.messages = input.messages.slice(0, 4);
+  const sessions = new SessionStore(h.coordinator);
+  const pending = await sessions.save(input, 0);
+  assert.equal(pending.success, true);
+  const completed = pending.data;
+  completed.messages.push(structuredClone(structuredFixture.messages[5]), structuredClone(structuredFixture.messages[4]));
+  assert.equal((await sessions.save(completed, 1)).success, true);
+});
+
+for (const data of [null, 0, false, '', ['中文', null, false], { nested: [0, null] }]) {
+  test('successful result keeps JSON data exactly: ' + JSON.stringify(data), async t => {
+    const h = await harness(t), input = structuredSession();
+    input.messages[4].results[0].data = data;
+    const result = await new SessionStore(h.coordinator).save(input, 0);
+    assert.equal(result.success, true, result.message);
+    assert.deepEqual(result.data.messages[4].results[0].data, data);
+  });
+}
+
+for (const [label, data] of [['NaN', NaN], ['Infinity', Infinity], ['undefined', undefined],
+  ['function', () => 1], ['Date', new Date('2026-10-28T00:00:00Z')], ['BigInt', 1n]]) {
+  test('non-JSON input is rejected before stringify can change it: ' + label, async t => {
+    const h = await harness(t), input = structuredSession();
+    input.messages[4].results[0].data = data;
+    assert.equal((await new SessionStore(h.coordinator).save(input, 0)).errorCode, 'INVALID_ARGUMENT');
+    assert.deepEqual(await fs.readdir(h.directory), []);
+  });
+}
+
+test('circular structured input is rejected without touching files', async t => {
+  const h = await harness(t), input = structuredSession();
+  input.messages[4].results[0].data = input;
+  assert.equal((await new SessionStore(h.coordinator).save(input, 0)).errorCode, 'INVALID_ARGUMENT');
+  assert.deepEqual(await fs.readdir(h.directory), []);
+});
+
+test('additional JSON fields survive legacy migration and structured save/read', async t => {
+  const h = await harness(t), input = structuredClone(legacyFixture);
+  input.extension = { keep: null };
+  input.messages[0].futureDisplayField = '保留';
+  await seedLegacy(h.files, input);
+  const sessions = new SessionStore(h.coordinator), read = (await sessions.read('session-legacy')).data;
+  const result = await sessions.save(read, 7);
+  assert.equal(result.success, true);
+  assert.deepEqual(result.data.extension, input.extension);
+  assert.equal(result.data.messages[0].futureDisplayField, '保留');
 });

@@ -43,7 +43,8 @@ function sessionExample(): SessionDocument {
   const session: Session = { id: 'session-probe', title: '中文历史 🗓️',
     createdAt: '2026-10-23T10:00:00+08:00', updatedAt: '2026-10-23T10:01:00+08:00', pendingProposalId: null };
   const document: SessionDocument = new SessionDocument(session);
-  const message: Message = { id: 'message-probe', sessionId: session.id, role: 'user', text: '仅日期，不补时刻。',
+  const message: Message = { id: 'message-probe', sessionId: session.id, role: 'user', type: 'text',
+    text: '仅日期，不补时刻。', calls: [], results: [],
     toolName: null, toolResultSummary: null, status: 'completed', createdAt: session.createdAt };
   document.messages.push(message);
   return document;

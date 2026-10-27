@@ -2,6 +2,7 @@ import { Session, SessionDocument } from '../domain/StorageModels';
 import { StorageCoordinator } from './storage/StorageCoordinator';
 import { JsonSnapshotFile } from './storage/JsonSnapshotFile';
 import { SessionDocumentCodec } from './storage/SnapshotCodecs';
+import { requireSessionJson } from './storage/MessageCodec';
 import { StorageFailure, StorageResult, isStorageId, storageError, storageSuccess } from './storage/StorageTypes';
 
 export class SessionIssue {
@@ -46,6 +47,7 @@ export class SessionStore {
 
   async save(document: SessionDocument, expectedRevision: number): Promise<StorageResult<SessionDocument>> {
     try {
+      requireSessionJson(document);
       return await this.record(document.session.id).save(document, expectedRevision);
     } catch (error) {
       return storageError<SessionDocument>(error as Error);

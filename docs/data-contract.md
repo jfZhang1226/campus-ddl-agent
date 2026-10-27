@@ -151,3 +151,5 @@ T03 资料交付：三类字段表、两条关联样例、本地保存方案均�
 共享客户端已添加 LocalStore 和 SessionStore 基础接口，详见 [T08 实现与验证](setup/T08-本地存储基础与验证.md)。它们返回 success/data/errorCode/message，并对候选快照作基本结构与引用校验；save(candidate, expectedRevision) 返回真实已保存内容。
 
 当前未提供任务 Repository、完整日历校验、operationId 或确认记录校验；不得将基础 save 直接作为模型写入工具。全局业务 revision、单任务 version、会话文档自身 revision 与 schemaVersion 仍需分开使用。
+
+2026-10-28 会话接口补充：SessionDocument 新写入使用 schemaVersion=2，支持文本、回答、追问、工具调用数组与结构化结果；旧 v1 在内存中兼容读取，明确保存后才升级。完整字段、合成样例、调用关联和备份兼容见 [会话消息约定](session-message-contract.md)。业务快照的 schemaVersion 仍为1；该格式等待 B 复查，不代表多轮网关或 T16 确认协议已实现。

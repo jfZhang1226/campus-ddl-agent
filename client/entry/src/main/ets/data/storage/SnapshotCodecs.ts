@@ -1,5 +1,6 @@
 import { BusinessSnapshot, ChecklistItem, Message, Notice, Session, SessionDocument, Task } from '../../domain/StorageModels';
 import { SnapshotCodec, StorageFailure, checkHeader, isStorageId, requireStorage } from './StorageTypes';
+import { checkMessages } from './MessageCodec';
 
 function text(value: string): boolean {
   return typeof value === 'string' && value.trim().length > 0;
@@ -112,7 +113,8 @@ export class SessionDocumentCodec implements SnapshotCodec<SessionDocument> {
     } catch (error) {
       throw new StorageFailure('CORRUPT_DATA', '会话文件不是有效 JSON，原文件已保留。');
     }
-    checkHeader(value);
+    checkHeader(value, [1, 2]);
+    const legacy: boolean = value.schemaVersion === 1;
     const session: Session = value.session;
     requireStorage(session !== null && typeof session === 'object' && isStorageId(session.id) &&
       session.id === this.initial.id && typeof session.title === 'string' &&
@@ -122,10 +124,12 @@ export class SessionDocumentCodec implements SnapshotCodec<SessionDocument> {
     uniqueIds(value.messages.map((message: Message) => message.id));
     value.messages.forEach((message: Message) => {
       requireStorage(message.sessionId === session.id && ['user', 'assistant', 'system', 'tool'].includes(message.role) &&
-        typeof message.text === 'string' && nullableText(message.toolName) &&
+        (typeof message.text === 'string' || (!legacy && message.text === null)) && nullableText(message.toolName) &&
         (message.toolResultSummary === null || typeof message.toolResultSummary === 'string') &&
         text(message.status) && timestamp(message.createdAt), '会话消息字段或关联无效。');
     });
+    checkMessages(value.messages, legacy);
+    value.schemaVersion = 2;
     return value;
   }
 }
