@@ -58,5 +58,17 @@
         "sourceSha256": "b10840e7cf56ba0ea15f7fbe873df2d9dd736e44a3e4b622eec0ae7f99fb0637"
       }
     ]
-  }
+  },
+  "sourceCommit": "3cc720079e94a68a8db88f64fa3c901ccc845e1c",
+  "sourceSha256Basis": "Build working-copy bytes; native LF/CRLF preserved. sourceGitBlobSha256 hashes committed bytes.",
+  "sourceGitBlobSha256": {
+    "client/entry/src/main/ets/domain/StorageModels.ts": "fd560ab35070de25bafeff67e8ce4f589af93845c5f01097073fd34c7efb18fc",
+    "client/entry/src/main/ets/data/SessionStore.ts": "7629b41c31f3c42e2b69c56c705acd751538d62ee9489c744eb488f1d56b7b3b",
+    "client/entry/src/main/ets/data/storage/MessageCodec.ts": "1860cf9332cca6c9869f33283cef1dc2c545fed9006f55497d7ed290c29c2270",
+    "client/entry/src/main/ets/data/storage/StorageTypes.ts": "d5fba0a5f918c7903a8c5b5cf984ae36646f47788835c20207a612aa8b480f0d",
+    "client/entry/src/main/ets/data/storage/SnapshotCodecs.ts": "fd022484e64d7952e95521edf4477634ba983e9eed375300c2b7fcbe35e096b6",
+    "client/entry/src/main/ets/data/storage/JsonSnapshotFile.ts": "88aeb08f28dc3f032aa7bcb47bfe8968ba30e46f8b5ba001d95e1be4f4a1028b",
+    "client/entry/src/main/ets/data/diagnostics/StorageProbe.ets": "ecf6627141a745e14cd3e4390c18ff4682a7fa10d8f5d7c84a15cc672c41b04c"
+  },
+  "sourceTextMatchesCommitIgnoringLineEndings": true
 }
