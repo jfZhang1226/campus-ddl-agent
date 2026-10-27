@@ -15,6 +15,7 @@
 
 import { ChatMessage, ChatState, GatewayConfig } from '../chat/ChatModels';
 import { chatOwner } from '../chat/ChatOwner';
+import { KeyboardAvoidMode } from '@ohos.arkui.UIContext';
 
 @Entry
 @Component
@@ -26,8 +27,11 @@ struct Index {
   @State timeoutSeconds: string = '45';
   private scroller: Scroller = new Scroller();
   private scrollTimer: number = -1;
+  private previousKeyboardMode: KeyboardAvoidMode = KeyboardAvoidMode.OFFSET;
 
   aboutToAppear(): void {
+    this.previousKeyboardMode = this.getUIContext().getKeyboardAvoidMode();
+    this.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
     const controller = chatOwner.get();
     const config = controller.configuration();
     this.gatewayUrl = config.baseUrl;
@@ -51,6 +55,7 @@ struct Index {
   }
 
   aboutToDisappear(): void {
+    this.getUIContext().setKeyboardAvoidMode(this.previousKeyboardMode);
     chatOwner.pause();
     chatOwner.detach();
     clearTimeout(this.scrollTimer);
