@@ -5,6 +5,7 @@ import { StorageCoordinator } from '../storage/StorageCoordinator';
 import { JsonSnapshotFile } from '../storage/JsonSnapshotFile';
 import { BusinessSnapshotCodec } from '../storage/SnapshotCodecs';
 import { StorageFailure, StorageResult } from '../storage/StorageTypes';
+import { checkSaveFailure, checkRecoveryFailure, FailureEvidence } from './FailureProbe';
 
 export class ProbeLine {
   label: string;
@@ -174,6 +175,32 @@ export class StorageProbe {
       const failure: Error = error as Error;
       lines.push(new ProbeLine('检查中止', false, failure.message));
     }
+    return lines;
+  }
+
+  async checkFailures(): Promise<ProbeLine[]> {
+    const lines: ProbeLine[] = [];
+    const runId: string = '' + Date.now();
+    const operations: string[] = ['write', 'write', 'replace', 'replace'];
+    const names: string[] = ['task-store.tmp.json', 'task-store.backup.tmp.json',
+      'task-store.backup.json', 'task-store.json'];
+    const labels: string[] = ['候选写入失败', '备份写入失败', '备份替换失败', '主文件替换失败'];
+    try {
+      for (let index: number = 0; index < operations.length; index++) {
+        const namespace: string = 'campus-ddl-t08-fail-' + runId + '-' + index;
+        const files: ArkFilePort = new ArkFilePort(this.filesDir, namespace);
+        const evidence: FailureEvidence = await checkSaveFailure(files, example(), operations[index], names[index]);
+        lines.push(new ProbeLine(labels[index], true, 'STORAGE_FAILED；旧主文件/有效备份保留；重试 revision=' +
+          evidence.retryRevision + '；' + namespace));
+      }
+      const namespace: string = 'campus-ddl-t08-fail-' + runId + '-4';
+      const evidence: FailureEvidence = await checkRecoveryFailure(new ArkFilePort(this.filesDir, namespace), example());
+      lines.push(new ProbeLine('恢复替换失败', true, '原文/备份/归档保留；重试 revision=' + evidence.retryRevision + '；' + namespace));
+    } catch (error) {
+      const failure: Error = error as Error;
+      lines.push(new ProbeLine('失败保护检查中止', false, failure.message));
+    }
+    console.info('[T08-FAILURE-PROBE] ' + JSON.stringify(lines));
     return lines;
   }
 }
