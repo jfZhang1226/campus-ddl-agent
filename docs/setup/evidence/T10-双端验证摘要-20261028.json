@@ -1,0 +1,121 @@
+{
+  "task": "T10",
+  "updatedAt": "2026-10-28",
+  "branch": "feat/a-t10-text-chat",
+  "baseline": "2a753ca21574f20599394963ca1f003a2ee8082d",
+  "productionClientCommit": "8b882e9130be8d80b9a88a39056aef12510be791",
+  "status": "technical evidence ready for peer review; not merged",
+  "hostChecks": {
+    "strictTypeScriptFiles": 3,
+    "checksPassed": 29,
+    "scope": "host and simulated native HTTP boundary"
+  },
+  "artifacts": [
+    {
+      "filename": "T10-Android-20261027.apk",
+      "bytes": 49941422,
+      "sha256": "293dd636c0346d20c09a7acff42a26928a5f297d1bdc23399f59142a82f4207d"
+    },
+    {
+      "filename": "T10-Harmony-unsigned-20261027.hap",
+      "bytes": 131996,
+      "sha256": "0034be300e557f15b8017799b28bdf08cba4b6d3d6497b62d1d21b1e491ae798"
+    },
+    {
+      "filename": "T10-Harmony-signed-20261027.hap",
+      "bytes": 176297,
+      "sha256": "34789266c410a9f1012e958f1fd8f7c4122b7d482790202ce7b16aafccc06e0b"
+    }
+  ],
+  "devices": [
+    {
+      "platform": "Android",
+      "model": "OnePlus Ace 3 / PJE110",
+      "system": "Android 16",
+      "api": 36,
+      "fixtureValidation": {
+        "stagedRecordsPassed": 15,
+        "firstTwoRecordsOnInitialClient": true,
+        "remainingRecordsOnFinalClient": true,
+        "cases": [
+          "Chinese input",
+          "keyboard visibility",
+          "HTTP 401/429/502",
+          "manual retry",
+          "timeout",
+          "stop",
+          "background late response",
+          "unreachable address",
+          "long reply scroll",
+          "edited draft",
+          "cold restart memory reset"
+        ]
+      },
+      "realCall": {
+        "question": "帮我列出阅读校园通知时要关注的信息",
+        "sentAtChinaTime": "2026-10-27T23:38:11.326852+08:00",
+        "outcome": "answer",
+        "observedAfterSeconds": 7.34,
+        "requestId": null,
+        "answerScope": "Complete seven-part response retained in local evidence; screenshot shows tail."
+      },
+      "requestCount": 1,
+      "automaticRetry": false,
+      "inputClearedAfterSuccess": true,
+      "screenshot": "../../images/t10/android-real-answer.png"
+    },
+    {
+      "platform": "HarmonyOS",
+      "model": "HUAWEI Pura 70 / ADY-AL10",
+      "system": "HarmonyOS 7.0.0.109 / OpenHarmony-7.0.0.105",
+      "api": 26,
+      "fixtureValidation": {
+        "recordsPassed": 4,
+        "cases": [
+          "Chinese input, keyboard and local HTTP",
+          "HTTP 502/manual retry",
+          "timeout",
+          "real gateway invalid-token 401 without upstream model call"
+        ]
+      },
+      "realCall": {
+        "question": "请用一句话说明阅读校园通知时应优先核对什么信息。",
+        "sentAtChinaTime": "2026-10-28T00:02:01.107390+08:00",
+        "outcome": "answer",
+        "observedAfterSeconds": 13.28,
+        "requestId": null,
+        "answer": "阅读校园通知时，应优先核对通知的发布主体、适用对象、生效/执行时间、地点与截止时限，以及需要完成的具体事项和提交要求。"
+      },
+      "requestCount": 1,
+      "automaticRetry": false,
+      "inputClearedAfterSuccess": true,
+      "screenshot": "../../images/t10/harmony-real-answer.png"
+    }
+  ],
+  "realGateway": {
+    "serverCommitReportedByB": "2a753ca21574f20599394963ca1f003a2ee8082d",
+    "modelReportedByBAndHealth": "deepseek-flash",
+    "serverTimeoutSecondsReportedByB": 30,
+    "rateLimitReportedByB": "30 per minute per token",
+    "clientTimeoutSeconds": 45,
+    "connection": "direct private LAN; no USB forwarding for real calls"
+  },
+  "cleanup": {
+    "fixtureProcessesStopped": true,
+    "usbFixtureMappingsRemoved": true,
+    "phonesKeepT10": true,
+    "uninstallOrClearData": false,
+    "networkSettingsChanged": false
+  },
+  "limitations": [
+    "Each question is independent; no history is sent to the gateway.",
+    "Messages and configuration live only in process memory; T11 is not implemented.",
+    "No task tool execution; tools and results are empty.",
+    "Success requestId is not exposed by current page; these two requestIds were not captured.",
+    "Observed durations include waiting and UI capture; they are not server latency measurements.",
+    "Text including Markdown is rendered as plain text.",
+    "Harmony did not repeat all Android extended lifecycle scenarios.",
+    "Neither device was tested in airplane mode during T10.",
+    "Same configured build machine; not T41 clean-machine validation."
+  ]
+}

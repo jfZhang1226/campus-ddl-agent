@@ -70,7 +70,9 @@ def main():
                 self.send_json(400, {'type': 'error', 'errorCode': 'INVALID_REQUEST', 'requestId': request_id})
                 return
             known = {'T10 OK', 'T10 LONG', 'T10 SLOW', 'T10 TIMEOUT', 'T10 FAIL', 'T10 RETRY', 'T10 RATE'}
-            case = message if message in known else 'default-text'
+            # Underscore aliases also work with device input tools that split text on spaces.
+            scenario = message.replace('_', ' ')
+            case = scenario if scenario in known else 'default-text'
             with lock:
                 counts[case] = counts.get(case, 0) + 1
                 attempt = counts[case]
