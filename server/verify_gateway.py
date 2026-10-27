@@ -98,7 +98,7 @@ def asgi_request(path, body_bytes, auth=None):
     """经 ASGI 入口发送原始请求，覆盖 FastAPI 路由与请求体校验路径（不经 model_turn 直接调用）。"""
     headers = [(b"content-type", b"application/json")]
     if auth is not None:
-        headers.append((b"authorization", auth.encode()))
+        headers.append((b"authorization", auth if isinstance(auth, bytes) else auth.encode()))
     scope = {
         "type": "http",
         "asgi": {"version": "3.0", "spec_version": "2.3"},
@@ -347,6 +347,57 @@ install_post(json_body={"choices": [{"message": {"tool_calls": {}}}]})
 resp, body = call({"message": "hi"}, GOOD_AUTH)
 check("tool_calls 为空对象 -> 502 MODEL_ERROR 而非落入 answer",
       resp.status_code == 502 and body["errorCode"] == "MODEL_ERROR", body)
+
+# ---------------------------------------------------------------- 非 ASCII 凭证（P2-1）
+clear_captured()
+status, _, raw = asgi_request("/api/model/turn", json.dumps({"message": "hi"}).encode(), auth=b"Bearer \xe9")
+body = json.loads(raw)
+check("非 ASCII 凭证 -> 401 UNAUTHORIZED 而非 500 且不调上游",
+      status == 401 and body["type"] == "error" and body["errorCode"] == "UNAUTHORIZED"
+      and "url" not in captured, body)
+
+# ---------------------------------------------------------------- 非有限工具参数（P2-2）
+install_post(json_body={"choices": [{"message": {"tool_calls": [
+    {"id": "c8", "function": {"name": "get_tasks", "arguments": '{"remainingMinutes": NaN}'}}
+]}}], "usage": {}})
+status, _, raw = asgi_request("/api/model/turn", json.dumps({"message": "hi"}).encode(), GOOD_AUTH)
+body = json.loads(raw)
+check("工具参数 NaN -> 502 MODEL_ERROR 而非 500", status == 502 and body["errorCode"] == "MODEL_ERROR", body)
+
+install_post(json_body={"choices": [{"message": {"tool_calls": [
+    {"id": "c9", "function": {"name": "get_tasks", "arguments": '{"remainingMinutes": 1e999}'}}
+]}}], "usage": {}})
+status, _, raw = asgi_request("/api/model/turn", json.dumps({"message": "hi"}).encode(), GOOD_AUTH)
+body = json.loads(raw)
+check("工具参数 1e999 -> 502 MODEL_ERROR 而非 500", status == 502 and body["errorCode"] == "MODEL_ERROR", body)
+
+# ---------------------------------------------------------------- 工具调用 ID 约束（P2-3）
+install_post(json_body={"choices": [{"message": {"tool_calls": [
+    {"id": 17, "function": {"name": "get_tasks", "arguments": "{}"}}
+]}}], "usage": {}})
+resp, body = call({"message": "hi"}, GOOD_AUTH)
+check("工具调用 id 为数字 -> 502 MODEL_ERROR 而非下发非字符串 id",
+      resp.status_code == 502 and body["errorCode"] == "MODEL_ERROR", body)
+
+install_post(json_body={"choices": [{"message": {"tool_calls": [
+    {"id": {"bad": "id"}, "function": {"name": "get_tasks", "arguments": "{}"}}
+]}}], "usage": {}})
+resp, body = call({"message": "hi"}, GOOD_AUTH)
+check("工具调用 id 为对象 -> 502 MODEL_ERROR 而非下发非字符串 id",
+      resp.status_code == 502 and body["errorCode"] == "MODEL_ERROR", body)
+
+install_post(json_body={"choices": [{"message": {"tool_calls": [
+    {"id": "call_9", "function": {"name": "get_tasks", "arguments": "{}"}}
+]}}], "usage": {}})
+resp, body = call({"message": "hi"}, GOOD_AUTH)
+check("正常工具调用 id 为字符串并保留",
+      resp.status_code == 200 and body["type"] == "tool_calls" and body["calls"][0]["id"] == "call_9", body)
+
+install_post(json_body={"choices": [{"message": {"content": "续轮成功"}}], "usage": {}})
+resp2, body2 = call({"message": "继续", "results": [{"id": "call_9", "action": "get_tasks", "params": {},
+    "success": True, "data": {}, "errorCode": None, "message": ""}]}, GOOD_AUTH)
+check("返回的字符串 id 原样续轮被接受",
+      resp2.status_code == 200 and body2["type"] == "answer", body2)
 
 # ---------------------------------------------------------------- 汇总
 print("\n" + "=" * 60)

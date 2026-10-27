@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import math
 import hmac
 import uuid
 import threading
@@ -77,6 +78,19 @@ def _error(request_id: str, code: str, message: str, status: int, start: float) 
             "elapsedMs": round((time.time() - start) * 1000),
         },
     )
+
+
+def _ensure_json_finite(value) -> None:
+    """递归检查数值有限性；非有限浮点会令 JSONResponse(allow_nan=False) 在序列化时抛错。"""
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("包含非有限数值")
+    elif isinstance(value, dict):
+        for item in value.values():
+            _ensure_json_finite(item)
+    elif isinstance(value, list):
+        for item in value:
+            _ensure_json_finite(item)
 
 
 @app.exception_handler(RequestValidationError)
@@ -164,6 +178,8 @@ def model_turn(req: TurnRequest, request: Request):
     # 配置校验：网关凭证与服务商密钥缺一不可，未配置时拒绝服务（fail-closed）
     if not GATEWAY_TOKEN:
         return _error(request_id, "CONFIG_ERROR", "GATEWAY_TOKEN 未配置，网关拒绝提供服务", 500, start)
+    if not GATEWAY_TOKEN.isascii():
+        return _error(request_id, "CONFIG_ERROR", "GATEWAY_TOKEN 含非 ASCII 字符", 500, start)
     if not API_KEY:
         return _error(request_id, "CONFIG_ERROR", "DEEPSEEK_API_KEY 未配置", 500, start)
 
@@ -172,7 +188,7 @@ def model_turn(req: TurnRequest, request: Request):
     if not auth.startswith("Bearer "):
         return _error(request_id, "UNAUTHORIZED", "缺少网关访问凭证", 401, start)
     token = auth[len("Bearer "):].strip()
-    if not token or not hmac.compare_digest(token, GATEWAY_TOKEN):
+    if not token or not token.isascii() or not hmac.compare_digest(token, GATEWAY_TOKEN):
         return _error(request_id, "UNAUTHORIZED", "网关访问凭证无效", 401, start)
 
     # 基本限流：在调用上游前拦截，避免任何可达调用方消耗服务商额度
@@ -223,6 +239,10 @@ def model_turn(req: TurnRequest, request: Request):
         return _error(request_id, "MODEL_ERROR", "上游响应缺少 message", 502, start)
 
     usage = data.get("usage", {})
+    try:
+        _ensure_json_finite(usage)
+    except ValueError:
+        return _error(request_id, "MODEL_ERROR", "上游 usage 包含非有限数值", 502, start)
 
     if "tool_calls" in msg and msg["tool_calls"] is not None:
         tool_calls = msg["tool_calls"]
@@ -248,8 +268,17 @@ def model_turn(req: TurnRequest, request: Request):
                 # 工具参数必须是对象；字符串/数组等非法参数不当作正常工具调用下发
                 if not isinstance(args, dict):
                     return _error(request_id, "MODEL_ERROR", "上游工具参数不是对象", 502, start)
+                try:
+                    _ensure_json_finite(args)
+                except ValueError:
+                    return _error(request_id, "MODEL_ERROR", "上游工具参数包含非有限数值", 502, start)
+                call_id = c.get("id")
+                if call_id is None or call_id == "":
+                    call_id = f"call_{uuid.uuid4().hex[:8]}"
+                elif not isinstance(call_id, str):
+                    return _error(request_id, "MODEL_ERROR", "上游工具调用 id 不是字符串", 502, start)
                 calls.append({
-                    "id": c.get("id") or f"call_{uuid.uuid4().hex[:8]}",
+                    "id": call_id,
                     "action": name,
                     "params": args,
                 })
