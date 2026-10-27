@@ -3,6 +3,7 @@ import hilog from '@ohos.hilog';
 import UIAbility from '@ohos.app.ability.UIAbility';
 import Want from '@ohos.app.ability.Want';
 import window from '@ohos.window';
+import { chatOwner } from '../chat/ChatOwner';
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam) {
@@ -10,6 +11,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   onDestroy() {
+    chatOwner.destroy();
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onDestroy');
   }
 
@@ -27,6 +29,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   onWindowStageDestroy() {
+    chatOwner.pause();
     // Main window is destroyed, release UI related resources
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageDestroy');
   }
@@ -37,6 +40,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   onBackground() {
+    chatOwner.pause();
     // Ability has back to background
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onBackground');
   }

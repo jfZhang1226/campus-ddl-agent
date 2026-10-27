@@ -22,20 +22,24 @@
 - [T06 验证记录](docs/setup/T06-共享工程与双端验证.md)：双端构建结果、版本及待完成验收项。
 - [鸿蒙构建与签名](docs/build-harmony.md)、[Android 构建与安装](docs/build-android.md)：可复现命令和设备条件。
 
-鸿蒙已在 Pura 70（7.0.0.109 / 原生 API 26）完成调试签名、HAP 安装、Hello World 和停止后重新启动；Android 已在一加 Ace 3（Android 16 / API 36）通过相同模板验证。源码新目录的双端构建也已复核。T06 技术证据已齐，仍待其他相关成员评审后确认验收。
+鸿蒙已在 Pura 70（7.0.0.109 / 原生 API 26）完成调试签名、HAP 安装、Hello World 和停止后重新启动；Android 已在一加 Ace 3（Android 16 / API 36）通过相同模板验证。源码新目录的双端构建也已复核。T06 已于 2026-10-27 通过 PR #4 合入 main（`9f08105`），不代表后续业务已通过。
 
 ### 组员先行使用
 
-当前基础工程发布在 `feat/a-t06-arkui-x` 分支，供 B、C、D 接入后续模块。T06 的两端模板运行证据已补齐，草稿 PR #4 待相关成员评审；它不代表后续业务功能验收通过。工程未合并进 `main`，请明确选择任务分支：
+当前基础工程和 T07 网关已合入 `main`。组员从最新 main 创建自己的任务分支；A 的 T10 正在 `feat/a-t10-text-chat` 开发，尚未合并：
 
 ```sh
-git clone --branch feat/a-t06-arkui-x https://github.com/jfZhang1226/campus-ddl-agent.git
+git clone https://github.com/jfZhang1226/campus-ddl-agent.git
 cd campus-ddl-agent
 ```
 
-已克隆仓库的组员先保存自己的改动，再 `git fetch origin`，切到 `feat/a-t06-arkui-x` 查看源码；开发自己的任务时，从该基线创建个人任务分支，保留依赖关系，不直接覆盖他人的分支。DevEco Studio 打开 `client/`，在自己电脑配置实际 SDK 与工具路径，按 [客户端说明](client/README.md) 构建。B、C、D 可在共享 `entry/src/main/ets/` 中接入各自模块，平台能力以两端实测为准。
+已克隆仓库的组员先保存自己的改动，再 `git fetch origin`，从最新 `origin/main` 创建个人任务分支，保留依赖关系，不直接覆盖他人的分支。DevEco Studio 打开 `client/`，在自己电脑配置实际 SDK 与工具路径，按 [客户端说明](client/README.md) 构建。B、C、D 可在共享 `entry/src/main/ets/` 中接入各自模块，平台能力以两端实测为准。
 
-当前仍待相关成员评审和最终验收确认，再按协作约定合并。签名和设备标识只保留在验证者本机；组员需要为自己的设备配置调试签名，见 [鸿蒙构建说明](docs/build-harmony.md)。
+后续任务仍通过 PR 和相关成员评审交付。签名和设备标识只保留在验证者本机；组员需要为自己的设备配置调试签名，见 [鸿蒙构建说明](docs/build-harmony.md)。
+
+## A 的 T10 文本对话
+
+[T10 接入说明](docs/setup/T10-文本对话与网关接入.md) 记录两端共享文本页、T07 HTTP 适配、配置、加载/超时/错误和手动重试。当前等待实际网关与双端真机联调；内存对话列表不是持久历史，每次提问仍独立处理。
 
 ## C 的 T03 交付
 
@@ -43,4 +47,4 @@ cd campus-ddl-agent
 - [两条人工构造示例](fixtures/task-samples.json)：明确截止时刻、仅有截止日期两种情况。
 - [本地保存思路](docs/local-storage-plan.md)：存储组织、读写恢复流程和 T08 待验证事项。
 
-本分支提供现行设计文档、T01 环境配置、T03 资料初稿和 T06 客户端模板，尚未集成客户端业务或服务端。C 的存储基础工作独立在 [T08 草稿 PR #5](https://github.com/jfZhang1226/campus-ddl-agent/pull/5) 推进，不属于本次 T06 模板验收；示例数据不代表真实模型提取结果。
+本分支在现行设计文档、T01/T03 资料、T06 模板与 T07 网关基础上开发 T10。C 的存储基础工作独立在 [T08 草稿 PR #5](https://github.com/jfZhang1226/campus-ddl-agent/pull/5) 推进，未引入本次接入；示例数据不代表真实模型提取结果。
