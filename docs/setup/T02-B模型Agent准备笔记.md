@@ -4,7 +4,7 @@
 > 依据：项目设计与开发总纲 v0.3（第4、6、9、14节）；四人分工与交付清单
 > 评审人：C｜分支：docs/b-agent
 > 状态：草案，待C评审后定稿
-> 说明：本文是T02资料交付，仅描述设计与计划；真实调用、结构化输出质量、延迟和费用需在T07最小网关中实际验证后再定稿。
+> 说明：本文是T02资料交付，仅描述设计与计划；真实调用、JSON结构化输出、function calling、中文效果、延迟与费用均已由T07实测（见T07文档）。
 
 ## 1. 候选模型选型
 
@@ -12,16 +12,16 @@
 
 | 项 | 内容 | 状态 |
 |---|---|---|
-| 账号/API Key | DeepSeek 开放平台（platform.deepseek.com）申请，Key 放在服务端环境变量 | 待B本人申请 |
-| 官方文档 | https://api-docs.deepseek.com/ | 待B本人查阅确认 |
-| 调用方式 | OpenAI 兼容模式 HTTP 接口：`POST /v1/chat/completions`，base_url 建议 `https://api.deepseek.com`（兼容 OpenAI 的 `/v1` 路径也可用） | 待T07实测 |
-| 地域/访问 | 国内可直接访问，无地域选择项 | 待T07实测 |
-| 模型选择 | 首选 `deepseek-v4-pro`（非思考模式），备选 `deepseek-flash`；旧模型名 `deepseek-chat` / `deepseek-reasoner` 已于 2026-07-24 停用，不再使用 | 待T07实测确认实际型号 |
-| 模式选择 | 首版默认非思考模式（具体模式名以官方文档为准），控制延迟与流程复杂度；需要长链推理时再评估思考模式 | 待T07实测 |
-| 结构化能力 | 支持 JSON 输出（如 `response_format={"type":"json_object"}`）；具体启用条件与限制按所选型号/模式核对 | 待T07实测中文效果 |
-| 工具调用 | 支持 function calling；本项目采用结构化动作协议（见第4节） | 待T07实测 |
-| 中文效果 | 中文理解与生成好，对中文校园通知提取优先考察 | 待T07实测 |
-| 成本/延迟/频率限制 | 以T07真实调用记录为准 | 待T07实测 |
+| 账号/API Key | DeepSeek 开放平台（platform.deepseek.com）申请，Key 放在服务端 `.env` | 已申请 |
+| 官方文档 | https://api-docs.deepseek.com/ | 已查阅（入门文档） |
+| 调用方式 | OpenAI 兼容接口：`POST https://api.deepseek.com/chat/completions`，base_url `https://api.deepseek.com` | 已T07实测 |
+| 地域/访问 | 国内可直接访问，无地域选择项 | 已T07实测 |
+| 模型选择 | 统一用 `deepseek-flash`（现为 V4.1 Flash）；旧模型名 `deepseek-chat` / `deepseek-reasoner` 已于 2026-07-24 停用，`deepseek-v4-pro` 已于 2026-09-14 路由至 V4.1 Flash、按 Flash 计费，不再使用 | 已T07实测 |
+| 模式选择 | 默认关闭思考（`thinking: {"type": "disabled"}`），控制延迟与费用；需要长链推理时再评估开启 | 已T07实测（disabled 可关闭思考） |
+| 结构化能力 | 支持 JSON 输出（如 `response_format={"type":"json_object"}`）；具体启用条件与限制按所选型号/模式核对 | 已T07实测（JSON 输出与中文提取通过） |
+| 工具调用 | 支持 function calling；本项目采用结构化动作协议（见第4节） | 已T07实测 |
+| 中文效果 | 中文理解与生成好，对中文校园通知提取优先考察 | 已T07实测 |
+| 成本/延迟/频率限制 | 以T07真实调用记录为准 | 已T07记录延迟、用量与费用（见T07文档） |
 
 说明：`response_format={"type":"json_object"}` 只保证输出是**合法 JSON（格式层）**，不代表字段取值正确或动作合法；字段类型、枚举、动作名与参数的**业务校验是独立一层**，由客户端/工具层完成（见第4节），二者要分开看待。
 
@@ -29,8 +29,8 @@
 
 - 选 DeepSeek 作首选：OpenAI 兼容接口便于 FastAPI 网关统一接入、国内可访问、中文效果好、支持JSON结构化输出与 function calling、成本低，适配本项目"通知文本→结构化任务"的核心诉求。
 - 备选：通义千问 Qwen（阿里云百炼 DashScope），同为 OpenAI 兼容接口。正式切换需重走T07验证。
-- 型号与能力（核对日期 2026-10-26）：当前官方 API 模型为 `deepseek-v4-pro`、`deepseek-flash`；旧模型名 `deepseek-chat`、`deepseek-reasoner` 已于 2026-07-24 15:59 UTC 停用，不再作为网关配置。工具调用自 DeepSeek-V3.2 起在思考模式亦可用，因此不再使用"推理模型不支持工具调用 / JSON 输出"这类绝对表述；JSON 输出的启用条件与限制按所选型号/模式核对。
-- 模式选择是项目决策而非服务商能力限制：为控制延迟与流程复杂度，首版默认用非思考模式做提取、追问与工具选择；若后续需要长链推理（如复杂重排解释），再评估思考模式，并在 T07 实测中对比延迟、费用与结构化效果。T07 记录实际所用型号、模式与结果。
+- 型号与能力（核对日期 2026-10-27）：当前可用模型为 `deepseek-flash`（V4.1 Flash）；旧模型名 `deepseek-chat`、`deepseek-reasoner` 已于 2026-07-24 停用，`deepseek-v4-pro` 已于 2026-09-14 路由至 V4.1 Flash、按 Flash 价格计费。工具调用自 DeepSeek-V3.2 起在思考模式亦可用，因此不再使用"推理模型不支持工具调用 / JSON 输出"这类绝对表述；JSON 输出的启用条件与限制按所选型号/模式核对。
+- 模式选择是项目决策而非服务商能力限制：为控制延迟与流程复杂度，首版默认关闭思考（`thinking: {"type":"disabled"}`）做提取、追问与工具选择；若后续需要长链推理（如复杂重排解释），再评估开启思考。T07 实测确认 `disabled` 可关闭思考（无 reasoning_token、延迟与费用更低）。
 - **不在客户端直连大模型**：API Key只放服务端FastAPI网关（`server/`），客户端只访问网关。这样符合安全加分项，也符合总纲"模型网关+密钥管理"设计。
 
 ## 2. 三大Agent业务闭环
@@ -179,5 +179,5 @@ stateDiagram-v2
 
 1. 【需C评审】核对Notice/Task/ChecklistItem字段、Repository方法与工具返回、错误码。
 2. 【需A配合】确认 `/api/model/turn` 请求响应示例、超时与错误反馈格式。
-3. 【T07】搭建最小FastAPI网关，完成一次真实 DeepSeek 调用，实测JSON结构化、中文效果、延迟与费用。
+3. 【T07】✅ 已完成：搭建 FastAPI 网关，真实 DeepSeek 调用通过，JSON结构化、function calling、中文效果、延迟与费用均已实测。
 4. 【T12】实现通知提取与多轮补齐，产出可编辑任务草案。
