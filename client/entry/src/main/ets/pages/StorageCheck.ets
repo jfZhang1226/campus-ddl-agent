@@ -25,6 +25,10 @@ struct StorageCheck {
         this.lines = await this.probe.readExample();
       } else if (action === 'failure') {
         this.lines = await this.probe.checkFailures();
+      } else if (action === 'messages-write') {
+        this.lines = await this.probe.writeMessages();
+      } else if (action === 'messages-read') {
+        this.lines = await this.probe.readMessages();
       } else {
         this.lines = await this.probe.checkFiles();
       }
@@ -44,6 +48,8 @@ struct StorageCheck {
         Button('2. 读取重启结果').id('t08-read').enabled(!this.busy).onClick(() => { this.run('read'); })
         Button('3. 检查替换与恢复').id('t08-check').enabled(!this.busy).onClick(() => { this.run('check'); })
         Button('4. 检查失败保护').id('t08-failure').enabled(!this.busy).onClick(() => { this.run('failure'); })
+        Button('5. 写入新版会话验证').id('t08-messages-write').enabled(!this.busy).onClick(() => { this.run('messages-write'); })
+        Button('6. 读取新版会话结果').id('t08-messages-read').enabled(!this.busy).onClick(() => { this.run('messages-read'); })
         Text('失败保护用受控缺失路径触发真实文件 API 错误，只操作独立人工目录。').fontSize(14)
         Text('写入后关闭应用进程，再启动并点击“读取重启结果”。断网时也应可读。').fontSize(14)
         if (this.busy) {

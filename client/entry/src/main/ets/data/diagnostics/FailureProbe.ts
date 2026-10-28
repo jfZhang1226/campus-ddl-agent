@@ -5,7 +5,7 @@ import { StorageCoordinator } from '../storage/StorageCoordinator';
 import { StorageFailure, StorageResult } from '../storage/StorageTypes';
 
 /** Development-only fault injection: missing paths trigger the real platform API's error. */
-class MissingPathPort implements FilePort {
+export class MissingPathPort implements FilePort {
   private files: FilePort;
   private operation: string = '';
   private name: string = '';

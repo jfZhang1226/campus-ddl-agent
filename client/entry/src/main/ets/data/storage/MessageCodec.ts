@@ -1,37 +1,14 @@
 import { Message, MessageToolCall, MessageToolResult } from '../../domain/StorageModels';
-import { StorageFailure, requireStorage } from './StorageTypes';
+import { requireStorage } from './StorageTypes';
+import { isJsonRecord, isJsonValue, requireJsonValue } from './JsonValues';
 
 function nonempty(value: string): boolean {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-function record(value: Object | null): boolean {
-  return value !== null && typeof value === 'object' && !Array.isArray(value) &&
-    Object.prototype.toString.call(value) === '[object Object]';
-}
-
-/** JSON payloads may contain scalar/array/null values, but not lossy JS values. */
-function json(value: Object | null, parents: Object[] = []): boolean {
-  if (value === null || typeof value === 'string' || typeof value === 'boolean') return true;
-  if (typeof value === 'number') return Number.isFinite(value);
-  if (typeof value !== 'object' || parents.includes(value) || parents.length >= 64) return false;
-  const nested: Object[] = parents.concat([value]);
-  if (Array.isArray(value)) {
-    for (let i: number = 0; i < value.length; i++) {
-      if (!json(value[i], nested)) return false;
-    }
-    return true;
-  }
-  if (!record(value)) return false;
-  const fields = value as Record<string, Object | null>;
-  return Object.keys(fields).every((key: string) => json(fields[key], nested));
-}
-
 /** Run before JSON.stringify so NaN/undefined/functions cannot silently change data. */
 export function requireSessionJson(value: Object): void {
-  if (!json(value)) {
-    throw new StorageFailure('INVALID_ARGUMENT', '会话必须是有限、无循环且对象/数组嵌套不超过64层的 JSON 数据。');
-  }
+  requireJsonValue(value);
 }
 
 function equalJson(left: Object | null, right: Object | null): boolean {
@@ -49,14 +26,14 @@ function equalJson(left: Object | null, right: Object | null): boolean {
 }
 
 function checkCall(call: MessageToolCall): void {
-  requireStorage(record(call) && nonempty(call.id) && nonempty(call.action) &&
-    record(call.params) && json(call.params), '工具调用的 id/action/params 无效。');
+  requireStorage(isJsonRecord(call) && nonempty(call.id) && nonempty(call.action) &&
+    isJsonRecord(call.params) && isJsonValue(call.params), '工具调用的 id/action/params 无效。');
 }
 
 function checkResult(result: MessageToolResult): void {
-  requireStorage(record(result), '工具结果必须是对象。');
+  requireStorage(isJsonRecord(result), '工具结果必须是对象。');
   checkCall(result);
-  requireStorage(typeof result.success === 'boolean' && json(result.data) && typeof result.message === 'string' &&
+  requireStorage(typeof result.success === 'boolean' && isJsonValue(result.data) && typeof result.message === 'string' &&
     ((result.success && result.errorCode === null) ||
       (!result.success && nonempty(result.errorCode as string) && result.data === null)),
     '工具结果的 success/data/errorCode/message 不一致。');

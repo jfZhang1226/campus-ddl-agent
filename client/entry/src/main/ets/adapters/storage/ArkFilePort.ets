@@ -3,6 +3,9 @@ import { BusinessError } from '@ohos.base';
 import { FilePort } from './FilePort';
 import { StorageFailure } from '../../data/storage/StorageTypes';
 
+// ENOENT in the shared @ohos.file.fs API; regression records the native code on both OSes.
+const FILE_NOT_FOUND_CODE: number = 13900002;
+
 /** Same ArkUI-X file API on both platforms. root must come from UIAbilityContext.filesDir. */
 export class ArkFilePort implements FilePort {
   private root: string;
@@ -41,7 +44,7 @@ export class ArkFilePort implements FilePort {
     } catch (error) {
       // A permissions/I/O failure must never be mistaken for a new installation.
       const failure: BusinessError = error as BusinessError;
-      if (failure.code === 13900002) {
+      if (failure.code === FILE_NOT_FOUND_CODE) {
         return false;
       }
       throw new StorageFailure('STORAGE_FAILED', '无法检查应用私有文件，未初始化或覆盖数据。');

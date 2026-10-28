@@ -2,7 +2,8 @@ import { BusinessSnapshot } from '../domain/StorageModels';
 import { StorageCoordinator } from './storage/StorageCoordinator';
 import { JsonSnapshotFile } from './storage/JsonSnapshotFile';
 import { BusinessSnapshotCodec } from './storage/SnapshotCodecs';
-import { StorageResult } from './storage/StorageTypes';
+import { requireJsonValue } from './storage/JsonValues';
+import { StorageResult, storageError } from './storage/StorageTypes';
 
 /** Internal persistence boundary; do not expose save directly as an Agent tool. */
 export class LocalStore {
@@ -17,7 +18,12 @@ export class LocalStore {
   }
 
   save(candidate: BusinessSnapshot, expectedRevision: number): Promise<StorageResult<BusinessSnapshot>> {
-    return this.snapshot.save(candidate, expectedRevision);
+    try {
+      requireJsonValue(candidate);
+      return this.snapshot.save(candidate, expectedRevision);
+    } catch (error) {
+      return Promise.resolve(storageError<BusinessSnapshot>(error as Error));
+    }
   }
 
   recoverBackup(): Promise<StorageResult<BusinessSnapshot>> {

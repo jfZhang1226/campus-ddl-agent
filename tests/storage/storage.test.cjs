@@ -578,3 +578,63 @@ test('additional JSON fields survive legacy migration and structured save/read',
   assert.deepEqual(result.data.extension, input.extension);
   assert.equal(result.data.messages[0].futureDisplayField, '保留');
 });
+
+for (const collection of ['availabilityBlocks', 'planBlocks', 'proposals', 'operations']) {
+  for (const [label, bad] of [['NaN', NaN], ['Infinity', Infinity], ['undefined', undefined],
+    ['function', () => 1], ['BigInt', 1n], ['Date', new Date('2026-10-29T00:00:00Z')]]) {
+    test('business JSON preflight rejects ' + collection + ':' + label + ' without any I/O', async t => {
+      const h = await harness(t), store = new LocalStore(h.coordinator);
+      const input = sampleSnapshot();
+      input[collection].push({ nested: { bad } });
+      assert.equal((await store.save(input, 0)).errorCode, 'INVALID_ARGUMENT');
+      assert.deepEqual(h.files.trace, []);
+      assert.deepEqual(await fs.readdir(h.directory), []);
+    });
+  }
+  test('business JSON preflight rejects cycles in ' + collection + ' and preserves committed bytes', async t => {
+    const h = await harness(t), { store, saved } = await seed(h.coordinator);
+    await store.save(saved, 1);
+    const primary = await h.files.readText('task-store.json');
+    const backup = await h.files.readText('task-store.backup.json');
+    const input = structuredClone(saved);
+    input.revision = 2;
+    input[collection].push({ cycle: input });
+    h.files.trace = [];
+    assert.equal((await store.save(input, 2)).errorCode, 'INVALID_ARGUMENT');
+    assert.deepEqual(h.files.trace, []);
+    assert.equal(await h.files.readText('task-store.json'), primary);
+    assert.equal(await h.files.readText('task-store.backup.json'), backup);
+  });
+}
+
+test('valid business JSON preserves every reserved collection and does not lock the queue after rejection', async t => {
+  const h = await harness(t), store = new LocalStore(h.coordinator), input = sampleSnapshot();
+  input.proposals.push({ bad: undefined });
+  assert.equal((await store.save(input, 0)).errorCode, 'INVALID_ARGUMENT');
+  input.proposals = [];
+  for (const collection of ['availabilityBlocks', 'planBlocks', 'proposals', 'operations']) {
+    input[collection].push({ unicode: '中文 🗓️', zero: 0, empty: '', absent: null, values: [false, true, 0, null] });
+  }
+  const result = await store.save(input, 0);
+  assert.equal(result.success, true, result.message);
+  assert.deepEqual((await new LocalStore(new StorageCoordinator(new HostFiles(h.directory))).read()).data,
+    { ...input, revision: 1 });
+});
+
+test('device message probe uses canonical synthetic fixtures and reopens persisted records', async t => {
+  const { LEGACY_SESSION_JSON, STRUCTURED_SESSION_JSON } = require('../../client/entry/src/main/ets/data/diagnostics/SessionProbeSamples.ts');
+  assert.deepEqual(JSON.parse(LEGACY_SESSION_JSON), legacyFixture);
+  assert.deepEqual(JSON.parse(STRUCTURED_SESSION_JSON), structuredFixture);
+  const { writeMessageProbe, readMessageProbe } = require('../../client/entry/src/main/ets/data/diagnostics/MessageProbe.ts');
+  const h = await harness(t);
+  const report = await writeMessageProbe(h.files);
+  assert.equal(report.legacyBefore, LEGACY_SESSION_JSON);
+  assert.equal(report.legacyAfterRead, report.legacyBefore);
+  assert.equal(report.legacyAfterFailedSave, report.legacyBefore);
+  assert.equal(report.backupAfterFailedSave, report.legacyBefore);
+  assert.equal(report.failureCode, 'STORAGE_FAILED');
+  assert.equal(report.invalidBusinessCode, 'INVALID_ARGUMENT');
+  const fresh = new HostFiles(h.directory);
+  assert.equal((await readMessageProbe(fresh)).coldReadVerified, true);
+  await assert.rejects(writeMessageProbe(fresh));
+});

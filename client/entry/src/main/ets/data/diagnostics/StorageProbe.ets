@@ -1,4 +1,6 @@
 import { ArkFilePort } from '../../adapters/storage/ArkFilePort';
+import fs from '@ohos.file.fs';
+import { BusinessError } from '@ohos.base';
 import { BusinessSnapshot, ChecklistItem, Message, Notice, Session, SessionDocument, Task } from '../../domain/StorageModels';
 import { ClientStorage } from '../ClientStorage';
 import { StorageCoordinator } from '../storage/StorageCoordinator';
@@ -6,6 +8,9 @@ import { JsonSnapshotFile } from '../storage/JsonSnapshotFile';
 import { BusinessSnapshotCodec } from '../storage/SnapshotCodecs';
 import { StorageFailure, StorageResult } from '../storage/StorageTypes';
 import { checkSaveFailure, checkRecoveryFailure, FailureEvidence } from './FailureProbe';
+import { writeMessageProbe, readMessageProbe, MessageProbeReport } from './MessageProbe';
+
+interface MessageProbePointer { namespace: string; }
 
 export class ProbeLine {
   label: string;
@@ -203,5 +208,46 @@ export class StorageProbe {
     }
     console.info('[T08-FAILURE-PROBE] ' + JSON.stringify(lines));
     return lines;
+  }
+
+  async writeMessages(): Promise<ProbeLine[]> {
+    try {
+      const namespace: string = 'campus-ddl-t08-messages-' + Date.now();
+      const files: ArkFilePort = new ArkFilePort(this.filesDir, namespace);
+      let missingCode: number = 0;
+      try { await fs.stat(this.filesDir + '/' + namespace + '/missing-probe.json'); }
+      catch (error) { missingCode = (error as BusinessError).code; }
+      check(missingCode === 13900002, '实际缺失文件错误码与适配约定不一致。');
+      const report: MessageProbeReport = await writeMessageProbe(files);
+      report.nativeMissingCode = missingCode;
+      await files.writeText('message-regression.json', JSON.stringify(report));
+      const index: ArkFilePort = new ArkFilePort(this.filesDir, 'campus-ddl-t08-message-index');
+      await index.ensureDirectory('');
+      const pointer: MessageProbePointer = { namespace: namespace };
+      await index.writeText('latest.json', JSON.stringify(pointer));
+      console.info('[T08-MESSAGES-WRITE] ' + JSON.stringify(report));
+      return [new ProbeLine('新版会话写入与兼容', true,
+        'v1只读rev7；升级失败保留；重试rev8；多工具会话rev1；非法业务JSON拒绝；ENOENT=' + missingCode),
+        new ProbeLine('新版会话验证目录', true, namespace + '；结束进程后点击6读取')];
+    } catch (error) {
+      return [new ProbeLine('新版会话验证中止', false, (error as Error).message)];
+    }
+  }
+
+  async readMessages(): Promise<ProbeLine[]> {
+    try {
+      const index: ArkFilePort = new ArkFilePort(this.filesDir, 'campus-ddl-t08-message-index');
+      const pointer: MessageProbePointer = JSON.parse(await index.readText('latest.json')) as MessageProbePointer;
+      check(/^campus-ddl-t08-messages-\d+$/.test(pointer.namespace), '人工会话验证目录无效。');
+      const files: ArkFilePort = new ArkFilePort(this.filesDir, pointer.namespace);
+      const report: MessageProbeReport = await readMessageProbe(files);
+      await files.writeText('cold-read.json', JSON.stringify(report));
+      console.info('[T08-MESSAGES-READ] ' + JSON.stringify(report));
+      return [new ProbeLine('新版会话读取', true,
+        '旧会话v2/rev8、原v1备份；7条消息/2个调用/成功与失败结果；中文/emoji/null/0/false保持'),
+        new ProbeLine('业务JSON读取', true, '非法输入未写入；合法保留集合完整；' + pointer.namespace)];
+    } catch (error) {
+      return [new ProbeLine('新版会话读取中止', false, (error as Error).message)];
+    }
   }
 }
