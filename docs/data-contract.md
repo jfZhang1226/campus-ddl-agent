@@ -152,4 +152,6 @@ T03 资料交付：三类字段表、两条关联样例、本地保存方案均�
 
 当前未提供任务 Repository、完整日历校验、operationId 或确认记录校验；不得将基础 save 直接作为模型写入工具。全局业务 revision、单任务 version、会话文档自身 revision 与 schemaVersion 仍需分开使用。
 
-2026-10-28 会话接口补充：SessionDocument 新写入使用 schemaVersion=2，支持文本、回答、追问、工具调用数组与结构化结果；旧 v1 在内存中兼容读取，明确保存后才升级。完整字段、合成样例、调用关联和备份兼容见 [会话消息约定](session-message-contract.md)。业务快照的 schemaVersion 仍为1；该格式等待 B 复查，不代表多轮网关或 T16 确认协议已实现。
+2026-10-28 会话接口补充：SessionDocument 新写入使用 schemaVersion=2，支持文本、回答、追问、工具调用数组与结构化结果；旧 v1 在内存中兼容读取，明确保存后才升级。完整字段、合成样例、调用关联和备份兼容见 [会话消息约定](session-message-contract.md)。业务快照的 schemaVersion 仍为1；不代表多轮网关或 T16 确认协议已实现。
+
+2026-10-29 收尾：LocalStore 与 SessionStore 保存前共用有限 JSON 校验，保留集合也拒绝 NaN/Infinity、undefined、函数、BigInt、Date、循环引用及超过64层的对象/数组嵌套，非法候选返回 INVALID_ARGUMENT 且不调用 FilePort。合法的 0、false、null、中文与 emoji 原样保存，不在此补做未来集合的业务校验。新版会话同源双端回归与106项主机检查已通过，见 [T08 本轮证据](setup/evidence/t08-closeout-20261029.json)；B 已接受上一轮消息契约，本次收尾变更待其复查。ChecklistItem.state 继续按本文的 pending/prepared 约定；任务提交仍由 Task/Operation 表达，不在本次为清单添加 submitted。

@@ -1,0 +1,187 @@
+{
+  "recordedDate": "2026-10-29",
+  "timezone": "Asia/Shanghai",
+  "owner": "C",
+  "sourceCommit": "a9b53101660b15776d347081a406d1744537de97",
+  "mergedMain": "2a753ca21574f20599394963ca1f003a2ee8082d",
+  "mainMergeCommit": "e0473cb427b540dc14414aa3ea4871343165650a",
+  "reviewStatus": "Closing changes await B re-review; PR #5 remains draft/open/unmerged.",
+  "host": {
+    "strictTypecheckFiles": 13,
+    "tests": 106,
+    "passed": 106,
+    "failed": 0,
+    "command": "node scripts/test-storage.cjs",
+    "priorTestsRetained": 76,
+    "addedTests": 30
+  },
+  "sourceAudit": {
+    "clientFilesChecked": 83,
+    "exportPrivateSigningOnly": true,
+    "lineEndingsNormalized": true,
+    "sourceGitBlobSha256": {
+      "client/entry/hvigorfile.ts": "68e6b5524128d80b24e7b4c4a9e6e32da5c3f30fae77cc76e6b05086dcedc6fd",
+      "client/entry/src/main/ets/adapters/storage/ArkFilePort.ets": "8d91b3080bf008101dab18c632062b50b9cf6b9720f67fb822965614180a4499",
+      "client/entry/src/main/ets/adapters/storage/FilePort.ts": "21a97aee8fcfd87b74abdc48421b1d3bd42aefad09099cc0aed7407be7dc2fe8",
+      "client/entry/src/main/ets/data/ClientStorage.ets": "33c88010d43f71f9dec1cf959f18e9a4984044711e3e4ad61a2938f2ef8194db",
+      "client/entry/src/main/ets/data/LocalStore.ts": "985ea44983c8431fdcd6d7f9117e56aa1bc79c5a841e668f1f21db623e132d03",
+      "client/entry/src/main/ets/data/SessionStore.ts": "7629b41c31f3c42e2b69c56c705acd751538d62ee9489c744eb488f1d56b7b3b",
+      "client/entry/src/main/ets/data/diagnostics/FailureProbe.ts": "7cbd811ab280cbe64647148844aab4359f54365ffcf35c4ff4d1d99947f34cee",
+      "client/entry/src/main/ets/data/diagnostics/MessageProbe.ts": "2fc71064bb0b366bfd5a4f57d7334b49c9288662efd6a967d865998702d2a347",
+      "client/entry/src/main/ets/data/diagnostics/SessionProbeSamples.ts": "748366d53174c4e43b7015f04f57251bd762eefd5e4a32d8b95322698a5f7b01",
+      "client/entry/src/main/ets/data/diagnostics/StorageProbe.ets": "06b3d65d2af380f6acbdb9602d2586e584a41c23e1fdf30bfd205c0636b43c88",
+      "client/entry/src/main/ets/data/storage/JsonSnapshotFile.ts": "88aeb08f28dc3f032aa7bcb47bfe8968ba30e46f8b5ba001d95e1be4f4a1028b",
+      "client/entry/src/main/ets/data/storage/JsonValues.ts": "9bc3656e6495b69a373881d88d63f8c00d5e9a7f93d534efddda26fae21b4c9e",
+      "client/entry/src/main/ets/data/storage/MessageCodec.ts": "72b9b4d7bc75925a085509683b7ee42d308b3871553ad5ed2b375ee8bb351697",
+      "client/entry/src/main/ets/data/storage/SnapshotCodecs.ts": "fd022484e64d7952e95521edf4477634ba983e9eed375300c2b7fcbe35e096b6",
+      "client/entry/src/main/ets/data/storage/StorageCoordinator.ts": "c7d516c0a993b7817d4f2fa853e9ab1cff09e2a65139c592c2db2412386eff95",
+      "client/entry/src/main/ets/data/storage/StorageTypes.ts": "d5fba0a5f918c7903a8c5b5cf984ae36646f47788835c20207a612aa8b480f0d",
+      "client/entry/src/main/ets/domain/StorageModels.ts": "fd560ab35070de25bafeff67e8ce4f589af93845c5f01097073fd34c7efb18fc",
+      "client/entry/src/main/ets/entryability/EntryAbility.ets": "1f02b56adcfe923d9da89d4d3f91ed5a6622d9a0d86fdb07cdf1ab72d6bde11d",
+      "client/entry/src/main/ets/pages/Index.ets": "92a280c0bcb9d8393c17e1db06318fda490ceea86c45773f847cb6fa38db9cfb",
+      "client/entry/src/main/ets/pages/StorageCheck.ets": "9931eb359772aafa28af4810184c5e76e92de1a24d27c7ddc4d250609f30509d",
+      "client/entry/src/ohosTest/ets/TestRunner/OpenHarmonyTestRunner.ts": "ad0945d8b3b68e4457e7baf2aea1edcbf44af687e568cbad1e19a507c386090e",
+      "client/entry/src/ohosTest/ets/test/Ability.test.ets": "57d12d3aa0bd5baec25f2f6a4ce26711bd45d583a2dd357dd3f9c2b103784875",
+      "client/entry/src/ohosTest/ets/test/List.test.ets": "61be91f1d38dff9c4ed706059f99aaa1c1a4b6c43a88c06958fd7d81e54514d9",
+      "client/entry/src/ohosTest/ets/testability/TestAbility.ets": "f272f78846ad7b1d2f2b90eacf1417f917d48d84f81e85612f1d91b7fb1f42e8",
+      "client/entry/src/ohosTest/ets/testability/pages/Index.ets": "1859eb22641de69faec81bcc54a66c995902d4cffad1db5e443833d350a3f89c",
+      "client/entry/src/test/List.test.ets": "51416623586e98bceea498fce8c25a4eccc8703689bbe2e7cbbbd279f924f993",
+      "client/entry/src/test/LocalUnit.test.ets": "60e885ad330901a3c6a513dd8fbd91330480ec1c55c850fad94f6edbef5883ad",
+      "client/hvigorfile.ts": "a0e4787765f6acac92ab623c4b13d92b6837f79f3928922a6a9a1c05b0f8e7c3"
+    }
+  },
+  "buildArtifacts": {
+    "T08-closeout-Android.apk": "49c33a656670b7cc4d8fc343a69a189bb0a74fcfbbcae68f18b544b37bc36ebc",
+    "T08-closeout-Harmony-signed.hap": "855c259fe3180d71e5e7d8133057b395faf59759ef57fdca20518867dfc68c2c"
+  },
+  "buildChecks": {
+    "fullAceAndroidArm64": true,
+    "androidRequiredNativeLibraries": 6,
+    "androidV2DebugSignature": true,
+    "harmonySignedHap": true,
+    "existingPrivateDebugProfileReused": true,
+    "personalSigningInRepository": false
+  },
+  "devices": [
+    {
+      "result": "PASS",
+      "platform": "android",
+      "sourceCommit": "a9b53101660b15776d347081a406d1744537de97",
+      "nativeMissingCode": 13900002,
+      "legacyReadRevision": 7,
+      "legacySavedRevision": 8,
+      "structuredMessages": 7,
+      "calls": 2,
+      "coldReadVerified": true,
+      "fileHashes": {
+        "cold-read.json": "cc8a2b913b9b05941515c5620ec38da5e7b3aa5b636b53f3664044c04da148a1",
+        "message-regression.json": "806f7686b68a1ddbb575a8a19c531b99a5584261fcdbabeacb5451a4fda627d8",
+        "task-store.json": "96f2d0b1ec1ab8166ed305f016813f243b8cb1af84249134a574bbb2c612f28e",
+        "sessions/session-legacy.backup.json": "61c7b55c04c19ca4c4fa47a35cc464fe5b7c03964cbedba953b0f3e992f5971d",
+        "sessions/session-legacy.json": "1d0adfd157d1c26d2988ac764352459ea69cebd01ebf8bf7aac61f1e5117688c",
+        "sessions/session-structured.json": "f57c44c624341abd16259a7ef0efd003c464265c9cf0c97fea27b7432c79cc71"
+      },
+      "model": "OnePlus Ace 3 / PJE110",
+      "os": "Android 16",
+      "api": 36,
+      "checkedAtUtc": "2026-10-28T16:15:34.516Z",
+      "checks": {
+        "realMissingFileCode": 13900002,
+        "missingExists": false,
+        "legacyReadDoesNotChangeBytes": true,
+        "failedUpgradeCode": "STORAGE_FAILED",
+        "failedUpgradePreservesPrimaryAndBackup": true,
+        "failedUpgradeCandidateRetained": true,
+        "retrySavedSchema": 2,
+        "retrySavedRevision": 8,
+        "structuredRevision": 1,
+        "structuredFixtureFullyEqual": true,
+        "toolSuccessAndFailurePreserved": true,
+        "zeroFalseNullTypesPreserved": true,
+        "businessInvalidJsonCode": "INVALID_ARGUMENT",
+        "businessInvalidCandidateCreatedNoPrimary": true,
+        "validBusinessRevision": 1,
+        "stoppedProcessAbsent": true,
+        "restartHasNewProcess": true,
+        "offlineNoDefaultNetwork": true,
+        "coldReadAllRecordsVerified": true
+      },
+      "networkAfter": {
+        "wifiEnabled": false,
+        "mobileDataEnabled": true,
+        "restoredToOriginal": true
+      }
+    },
+    {
+      "result": "PASS",
+      "platform": "harmony",
+      "sourceCommit": "a9b53101660b15776d347081a406d1744537de97",
+      "nativeMissingCode": 13900002,
+      "legacyReadRevision": 7,
+      "legacySavedRevision": 8,
+      "structuredMessages": 7,
+      "calls": 2,
+      "coldReadVerified": true,
+      "fileHashes": {
+        "cold-read.json": "344d525a0b8285b0f32b0440af460e3693a70bc773d7cb32293ea0c45c0fde82",
+        "message-regression.json": "a1f561a65dbb9ffeb4cf9de6c50a724084759f250f558bb1328ce4d2ca87a518",
+        "task-store.json": "96f2d0b1ec1ab8166ed305f016813f243b8cb1af84249134a574bbb2c612f28e",
+        "sessions/session-legacy.backup.json": "61c7b55c04c19ca4c4fa47a35cc464fe5b7c03964cbedba953b0f3e992f5971d",
+        "sessions/session-legacy.json": "1d0adfd157d1c26d2988ac764352459ea69cebd01ebf8bf7aac61f1e5117688c",
+        "sessions/session-structured.json": "f57c44c624341abd16259a7ef0efd003c464265c9cf0c97fea27b7432c79cc71"
+      },
+      "model": "HUAWEI Pura 70 / ADY-AL10",
+      "nativeOs": "OpenHarmony-7.0.0.105",
+      "nativeApi": 26,
+      "checkedAtUtc": "2026-10-28T16:21:54.112Z",
+      "checks": {
+        "realMissingFileCode": 13900002,
+        "missingExists": false,
+        "legacyReadDoesNotChangeBytes": true,
+        "failedUpgradeCode": "STORAGE_FAILED",
+        "failedUpgradePreservesPrimaryAndBackup": true,
+        "failedUpgradeCandidateRetained": true,
+        "retrySavedSchema": 2,
+        "retrySavedRevision": 8,
+        "structuredRevision": 1,
+        "structuredFixtureFullyEqual": true,
+        "toolSuccessAndFailurePreserved": true,
+        "zeroFalseNullTypesPreserved": true,
+        "businessInvalidJsonCode": "INVALID_ARGUMENT",
+        "businessInvalidCandidateCreatedNoPrimary": true,
+        "validBusinessRevision": 1,
+        "stoppedProcessAbsent": true,
+        "restartHasNewProcess": true,
+        "offlineNoDefaultNetwork": true,
+        "coldReadAllRecordsVerified": true
+      },
+      "networkAfter": {
+        "wifiActive": true,
+        "wifiConnected": true,
+        "defaultNetworkAvailable": true,
+        "otherTogglesChanged": false,
+        "restoredToOriginal": true
+      }
+    }
+  ],
+  "crossPlatformPayloadBytesEqual": true,
+  "identicalPayloadFiles": [
+    "sessions/session-legacy.json",
+    "sessions/session-legacy.backup.json",
+    "sessions/session-structured.json",
+    "task-store.json"
+  ],
+  "limits": [
+    "Synthetic data and controlled missing-path real file API failures, not hardware faults.",
+    "Process stopped only after completed saves; no interruption during commit, power loss, directory fsync, or cross-file transaction verification.",
+    "No real model calls, Hypium or Android instrumentation runs.",
+    "No T11 history UI, T14 Repository/date validation, T16 idempotency/confirmation or T30 tmp-only recovery implementation.",
+    "2026-10-27 file/failure evidence remains bound to f79cb62; this record binds the new session regression to a9b5310."
+  ],
+  "screenshotsSha256": {
+    "docs/images/t08/android-messages-read-20261029.png": "1726264acc5c06e18a94bf27b79b9a167320b5c4b34c43895eed9fb74567062d",
+    "docs/images/t08/android-messages-write-20261029.png": "6c696e7ed387d2ac444e12298c7bc79d1fa67f7a5bb70665f8c0faf76ee9659c",
+    "docs/images/t08/harmony-messages-read-20261029.png": "60f5dc2b526203a568c90848363e69f4c1bf434f03789cb9b6268d9afe884cfa",
+    "docs/images/t08/harmony-messages-write-20261029.png": "6c25f399786e0c31968f9690b1d0ca483ebfccb502021c6058db16d456349cc3"
+  }
+}
