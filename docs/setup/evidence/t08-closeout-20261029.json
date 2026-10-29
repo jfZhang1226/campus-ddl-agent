@@ -192,14 +192,20 @@
     "commentType": "issue_comment",
     "formalGitHubApprove": false,
     "conclusion": "No remaining changes; session contract and deferred-task boundaries accepted.",
-    "synchronizedMain": "e831d84efdc98d50cd8c61826cce97449f7eb5b0",
+    "synchronizedMain": "f34865a8639171c5016ac47d1ee9ee38c39386b0",
     "resolvedConflictFiles": [
-      "docs/README.md"
+      "README.md",
+      "client/README.md",
+      "docs/README.md",
+      "client/entry/src/main/ets/pages/Index.ets"
     ],
-    "runtimeSourceChangedAfterReviewedHead": false,
-    "newBuildOrDeviceValidation": false,
+    "runtimeSourceChangedAfterReviewedHead": true,
     "finalAcceptanceAndMergeConfirmation": "pending",
     "prRemainsDraft": true,
-    "merged": false
+    "merged": false,
+    "storageCoreCodecAndDiagnosticsChangedAfterReviewedHead": false,
+    "integrationNote": "Main T10 text page and Ability lifecycle retained; T08 diagnostic entry retained in gateway settings. Chat history is not connected to persistence.",
+    "newIntegrationBuildRecordedSeparately": true,
+    "newDeviceValidation": false
   }
 }
