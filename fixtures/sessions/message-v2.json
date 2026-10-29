@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 2,
+  "revision": 0,
+  "session": {
+    "id": "session-structured",
+    "title": "合成多轮与工具结果 🗓️",
+    "createdAt": "2026-10-28T10:00:00+08:00",
+    "updatedAt": "2026-10-28T10:01:00+08:00",
+    "pendingProposalId": null
+  },
+  "messages": [
+    { "id": "user-one", "sessionId": "session-structured", "role": "user", "type": "text", "text": "帮我查作业。", "calls": [], "results": [], "toolName": null, "toolResultSummary": null, "status": "completed", "createdAt": "2026-10-28T10:00:00+08:00" },
+    { "id": "clarify-one", "sessionId": "session-structured", "role": "assistant", "type": "clarification", "text": "要查哪些课程？", "calls": [], "results": [], "toolName": null, "toolResultSummary": null, "status": "completed", "createdAt": "2026-10-28T10:00:01+08:00" },
+    { "id": "user-two", "sessionId": "session-structured", "role": "user", "type": "text", "text": "数据库和高等数学。", "calls": [], "results": [], "toolName": null, "toolResultSummary": null, "status": "completed", "createdAt": "2026-10-28T10:00:02+08:00" },
+    { "id": "calls-one", "sessionId": "session-structured", "role": "assistant", "type": "tool_calls", "text": null, "calls": [
+      { "id": "call-database", "action": "get_tasks", "params": { "course": "数据库", "filters": { "deadlinePrecision": "date_only", "tag": "中文 🗓️" } } },
+      { "id": "call-math", "action": "get_tasks", "params": { "course": "高等数学" } }
+    ], "results": [], "toolName": null, "toolResultSummary": null, "status": "completed", "createdAt": "2026-10-28T10:00:03+08:00" },
+    { "id": "result-database", "sessionId": "session-structured", "role": "tool", "type": "tool_result", "text": null, "calls": [], "results": [
+      { "id": "call-database", "action": "get_tasks", "params": { "filters": { "tag": "中文 🗓️", "deadlinePrecision": "date_only" }, "course": "数据库" }, "success": true, "data": { "tasks": [{ "id": "task-synthetic", "title": "合成作业 🗓️", "deadlinePrecision": "date_only", "deadlineDate": "2026-11-08", "dueAt": null, "remainingMinutes": 0, "submitted": false }], "cursor": null }, "errorCode": null, "message": "" }
+    ], "toolName": null, "toolResultSummary": null, "status": "completed", "createdAt": "2026-10-28T10:00:04+08:00" },
+    { "id": "result-math", "sessionId": "session-structured", "role": "tool", "type": "tool_result", "text": null, "calls": [], "results": [
+      { "id": "call-math", "action": "get_tasks", "params": { "course": "高等数学" }, "success": false, "data": null, "errorCode": "STORAGE_FAILED", "message": "合成读取失败，请保留输入后重试。" }
+    ], "toolName": null, "toolResultSummary": null, "status": "completed", "createdAt": "2026-10-28T10:00:05+08:00" },
+    { "id": "answer-one", "sessionId": "session-structured", "role": "assistant", "type": "answer", "text": "已查到数据库作业；高等数学读取失败，可重试。", "calls": [], "results": [], "toolName": null, "toolResultSummary": null, "status": "completed", "createdAt": "2026-10-28T10:00:06+08:00" }
+  ]
+}

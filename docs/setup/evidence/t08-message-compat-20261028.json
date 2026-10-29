@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-28",
+  "kind": "session-codec-host-and-build-validation",
+  "baseline": "bd41e21a1c0b1b207e31fbbe55fbdb9a26fbede4",
+  "deviceOperationPerformed": false,
+  "realModelCalled": false,
+  "strictTypecheckFiles": 10,
+  "hostTests": {
+    "total": 76,
+    "passed": 76,
+    "failed": 0,
+    "existing": 26,
+    "added": 50
+  },
+  "sourceSha256": {
+    "client/entry/src/main/ets/domain/StorageModels.ts": "afb274b7c41de1dfd7fc9f88b2edbeda0d1f613d56701a98537290cfa3088385",
+    "client/entry/src/main/ets/data/SessionStore.ts": "7df35c944a73b853fa2d434203987af7428773304f7def9a8e78071d076493d1",
+    "client/entry/src/main/ets/data/storage/MessageCodec.ts": "1860cf9332cca6c9869f33283cef1dc2c545fed9006f55497d7ed290c29c2270",
+    "client/entry/src/main/ets/data/storage/StorageTypes.ts": "84ee91e9c0f866d001054af1dd41dd362786a0c520560ee663c99e2228cb9fb9",
+    "client/entry/src/main/ets/data/storage/SnapshotCodecs.ts": "5496bb9a8a7aaf9eb080b61c311f46a893d04760685dcd7d5f457b979342d971",
+    "client/entry/src/main/ets/data/storage/JsonSnapshotFile.ts": "26266a30aabea515382cae794fd9cacd49407b95ea575e3c89c7a7fd23efb4a6",
+    "client/entry/src/main/ets/data/diagnostics/StorageProbe.ets": "ffb81e84cf1de56e14952d5eefb624823cdecf1a191ea1eacd0937258862ab55"
+  },
+  "builds": {
+    "harmony": {
+      "result": "PASS",
+      "signed": false,
+      "sha256": "319ecd5d2adc8e40ac9211a23335e811c2f48c169c0a5cfdb20b8a72d7e9dcc2"
+    },
+    "android": {
+      "result": "PASS",
+      "abi": "arm64-v8a",
+      "adapterLibraries": 6,
+      "v2SignatureVerified": true,
+      "cleanRebuildRequired": true,
+      "sha256": "dc9c95e7e946c4ededd0e28d5de7631a83759bf7cc9a62c45833a3daeebb77d6"
+    }
+  },
+  "previousDeviceFilesOfflineDecode": {
+    "method": "Offline decoding of previously exported synthetic v1 device files. No device operation.",
+    "results": [
+      {
+        "platform": "android",
+        "sourceSchema": 1,
+        "decodedSchema": 2,
+        "revision": 6,
+        "messageCount": 1,
+        "bytesUnchanged": true,
+        "sourceSha256": "6a48f971560a9600c9cb0e9ca0460a61e5bf1368af0a86ac85ef03386444163f"
+      },
+      {
+        "platform": "harmony",
+        "sourceSchema": 1,
+        "decodedSchema": 2,
+        "revision": 1,
+        "messageCount": 1,
+        "bytesUnchanged": true,
+        "sourceSha256": "b10840e7cf56ba0ea15f7fbe873df2d9dd736e44a3e4b622eec0ae7f99fb0637"
+      }
+    ]
+  },
+  "sourceCommit": "3cc720079e94a68a8db88f64fa3c901ccc845e1c",
+  "sourceSha256Basis": "Build working-copy bytes; native LF/CRLF preserved. sourceGitBlobSha256 hashes committed bytes.",
+  "sourceGitBlobSha256": {
+    "client/entry/src/main/ets/domain/StorageModels.ts": "fd560ab35070de25bafeff67e8ce4f589af93845c5f01097073fd34c7efb18fc",
+    "client/entry/src/main/ets/data/SessionStore.ts": "7629b41c31f3c42e2b69c56c705acd751538d62ee9489c744eb488f1d56b7b3b",
+    "client/entry/src/main/ets/data/storage/MessageCodec.ts": "1860cf9332cca6c9869f33283cef1dc2c545fed9006f55497d7ed290c29c2270",
+    "client/entry/src/main/ets/data/storage/StorageTypes.ts": "d5fba0a5f918c7903a8c5b5cf984ae36646f47788835c20207a612aa8b480f0d",
+    "client/entry/src/main/ets/data/storage/SnapshotCodecs.ts": "fd022484e64d7952e95521edf4477634ba983e9eed375300c2b7fcbe35e096b6",
+    "client/entry/src/main/ets/data/storage/JsonSnapshotFile.ts": "88aeb08f28dc3f032aa7bcb47bfe8968ba30e46f8b5ba001d95e1be4f4a1028b",
+    "client/entry/src/main/ets/data/diagnostics/StorageProbe.ets": "ecf6627141a745e14cd3e4390c18ff4682a7fa10d8f5d7c84a15cc672c41b04c"
+  },
+  "sourceTextMatchesCommitIgnoringLineEndings": true
+}

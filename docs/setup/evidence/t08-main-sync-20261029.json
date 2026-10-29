@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-29",
+  "owner": "C",
+  "integrationSourceCommit": "43646d375a2e6a365b36873615c9f398bdb84c1c",
+  "synchronizedMain": "f34865a8639171c5016ac47d1ee9ee38c39386b0",
+  "previousBReviewedHead": "467a65c684b6262cdb8e1163b49aa879b097ca8a",
+  "reviewComment": "https://github.com/jfZhang1226/campus-ddl-agent/pull/5#issuecomment-6487027103",
+  "reviewScope": "B accepted 467a65c in an ordinary PR comment. This record describes later main synchronization and the combined T10/T08 entry; it does not extend that review or old device evidence to the new entry.",
+  "sourceAudit": {
+    "integrationSourceCommit": "43646d375a2e6a365b36873615c9f398bdb84c1c",
+    "synchronizedMain": "f34865a8639171c5016ac47d1ee9ee38c39386b0",
+    "previousBReviewedHead": "467a65c684b6262cdb8e1163b49aa879b097ca8a",
+    "storageCoreCodecDiagnosticsAndTestsUnchanged": true,
+    "dMainFilesPreserved": 22,
+    "dIndexSectionUnchanged": true,
+    "t10MainFilesPreservedExceptMergedDocsAndDiagnosticEntry": 19,
+    "documentSectionsPreserved": [
+      "A/T10",
+      "B/T07",
+      "C/T08",
+      "D/T04,T05"
+    ],
+    "sourceGitBlobSha256": {
+      "client/entry/hvigorfile.ts": "68e6b5524128d80b24e7b4c4a9e6e32da5c3f30fae77cc76e6b05086dcedc6fd",
+      "client/entry/src/main/ets/adapters/ArkGatewayTransport.ets": "9d4bb0f1c278811c1ec7c5c7f617650ae87727ff4c30f0692ed99fcc788251d3",
+      "client/entry/src/main/ets/adapters/storage/ArkFilePort.ets": "8d91b3080bf008101dab18c632062b50b9cf6b9720f67fb822965614180a4499",
+      "client/entry/src/main/ets/adapters/storage/FilePort.ts": "21a97aee8fcfd87b74abdc48421b1d3bd42aefad09099cc0aed7407be7dc2fe8",
+      "client/entry/src/main/ets/chat/ChatController.ts": "3d754aa834d87a13f17b0771467b694a3fb35b13dcef1ebca95d60db004ea662",
+      "client/entry/src/main/ets/chat/ChatModels.ts": "f1cadbed05a8e9c4ecd72cec90aac2132d30395beb1f04869626e800eb34a54a",
+      "client/entry/src/main/ets/chat/ChatOwner.ets": "7c2c2c01ec8eac51a9e729ac4370dc931e6135b7770ada86901aeabfcd3a14b9",
+      "client/entry/src/main/ets/chat/GatewayProtocol.ts": "a785bd242204b5d25839b183c1d5fbd89802628ce438ff0c564d4e1b5d77b094",
+      "client/entry/src/main/ets/data/ClientStorage.ets": "33c88010d43f71f9dec1cf959f18e9a4984044711e3e4ad61a2938f2ef8194db",
+      "client/entry/src/main/ets/data/LocalStore.ts": "985ea44983c8431fdcd6d7f9117e56aa1bc79c5a841e668f1f21db623e132d03",
+      "client/entry/src/main/ets/data/SessionStore.ts": "7629b41c31f3c42e2b69c56c705acd751538d62ee9489c744eb488f1d56b7b3b",
+      "client/entry/src/main/ets/data/diagnostics/FailureProbe.ts": "7cbd811ab280cbe64647148844aab4359f54365ffcf35c4ff4d1d99947f34cee",
+      "client/entry/src/main/ets/data/diagnostics/MessageProbe.ts": "2fc71064bb0b366bfd5a4f57d7334b49c9288662efd6a967d865998702d2a347",
+      "client/entry/src/main/ets/data/diagnostics/SessionProbeSamples.ts": "748366d53174c4e43b7015f04f57251bd762eefd5e4a32d8b95322698a5f7b01",
+      "client/entry/src/main/ets/data/diagnostics/StorageProbe.ets": "06b3d65d2af380f6acbdb9602d2586e584a41c23e1fdf30bfd205c0636b43c88",
+      "client/entry/src/main/ets/data/storage/JsonSnapshotFile.ts": "88aeb08f28dc3f032aa7bcb47bfe8968ba30e46f8b5ba001d95e1be4f4a1028b",
+      "client/entry/src/main/ets/data/storage/JsonValues.ts": "9bc3656e6495b69a373881d88d63f8c00d5e9a7f93d534efddda26fae21b4c9e",
+      "client/entry/src/main/ets/data/storage/MessageCodec.ts": "72b9b4d7bc75925a085509683b7ee42d308b3871553ad5ed2b375ee8bb351697",
+      "client/entry/src/main/ets/data/storage/SnapshotCodecs.ts": "fd022484e64d7952e95521edf4477634ba983e9eed375300c2b7fcbe35e096b6",
+      "client/entry/src/main/ets/data/storage/StorageCoordinator.ts": "c7d516c0a993b7817d4f2fa853e9ab1cff09e2a65139c592c2db2412386eff95",
+      "client/entry/src/main/ets/data/storage/StorageTypes.ts": "d5fba0a5f918c7903a8c5b5cf984ae36646f47788835c20207a612aa8b480f0d",
+      "client/entry/src/main/ets/domain/StorageModels.ts": "fd560ab35070de25bafeff67e8ce4f589af93845c5f01097073fd34c7efb18fc",
+      "client/entry/src/main/ets/entryability/EntryAbility.ets": "22894537d8bc9a9a01eca192dcef123fed5f82626cacd8dd5cf30df113fde6f6",
+      "client/entry/src/main/ets/pages/Index.ets": "ff087bf70ebb07cde04d3a39e1c947abebd65159d6fa73ea89d230742eb59844",
+      "client/entry/src/main/ets/pages/StorageCheck.ets": "9931eb359772aafa28af4810184c5e76e92de1a24d27c7ddc4d250609f30509d",
+      "client/entry/src/ohosTest/ets/TestRunner/OpenHarmonyTestRunner.ts": "ad0945d8b3b68e4457e7baf2aea1edcbf44af687e568cbad1e19a507c386090e",
+      "client/entry/src/ohosTest/ets/test/Ability.test.ets": "57d12d3aa0bd5baec25f2f6a4ce26711bd45d583a2dd357dd3f9c2b103784875",
+      "client/entry/src/ohosTest/ets/test/List.test.ets": "61be91f1d38dff9c4ed706059f99aaa1c1a4b6c43a88c06958fd7d81e54514d9",
+      "client/entry/src/ohosTest/ets/testability/TestAbility.ets": "f272f78846ad7b1d2f2b90eacf1417f917d48d84f81e85612f1d91b7fb1f42e8",
+      "client/entry/src/ohosTest/ets/testability/pages/Index.ets": "1859eb22641de69faec81bcc54a66c995902d4cffad1db5e443833d350a3f89c",
+      "client/entry/src/test/List.test.ets": "51416623586e98bceea498fce8c25a4eccc8703689bbe2e7cbbbd279f924f993",
+      "client/entry/src/test/LocalUnit.test.ets": "60e885ad330901a3c6a513dd8fbd91330480ec1c55c850fad94f6edbef5883ad",
+      "client/hvigorfile.ts": "a0e4787765f6acac92ab623c4b13d92b6837f79f3928922a6a9a1c05b0f8e7c3"
+    },
+    "worktreeTextMatchesFixedSourceIgnoringLineEndings": true
+  },
+  "integrationChanges": [
+    "Preserve main T10 text page, chat controller, transport and Ability lifecycle.",
+    "Retain T08 storage diagnostic navigation and local navigation error in gateway settings.",
+    "Preserve A/T10, B/T07, C/T08 and D/T04,T05 document chapters.",
+    "Chat messages/configuration remain memory-only; T11 persistence is not connected."
+  ],
+  "host": {
+    "storageStrictFiles": 13,
+    "storageChecksPassed": 106,
+    "chatStrictFiles": 3,
+    "chatChecksPassed": 29,
+    "failed": 0,
+    "commands": [
+      "node scripts/test-storage.cjs",
+      "node scripts/test-chat.cjs"
+    ]
+  },
+  "builds": {
+    "harmonyUnsignedHap": {
+      "command": "devecocli build --modules entry@default",
+      "success": true,
+      "sha256": "02d141f36f096b38c575e4d4d666094156b686e1714aa752ff862208f547d5c4"
+    },
+    "androidArm64Apk": {
+      "command": "ace build apk --debug --target-platform arm64",
+      "success": true,
+      "sha256": "456c97b0b9d77db583de2cd2fbaacf222be181ad49dab67d4b9e2bcdb56793a8",
+      "v2DebugSignatureVerified": true,
+      "requiredNativeLibrariesPresent": [
+        "libfile_fs.so",
+        "libfile_streamrw.so",
+        "libutil_stream.so",
+        "libutil.so",
+        "libcrypto_openssl.so",
+        "librouter.so",
+        "libnet_http.so",
+        "libnghttp2_shared.so"
+      ]
+    }
+  },
+  "limitations": {
+    "compilerWarningsRetained": true,
+    "newDeviceRun": false,
+    "newRealModelCall": false,
+    "newSigningMaterial": false,
+    "newHypiumOrInstrumentationRun": false,
+    "t08DeviceEvidenceSourceRemains": "a9b53101660b15776d347081a406d1744537de97",
+    "t10DeviceEvidenceRemainsBoundToItsOriginalRecord": true,
+    "combinedEntryDeviceValidation": "not rerun in this sync"
+  },
+  "prState": {
+    "draft": true,
+    "merged": false,
+    "finalAcceptanceAndMergeConfirmation": "pending, including confirmation of the newly combined entry"
+  }
+}

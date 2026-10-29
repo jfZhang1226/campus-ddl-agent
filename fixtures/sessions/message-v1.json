@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "revision": 7,
+  "session": {
+    "id": "session-legacy",
+    "title": "合成旧会话 🗓️",
+    "createdAt": "2026-10-23T10:00:00+08:00",
+    "updatedAt": "2026-10-23T10:01:00+08:00",
+    "pendingProposalId": null
+  },
+  "messages": [
+    { "id": "old-user", "sessionId": "session-legacy", "role": "user", "text": "查看数据库作业。", "toolName": null, "toolResultSummary": null, "status": "completed", "createdAt": "2026-10-23T10:00:00+08:00" },
+    { "id": "old-assistant", "sessionId": "session-legacy", "role": "assistant", "text": "正在查询。", "toolName": "get_tasks", "toolResultSummary": null, "status": "completed", "createdAt": "2026-10-23T10:00:01+08:00" },
+    { "id": "old-tool", "sessionId": "session-legacy", "role": "tool", "text": "", "toolName": "get_tasks", "toolResultSummary": "找到 2 条合成任务", "status": "completed", "createdAt": "2026-10-23T10:00:02+08:00" }
+  ]
+}
