@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>课事清 · D 的交互原型</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="workbench">
+    <aside class="guide">
+      <p class="eyebrow">课事清 / T04</p>
+      <h1>把通知，<br>变成心里有数的任务。</h1>
+      <p class="intro">助手输入页与任务列表页 · 第一版交互原型</p>
+      <div class="boundary"><strong>合成数据 · 交互预演</strong><p>不录音、不调用模型、不连接任务存储。确认后的任务仅在当前页面内存中，刷新即重置。</p></div>
+      <label for="sample-select">选择通知场景</label>
+      <select id="sample-select"></select>
+      <div class="faults">
+        <label><input type="checkbox" id="network-failure"> 演示模型请求失败</label>
+        <label><input type="checkbox" id="save-failure"> 演示保存失败</label>
+      </div>
+      <p class="hint">操作路径：整理通知 → 核对与修改 → 确认 → 查看任务。也可先取消，观察列表保持不变。</p>
+      <a href="../../setup/d-experience.md">查看交付说明</a>
+    </aside>
+    <section class="device" aria-label="课事清手机交互原型">
+      <header class="app-header"><div class="brand-mark" aria-hidden="true">课</div><div><strong>课事清</strong><span>校园里的事，慢慢理清。</span></div><span class="prototype-tag">原型</span></header>
+      <nav class="tabs" role="tablist" aria-label="主页面">
+        <button type="button" role="tab" id="assistant-tab" aria-controls="assistant-page" aria-selected="true">助手</button>
+        <button type="button" role="tab" id="tasks-tab" aria-controls="tasks-page" aria-selected="false">任务 <span id="task-count">0</span></button>
+      </nav>
+      <section id="assistant-page" class="app-page" role="tabpanel" aria-labelledby="assistant-tab">
+        <div class="page-title"><p class="section-kicker">添加一条通知</p><h2>先记下来，再逐项确认。</h2></div>
+        <label class="field-label" for="notice-input">通知原文</label>
+        <textarea id="notice-input" rows="5" spellcheck="false"></textarea>
+        <p class="source-meta" id="notice-meta"></p>
+        <div class="input-actions"><button type="button" id="voice-button" class="secondary">语音输入</button><button type="button" id="extract-button" class="primary">整理为任务</button></div>
+        <p id="input-feedback" class="feedback" aria-live="polite"></p>
+        <div id="draft-area"></div>
+      </section>
+      <section id="tasks-page" class="app-page" role="tabpanel" aria-labelledby="tasks-tab" hidden>
+        <div class="page-title"><p class="section-kicker">近期任务</p><h2>先看截止，再决定安排。</h2></div>
+        <p class="list-note">这里只显示本次预演中确认加入的任务。系统提醒尚未接入。</p>
+        <div id="task-list"></div>
+      </section>
+      <footer class="app-footer">文字输入始终可用 · 正式修改需要屏幕确认</footer>
+    </section>
+  </main>
+  <script src="sample-data.js"></script>
+  <script src="model.js"></script>
+  <script src="form.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
