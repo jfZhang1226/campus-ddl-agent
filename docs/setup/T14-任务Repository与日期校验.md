@@ -1,6 +1,6 @@
 # T14：任务 Repository 与日期校验
 
-负责人：C。基线为 main `b6032c0`（含已合并 T08/T10）；任务分支 `feat/c-t14-task-repository`。当前完成代码和主机检查，双端构建结果在完成后补录；尚未进行本轮设备验证、A/B 接口评审或合并。
+负责人：C。基线为 main `b6032c0`（含已合并 T08/T10）；任务分支 `feat/c-t14-task-repository`。代码、主机检查及双端构建已完成；尚未进行本轮设备验证、A/B 接口评审或合并。运行源码固定于 `8f964ff356fc8d9f21bdb325d1b6cd4760880405`，后续本轮说明/证据提交不改运行源码。
 
 ## 1. 范围与使用边界
 
@@ -82,6 +82,15 @@ node scripts/test-chat.cjs
 
 2026-10-30 主机结果：任务85项、存储106项、对话29项通过。严格检查覆盖所有共享 data/domain TS，平台 .ets 仍须实际构建。新增任务测试使用真实主机临时文件及故障注入，覆盖日期/偏移边界、CRUD/重开读取、空值、来源、材料删除、并发、版本、时钟回退、文件失败/人工重试和历史非法日期保留。
 
+从上述提交导出源码到仓库外新目录，未复制旧工程缓存或签名：官方 `devecocli build` 生成未签名 HAP（66任务全部执行，BUILD SUCCESSFUL）；随后 `ace build apk --debug --target-platform arm64` 完整构建共享 ArkTS 和 Android（Gradle 32任务全部执行，BUILD SUCCESSFUL）。95个已提交客户端文件在构建前后逐项字节相同，且与当前工作树按换行归一化一致；signingConfigs 仍为空。两个包均包含 TaskRepository、TaskCheck、writeTaskProbe、isCalendarDate 的编译符号；APK 所需9项文件/网络原生库及 HttpPlugin DEX、v2调试签名通过，包名 com.campusddl.agent、minAPI26/targetAPI33。
+
+| 产物 | 大小（字节） | SHA-256 |
+|---|---:|---|
+| T14-Harmony-unsigned-20261030.hap | 404847 | feeac689dcc79f752256e4fb3edd168fd66eb20ee0e979a2faf83fda8599e31b |
+| T14-Android-20261030.apk | 50942079 | d294bc27a6a603da93b8ee6fbc35b2b459a00682f06678868de305b4d9f0d93c |
+
+结构化结果见[主机与构建摘要](evidence/t14-host-build-20261030.json)。原始日志/源码清单及产物保留仓库外；未提交个人路径、签名或安装包。既有 Hypium、ArkFilePort 异常提示、SDK/Gradle/strip 警告保留；新增验证导航沿用现有 pushUrl，也收到弃用提示，构建未失败。此次是同机新目录构建，不替代 T41 的另一台干净机器验证。
+
 网关设置页新增“T14 任务验证（开发用）”，进入 [TaskCheck](../../client/entry/src/main/ets/pages/TaskCheck.ets)。按钮1使用新的 `campus-ddl-t14-时间戳` 隔离人工目录执行三种日期创建、非法日期拒绝、编辑/无变化、并发冲突、受控真实文件API替换失败/人工重试、日期查询和删除；按钮2重开读取，对比已保存任务并检查删除记录未恢复。最近成功目录指针在独立 `campus-ddl-t14-index/last.txt`，与正式目录和 T08 人工目录分离。流程代码为 [TaskProbe](../../client/entry/src/main/ets/data/diagnostics/TaskProbe.ts)。
 
 主机已执行同一 probe 的文件流程；**尚未在手机执行**。设备阶段需先Android、后鸿蒙验证实际安装与页面，写入后force-stop确认进程不存在，冷启动/离线读取一致、网络恢复原状态。受控缺失路径不代表硬件故障；不验证突然断电、完整T30恢复或跨文件事务。本轮构建不访问手机、不调用模型、不保存真实用户通知。
@@ -91,7 +100,7 @@ node scripts/test-chat.cjs
 - [x] 从最新 main 建独立任务分支，保留 A 工作树和旧 C 分支。
 - [x] Repository、日期/关联规则、应用所有者及开发入口。
 - [x] 85项任务、106项存储、29项对话主机检查。
-- [ ] 同版鸿蒙未签名 HAP 与完整 ACE Android APK 构建及安装包检查。
+- [x] 同版鸿蒙未签名 HAP 与完整 ACE Android APK 构建及安装包检查。
 - [ ] Android / 鸿蒙本轮真机验证。
 - [ ] A/B 独立接口评审与最终验收。
 - [ ] 用户后续合并确认；当前明确暂不合并。
