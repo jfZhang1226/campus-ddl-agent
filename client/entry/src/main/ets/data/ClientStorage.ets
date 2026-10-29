@@ -3,14 +3,17 @@ import { StorageCoordinator } from './storage/StorageCoordinator';
 import { StorageFailure } from './storage/StorageTypes';
 import { LocalStore } from './LocalStore';
 import { SessionStore } from './SessionStore';
+import { TaskRepository } from './TaskRepository';
 
 export class ClientStorage {
   local: LocalStore;
   sessions: SessionStore;
+  tasks: TaskRepository;
 
   constructor(coordinator: StorageCoordinator) {
     this.local = new LocalStore(coordinator);
     this.sessions = new SessionStore(coordinator);
+    this.tasks = new TaskRepository(this.local);
   }
 }
 
