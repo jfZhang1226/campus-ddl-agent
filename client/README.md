@@ -1,6 +1,8 @@
 # ArkUI-X 共享客户端
 
-T06 从 ArkUI-X SDK 26.0.0.28 Beta2 随附 ACE 的 `app` 模板创建。当前页面为 `Hello World`，尚未接入模型、任务或本地存储。鸿蒙与 Android 复用同一份 `entry/src/main/ets/` 页面和 Ability；Android Java 文件仅负责承载 ArkUI-X 页面。
+T06 从 ArkUI-X SDK 26.0.0.28 Beta2 随附 ACE 的 `app` 模板创建。T10 分支已将入口接为共享文本对话页和 T07 HTTP 网关适配，支持运行时配置、加载、超时、错误与手动重试。2026-10-27～28 同版客户端在 Android 和鸿蒙真机各取得一次真实模型回复，技术证据已记录，待相关成员评审。鸿蒙与 Android 复用同一份 `entry/src/main/ets/` 页面和 Ability；Android Java 文件仅负责承载 ArkUI-X 页面。
+
+进入应用先填写网关根地址与项目凭证；服务商 Key 留在服务端。当前每次提问独立处理，关闭进程后内存消息/配置不保留，未接入任务操作或 T11 历史。配置、协议范围、检查和待办见 [T10 接入说明](../docs/setup/T10-文本对话与网关接入.md)。
 
 ## 工程入口
 
@@ -34,7 +36,7 @@ ace build apk --debug --target-platform arm64
 
 当前鸿蒙模板的 `compatibleSdkVersion` 为 API 26（`26.0.0`），本轮使用 API 26 SDK 编译；模板未显式设置 target，构建保留相应提示。接入真机时必须先核对系统/API，不能把编译通过当作该手机可安装的证据。Android 当前为 min API 26、target/compile API 33、arm64 调试包。
 
-2026-10-26 已在 Pura 70（固件 7.0.0.109，原生 API 26）完成调试签名、HAP 安装、Hello World 和强制停止后的重新启动；Android 一加 Ace 3 的相同模板验证已通过。已核对两次设备验证之间 `client/` 无源码差异；本机导出目录只增加个人签名配置，未回写仓库。T06 技术证据已齐，仍待相关成员评审，不代表 T08 存储或后续业务通过。
+2026-10-26 已在 Pura 70（固件 7.0.0.109，原生 API 26）完成模板调试签名、HAP 安装、Hello World 和强制停止后的重新启动；Android 一加 Ace 3 的相同模板验证已通过。T06 已于 2026-10-27 经 PR #4 合入 main；这段记录仅覆盖当时模板，不代表 T10 页面、网络或 T08 存储验证通过。个人签名配置仍保留在仓库外。
 
 ## 模板与许可
 
