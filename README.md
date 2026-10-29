@@ -43,8 +43,8 @@ T06 的模板验收不代表 T08 存储或后续业务通过。签名和设备�
 - [两条人工构造示例](fixtures/task-samples.json)：明确截止时刻、仅有截止日期两种情况。
 - [本地保存思路](docs/local-storage-plan.md)：存储组织、读写恢复流程和 T08 待验证事项。
 
-## C 的 T08 存储基础（进行中）
+## C 的 T08 存储基础（复查通过，待合并确认）
 
-`feat/c-t08-local-store` 已普通合入 `main@2a753ca`（包含 T07 网关），实现共享文件适配、LocalStore、会话存储、备份与显式恢复，并提供隔离人工数据的开发验证页；[T08 草稿 PR #5](https://github.com/jfZhang1226/campus-ddl-agent/pull/5) 面向 `main` 交付。2026-10-29 收尾补齐业务快照的有限 JSON 校验，13个核心 TS 文件严格检查、106项主机检查通过；同一源码 `a9b5310` 在 Android 一加 Ace 3 和鸿蒙 Pura 70 完成新版结构化会话、v1 升级失败保护、实际停止进程后冷启动及离线读取回归，两端网络已恢复。[会话消息约定](docs/session-message-contract.md)、[完整记录](docs/setup/T08-本地存储基础与验证.md)和[本轮结构化证据](docs/setup/evidence/t08-closeout-20261029.json)区分旧版与本次验证。A 原范围通过，B 已接受上一轮会话契约；本次收尾变更待 B 复查，尚未标记整体验收完成。
+`feat/c-t08-local-store` 已普通合入 `main@e831d84`（包含 T07 网关和 T04 原型资料），实现共享文件适配、LocalStore、会话存储、备份与显式恢复，并提供隔离人工数据的开发验证页；[T08 草稿 PR #5](https://github.com/jfZhang1226/campus-ddl-agent/pull/5) 面向 `main` 交付。2026-10-29 收尾补齐业务快照的有限 JSON 校验，13个核心 TS 文件严格检查、106项主机检查通过；同一源码 `a9b5310` 在 Android 一加 Ace 3 和鸿蒙 Pura 70 完成新版结构化会话、v1 升级失败保护、实际停止进程后冷启动及离线读取回归，两端网络已恢复。[会话消息约定](docs/session-message-contract.md)、[完整记录](docs/setup/T08-本地存储基础与验证.md)和[本轮结构化证据](docs/setup/evidence/t08-closeout-20261029.json)区分旧版与本次验证。A 原范围通过；[B 对467a65c的普通评论复查](https://github.com/jfZhang1226/campus-ddl-agent/pull/5#issuecomment-6487027103)确认无剩余修改项，并接受会话契约及后续任务边界。本次同步只引入 main 的资料和更新评审状态，T08 运行源码不变；最终验收及合并确认仍待完成，PR 保持草稿、未合并。
 
-本分支已同步 main 的 T07 最小模型网关（`server/`），客户端包含 T06 模板与 T08 存储开发页；正式文本对话接入由 A 的 T10 继续推进，任务业务与语音尚未接入本分支页面。T08 正式验收与合并仍待相关成员复查，模型调用能力见 [T07](docs/setup/T07-B最小模型网关与接口约定.md)，存储样例不代替模型验证。
+本分支已同步 main 的 T07 最小模型网关（`server/`），客户端包含 T06 模板与 T08 存储开发页；正式文本对话接入由 A 的 T10 继续推进，任务业务与语音尚未接入本分支页面。T08 技术复查通过与最终验收、合并确认分别记录，模型调用能力见 [T07](docs/setup/T07-B最小模型网关与接口约定.md)，存储样例不代替模型验证。
