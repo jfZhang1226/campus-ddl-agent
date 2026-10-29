@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-27",
+  "kind": "browser-observation-summary",
+  "synthetic": true,
+  "modelExecuted": false,
+  "deviceValidation": false,
+  "method": "Browser form controls operated through input/change, confirm, save failure/retry and task list readback. This is an observation summary, not an automated browser test suite.",
+  "checks": [
+    {
+      "case": "D-003 time first",
+      "result": "PASS",
+      "observed": "Empty date + 19:30 survived change and blocked confirmation at task count 0; adding 2026-11-12 saved and read back 2026-11-12 19:30."
+    },
+    {
+      "case": "D-001 cleared date",
+      "result": "PASS",
+      "observed": "Date empty, original time 18:00 retained after change and rejected confirmation; task count stayed 1."
+    },
+    {
+      "case": "D-001 cleared time",
+      "result": "PASS",
+      "observed": "Date 2026-11-13 retained, empty time blocked confirmation, task count stayed 1."
+    },
+    {
+      "case": "D-001 corrected date with save retry",
+      "result": "PASS",
+      "observed": "After simulated save failure fields stayed 2026-11-13 18:00. Retrying added one task (total 2), list read back same deadline; prior D-003 still 2026-11-12 19:30."
+    },
+    {
+      "case": "precision round trip",
+      "result": "PASS",
+      "observed": "D-001 exact -> date_only -> unknown -> exact retained editable 2026-11-06 18:00."
+    },
+    {
+      "case": "unknown deadline",
+      "result": "PASS",
+      "observed": "Confirming unknown added one task showing 截止日期待补充 despite retained hidden UI date/time."
+    },
+    {
+      "case": "date only",
+      "result": "PASS",
+      "observed": "D-002 added one task (total 4), displayed 2026-11-08 当天到期 · 时刻待确认 without 23:59."
+    }
+  ],
+  "finalTaskList": "实验四报告\n\n数据库 · 尚未开始\n\n2026-11-12 19:30 截止\n\n原通知与材料\n实验三报告\n\n数据库 · 尚未开始\n\n2026-11-13 18:00 截止\n\n原通知与材料\n实验三报告\n\n数据库 · 尚未开始\n\n截止日期待补充\n\n原通知与材料\n第八周习题\n\n高等数学 · 尚未开始\n\n2026-11-08 当天到期 · 时刻待确认\n\n原通知与材料"
+}
