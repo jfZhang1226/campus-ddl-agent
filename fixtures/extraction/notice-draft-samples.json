@@ -1,0 +1,104 @@
+{
+  "fixtureFormatVersion": 1,
+  "description": "T12 通知提取草案的三条人工样例，供 A 的 T13 确认卡对接；不是运行时完整业务快照，也不是真实模型结果。草案不含 Notice.id/importedAt/contentHash、Task.id/status/version/createdAt/updatedAt/noticeIds 等保存期字段。",
+  "samples": [
+    {
+      "sampleId": "exact-complete",
+      "case": "明确截止时刻，字段齐全，无需追问",
+      "draft": {
+        "schemaVersion": 1,
+        "kind": "notice_draft",
+        "notice": {
+          "rawText": "数据库实验报告请于2026年11月6日23:59前提交，材料包括PDF报告和源代码，上传学习通。",
+          "sourceLabel": "数据库课程群",
+          "publishedAt": "2026-11-01T09:00:00+08:00",
+          "timezone": "Asia/Shanghai"
+        },
+        "task": {
+          "title": "提交数据库实验报告",
+          "course": "数据库",
+          "kind": "report",
+          "deadlinePrecision": "exact",
+          "deadlineDate": null,
+          "dueAt": "2026-11-06T23:59:00+08:00",
+          "timezone": "Asia/Shanghai",
+          "priority": null,
+          "submissionChannel": "学习通",
+          "remainingMinutes": null
+        },
+        "checklistItems": [
+          { "label": "PDF 报告", "state": "pending" },
+          { "label": "源代码", "state": "pending" }
+        ],
+        "missingFields": [],
+        "clarification": []
+      }
+    },
+    {
+      "sampleId": "date-only-complete",
+      "case": "仅有日期、无具体时刻，按 date_only 处理",
+      "draft": {
+        "schemaVersion": 1,
+        "kind": "notice_draft",
+        "notice": {
+          "rawText": "高等数学作业请于2026年11月8日当天提交，需准备作业PDF和解题过程截图，上传课程平台。",
+          "sourceLabel": "高等数学课程群",
+          "publishedAt": "2026-11-02T10:00:00+08:00",
+          "timezone": "Asia/Shanghai"
+        },
+        "task": {
+          "title": "提交高等数学作业",
+          "course": "高等数学",
+          "kind": "assignment",
+          "deadlinePrecision": "date_only",
+          "deadlineDate": "2026-11-08",
+          "dueAt": null,
+          "timezone": "Asia/Shanghai",
+          "priority": null,
+          "submissionChannel": "课程平台",
+          "remainingMinutes": null
+        },
+        "checklistItems": [
+          { "label": "作业 PDF", "state": "pending" },
+          { "label": "解题过程截图", "state": "pending" }
+        ],
+        "missingFields": [],
+        "clarification": []
+      }
+    },
+    {
+      "sampleId": "relative-date-missing",
+      "case": "只有相对日期且发布时间未知，追问发布时间或直接选择日期",
+      "draft": {
+        "schemaVersion": 1,
+        "kind": "notice_draft",
+        "notice": {
+          "rawText": "下周五前把实验报告交到学习通。",
+          "sourceLabel": null,
+          "publishedAt": null,
+          "timezone": "Asia/Shanghai"
+        },
+        "task": {
+          "title": "提交实验报告",
+          "course": null,
+          "kind": "report",
+          "deadlinePrecision": "unknown",
+          "deadlineDate": null,
+          "dueAt": null,
+          "timezone": "Asia/Shanghai",
+          "priority": null,
+          "submissionChannel": "学习通",
+          "remainingMinutes": null
+        },
+        "checklistItems": [],
+        "missingFields": ["deadline"],
+        "clarification": [
+          {
+            "field": "deadline",
+            "question": "通知里只有相对日期（如“周五”），且发布时间未知。请补充发布时间，或直接选择截止日期。"
+          }
+        ]
+      }
+    }
+  ]
+}

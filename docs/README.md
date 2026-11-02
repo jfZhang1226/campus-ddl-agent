@@ -52,6 +52,18 @@ T03 中的 `kind`、`priority` 取值和个别字段的空值约定是接口细�
 
 main 的 [T07 网关与接口](setup/T07-B最小模型网关与接口约定.md)和 [server 源码](../server/main.py)已同步到本分支，包括认证、限流、上下文与工具续轮结果。客户端实际接入属于 A 的 T10；网关存在不等于本存储开发页已经调用模型。
 
+## B 的 T12 通知提取与多轮补齐
+
+| 交付 | 内容 | 状态 |
+|---|---|---|
+| [实现与协议](setup/T12-通知提取与多轮补齐.md) | `POST /api/agent/extract-notice` 把原文提取为可编辑草案，缺项追问或标记未知，保留发布时间与来源 | 主机自测 + 真实 DeepSeek 调用通过 |
+| [提取逻辑](../server/notice_extraction.py) | 纯逻辑：截止规范化、拒绝虚构时刻、不臆测用户确认字段、多轮 answers 合并 | 无网络/模型依赖，可直接 import 测试 |
+| [主机检查](../server/verify_t12.py) | 41 项：凭证/限流、原文与来源保留、缺项追问、多轮合并、非法输出回退、畸形草案降级 | 全部通过；网关 verify_gateway 43 项不变 |
+| [真实调用脚本](../scripts/t12-real-extract.py) | 读取 server/.env 跑真实提取（少量费用） | 三条样例通过，记录见 T12 文档第 6 节 |
+| [草案样例](../fixtures/extraction/notice-draft-samples.json) | exact / date_only / 相对日期缺截止三条 | 人工构造，供 A 的 T13 确认卡对接 |
+
+T12 只产出草案，不写业务快照、不生成保存期字段；正式保存与确认归 T13/T16。
+
 ## C 的 T08 存储基础（复查通过，待合并确认）
 
 | 交付 | 内容 | 状态 |
