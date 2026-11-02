@@ -1,8 +1,8 @@
 # ArkUI-X 共享客户端
 
-T06 从 ArkUI-X SDK 26.0.0.28 Beta2 随附 ACE 的 `app` 模板创建。T10 分支已将入口接为共享文本对话页和 T07 HTTP 网关适配，支持运行时配置、加载、超时、错误与手动重试。2026-10-27～28 同版客户端在 Android 和鸿蒙真机各取得一次真实模型回复，技术证据已记录，待相关成员评审。鸿蒙与 Android 复用同一份 `entry/src/main/ets/` 页面和 Ability；Android Java 文件仅负责承载 ArkUI-X 页面。
+T06 从 ArkUI-X SDK 26.0.0.28 Beta2 随附 ACE 的 `app` 模板创建。当前已同步 main 的 T10 共享文本页与 T07 HTTP 适配，保留 T08 的存储基础及开发验证页。鸿蒙与 Android 复用同一份 `entry/src/main/ets/` 页面和 Ability；Android Java 文件仅负责承载 ArkUI-X 页面。
 
-进入应用先填写网关根地址与项目凭证；服务商 Key 留在服务端。当前每次提问独立处理，关闭进程后内存消息/配置不保留，未接入任务操作或 T11 历史。配置、协议范围、检查和待办见 [T10 接入说明](../docs/setup/T10-文本对话与网关接入.md)。
+进入应用先填写网关根地址与项目凭证；服务商 Key 留在服务端。T10 消息和配置仍仅在内存中，不会因合入 T08 而自动持久化，尚未接入 T11 历史。网关设置页底部保留“T08 存储验证（开发用）”入口；离开对话页沿用 T10 的暂停/取消与迟到结果保护。配置和协议范围见 [T10 接入说明](../docs/setup/T10-文本对话与网关接入.md)。
 
 ## 工程入口
 
@@ -20,6 +20,8 @@ client/
 
 ## 构建与运行
 
+T08 开发验证入口为“T08 存储验证（开发用）”，只写隔离的人工数据目录。2026-10-27 的七项文件检查及五项保存/恢复失败保护保留为旧版证据；2026-10-29 已用同一源码 a9b5310 在 Android 一加 Ace 3 和鸿蒙 Pura 70 补齐 v2 会话、v1 升级失败保护、冷启动及离线读取回归。点击“5. 写入新版会话验证”会建立独立人工目录，成功后记录目录索引；实际停止应用进程再启动后，点击“6. 读取新版会话结果”复核全部字段。离线操作完成后须恢复原网络状态，不卸载或清数据来代替冷启动。13个核心 TS 文件严格检查、106项主机检查通过；A 原范围通过，[B 对467a65c的普通评论复查](https://github.com/jfZhang1226/campus-ddl-agent/pull/5#issuecomment-6487027103)确认无剩余修改项。此后同步 main 的 T10 文本页，保留存储诊断入口；T08 存储内核、codec、诊断与既有受测源码不变，组合入口单独检查，PR 保持草稿、未合并，待最终验收及合并确认。接口、截图与证据见 [T08 记录](../docs/setup/T08-本地存储基础与验证.md)和[会话消息约定](../docs/session-message-contract.md)，不要将基础 save 直接暴露为 Agent 写入工具。
+
 先按 [T01 环境记录](../docs/setup/T01-环境安装与复核.md) 配置 ACE、SDK、JDK 17 和 Node/OHPM 路径，在本目录运行：
 
 ```powershell
@@ -34,9 +36,11 @@ ace build apk --debug --target-platform arm64
 
 不要只执行 Android 的 `gradlew assembleDebug` 来代替完整跨端构建：模板默认关闭独立 Gradle 触发 ArkTS 编译，可能打入旧资源。ACE 自动生成的运行库、跨端资源和包含本机路径的 `buildArkTS` 脚本均已忽略；每台电脑由 ACE 重新生成。`oh-package-lock.json5` 和 Gradle wrapper 属于共享源码。
 
+T08 实测还发现增量构建可能遗漏新增 API 原生库。新增原生 API 或真机出现模块缺失时，先 `devecocli build clean` 再完整 ACE 构建，并从 client/ 执行 `& ../scripts/check-storage-apk.ps1` 检查文件/路由依赖库；不手工修改 SDK 或向源码提交运行库。
+
 当前鸿蒙模板的 `compatibleSdkVersion` 为 API 26（`26.0.0`），本轮使用 API 26 SDK 编译；模板未显式设置 target，构建保留相应提示。接入真机时必须先核对系统/API，不能把编译通过当作该手机可安装的证据。Android 当前为 min API 26、target/compile API 33、arm64 调试包。
 
-2026-10-26 已在 Pura 70（固件 7.0.0.109，原生 API 26）完成模板调试签名、HAP 安装、Hello World 和强制停止后的重新启动；Android 一加 Ace 3 的相同模板验证已通过。T06 已于 2026-10-27 经 PR #4 合入 main；这段记录仅覆盖当时模板，不代表 T10 页面、网络或 T08 存储验证通过。个人签名配置仍保留在仓库外。
+2026-10-26 已在 Pura 70（固件 7.0.0.109，原生 API 26）完成调试签名、HAP 安装、Hello World 和强制停止后的重新启动；Android 一加 Ace 3 的相同模板验证已通过。已核对两次设备验证之间 `client/` 无源码差异；本机导出目录只增加个人签名配置，未回写仓库。T06 经 C 复查通过后已于 2026-10-27 通过 PR #4 合入 main；该结果不代表 T08 存储或后续业务通过。
 
 ## 模板与许可
 

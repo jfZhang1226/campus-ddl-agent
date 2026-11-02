@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+// Explicit import keeps the Android router adapter in the ACE package.
+import router from '@ohos.router';
 import { ChatMessage, ChatState, GatewayConfig } from '../chat/ChatModels';
 import { chatOwner } from '../chat/ChatOwner';
 import { KeyboardAvoidMode } from '@ohos.arkui.UIContext';
@@ -22,6 +24,7 @@ import { KeyboardAvoidMode } from '@ohos.arkui.UIContext';
 struct Index {
   @State view: ChatState = new ChatState();
   @State settingsOpen: boolean = false;
+  @State storageNavigationError: string = '';
   @State gatewayUrl: string = '';
   @State projectToken: string = '';
   @State timeoutSeconds: string = '45';
@@ -66,6 +69,13 @@ struct Index {
     if (chatOwner.get().configure(config)) {
       this.settingsOpen = false;
     }
+  }
+
+  private openStorageCheck(): void {
+    this.storageNavigationError = '';
+    router.pushUrl({ url: 'pages/StorageCheck' }).catch(() => {
+      this.storageNavigationError = '无法打开存储验证页，请稍后重试。';
+    });
   }
 
   @Builder
@@ -119,6 +129,12 @@ struct Index {
         }
         Button('应用设置').width('100%').height(46).backgroundColor('#176766')
           .onClick(() => this.applySettings())
+        Button('T08 存储验证（开发用）').id('t08-storage-entry')
+          .enabled(!this.view.busy)
+          .onClick(() => this.openStorageCheck())
+        if (this.storageNavigationError.length > 0) {
+          Text(this.storageNavigationError).fontSize(12).fontColor('#A43B32')
+        }
         Text('设置只在本次运行中有效，关闭应用后需要重新填写。请在可信网络中使用 HTTP 调试地址。')
           .fontSize(12).fontColor('#617589').lineHeight(19)
       }.alignItems(HorizontalAlign.Start).width('100%').padding(22)

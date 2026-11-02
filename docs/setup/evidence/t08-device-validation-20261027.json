@@ -1,0 +1,283 @@
+{
+  "date": "2026-10-27",
+  "timezone": "Asia/Shanghai",
+  "sourceCommit": "f79cb621ce32aa212a0bf1618f085e5bebc7e42c",
+  "mainBaseline": "9f08105508222c1f4463271d5cfb91dd77079527",
+  "sourceIntegrity": {
+    "archivedFiles": 108,
+    "onlyPrivateExportDifference": "client/build-profile.json5 signingConfigs",
+    "signingOnlyDifferenceVerified": true
+  },
+  "artifacts": [
+    {
+      "fileName": "T08-Android-20261027.apk",
+      "bytes": 49673927,
+      "sha256": "a8192e5430f0348cd8dff0e46de49448c255e30708e16e72ccafff90c47f6c6b"
+    },
+    {
+      "fileName": "T08-Harmony-signed-20261027.hap",
+      "bytes": 206969,
+      "sha256": "f5cd553964f36df9d33fc779b3b86324f1c4337423a0fbcd2accf4cf78be9630"
+    }
+  ],
+  "hostChecks": {
+    "strictTypeScriptFiles": 9,
+    "passed": 26,
+    "failed": 0
+  },
+  "androidRequiredNativeLibraries": 6,
+  "androidV2DebugSignatureVerified": true,
+  "platforms": [
+    {
+      "platform": "android",
+      "deviceModel": "OnePlus Ace 3 / PJE110",
+      "system": "Android 16",
+      "api": 36,
+      "physicalDevice": true,
+      "snapshotAndSessionRevision": 6,
+      "syntheticFieldsVerified": [
+        "Chinese",
+        "emoji",
+        "null",
+        "date_only",
+        "session and message"
+      ],
+      "forceStopConfirmedNoProcessThenNewProcess": true,
+      "offlineReadPassed": true,
+      "networkStateRestored": true,
+      "fileChecksPassed": [
+        "串行队列与版本保护",
+        "临时文件残留",
+        "主文件缺失",
+        "会话存储与故障隔离",
+        "文件替换与备份",
+        "显式恢复与损坏保留",
+        "未知结构版本"
+      ],
+      "nativeFailureChecks": [
+        {
+          "case": "write:task-store.tmp.json",
+          "faultMode": "controlled missing path through the real FilePort",
+          "nativeCallAttempted": true,
+          "errorCode": "STORAGE_FAILED",
+          "retryRevision": 3,
+          "sha256": {
+            "primaryBefore": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "primaryAfterFailure": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "backupBefore": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "backupAfterFailure": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "temporaryAfterFailure": null,
+            "archiveAfterFailure": null,
+            "primaryAfterRetry": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "backupAfterRetry": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b"
+          },
+          "rawEvidenceSha256": "d002c67ba310095c479027ba0e1976b4c5139e4ac97262a98575fbbbbcfc3811"
+        },
+        {
+          "case": "write:task-store.backup.tmp.json",
+          "faultMode": "controlled missing path through the real FilePort",
+          "nativeCallAttempted": true,
+          "errorCode": "STORAGE_FAILED",
+          "retryRevision": 3,
+          "sha256": {
+            "primaryBefore": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "primaryAfterFailure": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "backupBefore": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "backupAfterFailure": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "temporaryAfterFailure": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "archiveAfterFailure": null,
+            "primaryAfterRetry": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "backupAfterRetry": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b"
+          },
+          "rawEvidenceSha256": "41a17c488a7fd42856dfdce723d1eabe8e9ed611940c335cdeefa94316191c7e"
+        },
+        {
+          "case": "replace:task-store.backup.json",
+          "faultMode": "controlled missing path through the real FilePort",
+          "nativeCallAttempted": true,
+          "errorCode": "STORAGE_FAILED",
+          "retryRevision": 3,
+          "sha256": {
+            "primaryBefore": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "primaryAfterFailure": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "backupBefore": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "backupAfterFailure": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "temporaryAfterFailure": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "archiveAfterFailure": null,
+            "primaryAfterRetry": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "backupAfterRetry": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b"
+          },
+          "rawEvidenceSha256": "0caabe1ea3f89527e4b8c220aec6d5b9674c0ab813d2c8d96aae21ab33939eca"
+        },
+        {
+          "case": "replace:task-store.json",
+          "faultMode": "controlled missing path through the real FilePort",
+          "nativeCallAttempted": true,
+          "errorCode": "STORAGE_FAILED",
+          "retryRevision": 3,
+          "sha256": {
+            "primaryBefore": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "primaryAfterFailure": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "backupBefore": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "backupAfterFailure": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "temporaryAfterFailure": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "archiveAfterFailure": null,
+            "primaryAfterRetry": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "backupAfterRetry": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b"
+          },
+          "rawEvidenceSha256": "827e7c9cdaad1a51c031d2fa01a914bb5a5f8b36d17b12d517a50905312b522b"
+        },
+        {
+          "case": "replace:recovery",
+          "faultMode": "controlled missing path through the real FilePort",
+          "nativeCallAttempted": true,
+          "errorCode": "STORAGE_FAILED",
+          "retryRevision": 1,
+          "sha256": {
+            "primaryBefore": "700a30df390eb896b9e42dea2619662857b8b2c4d24004b9f321a2cd4b97f363",
+            "primaryAfterFailure": "700a30df390eb896b9e42dea2619662857b8b2c4d24004b9f321a2cd4b97f363",
+            "backupBefore": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "backupAfterFailure": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "temporaryAfterFailure": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "archiveAfterFailure": "700a30df390eb896b9e42dea2619662857b8b2c4d24004b9f321a2cd4b97f363",
+            "primaryAfterRetry": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "backupAfterRetry": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d"
+          },
+          "rawEvidenceSha256": "f182798d787125776215a12295ae66534847d84f2e783cec72315f53f3d6ea4e"
+        }
+      ]
+    },
+    {
+      "platform": "harmony",
+      "deviceModel": "HUAWEI Pura 70 / ADY-AL10",
+      "system": "HarmonyOS 7.0.0.109 / OpenHarmony-7.0.0.105",
+      "api": 26,
+      "physicalDevice": true,
+      "snapshotAndSessionRevision": 1,
+      "syntheticFieldsVerified": [
+        "Chinese",
+        "emoji",
+        "null",
+        "date_only",
+        "session and message"
+      ],
+      "forceStopConfirmedNoProcessThenNewProcess": true,
+      "offlineReadPassed": true,
+      "networkStateRestored": true,
+      "fileChecksPassed": [
+        "串行队列与版本保护",
+        "临时文件残留",
+        "主文件缺失",
+        "会话存储与故障隔离",
+        "文件替换与备份",
+        "显式恢复与损坏保留",
+        "未知结构版本"
+      ],
+      "nativeFailureChecks": [
+        {
+          "case": "write:task-store.tmp.json",
+          "faultMode": "controlled missing path through the real FilePort",
+          "nativeCallAttempted": true,
+          "errorCode": "STORAGE_FAILED",
+          "retryRevision": 3,
+          "sha256": {
+            "primaryBefore": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "primaryAfterFailure": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "backupBefore": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "backupAfterFailure": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "temporaryAfterFailure": null,
+            "archiveAfterFailure": null,
+            "primaryAfterRetry": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "backupAfterRetry": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b"
+          },
+          "rawEvidenceSha256": "d002c67ba310095c479027ba0e1976b4c5139e4ac97262a98575fbbbbcfc3811"
+        },
+        {
+          "case": "write:task-store.backup.tmp.json",
+          "faultMode": "controlled missing path through the real FilePort",
+          "nativeCallAttempted": true,
+          "errorCode": "STORAGE_FAILED",
+          "retryRevision": 3,
+          "sha256": {
+            "primaryBefore": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "primaryAfterFailure": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "backupBefore": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "backupAfterFailure": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "temporaryAfterFailure": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "archiveAfterFailure": null,
+            "primaryAfterRetry": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "backupAfterRetry": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b"
+          },
+          "rawEvidenceSha256": "41a17c488a7fd42856dfdce723d1eabe8e9ed611940c335cdeefa94316191c7e"
+        },
+        {
+          "case": "replace:task-store.backup.json",
+          "faultMode": "controlled missing path through the real FilePort",
+          "nativeCallAttempted": true,
+          "errorCode": "STORAGE_FAILED",
+          "retryRevision": 3,
+          "sha256": {
+            "primaryBefore": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "primaryAfterFailure": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "backupBefore": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "backupAfterFailure": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "temporaryAfterFailure": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "archiveAfterFailure": null,
+            "primaryAfterRetry": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "backupAfterRetry": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b"
+          },
+          "rawEvidenceSha256": "0caabe1ea3f89527e4b8c220aec6d5b9674c0ab813d2c8d96aae21ab33939eca"
+        },
+        {
+          "case": "replace:task-store.json",
+          "faultMode": "controlled missing path through the real FilePort",
+          "nativeCallAttempted": true,
+          "errorCode": "STORAGE_FAILED",
+          "retryRevision": 3,
+          "sha256": {
+            "primaryBefore": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "primaryAfterFailure": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "backupBefore": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "backupAfterFailure": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b",
+            "temporaryAfterFailure": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "archiveAfterFailure": null,
+            "primaryAfterRetry": "cea1348b8bf2407719ca0ed0dae076c07294b9bd9ea0379ba7d5bf1fe08b111b",
+            "backupAfterRetry": "ae6911c2059a1a6a06a18666309ec2526602f45ed2a74380cdbb501a70bc082b"
+          },
+          "rawEvidenceSha256": "827e7c9cdaad1a51c031d2fa01a914bb5a5f8b36d17b12d517a50905312b522b"
+        },
+        {
+          "case": "replace:recovery",
+          "faultMode": "controlled missing path through the real FilePort",
+          "nativeCallAttempted": true,
+          "errorCode": "STORAGE_FAILED",
+          "retryRevision": 1,
+          "sha256": {
+            "primaryBefore": "700a30df390eb896b9e42dea2619662857b8b2c4d24004b9f321a2cd4b97f363",
+            "primaryAfterFailure": "700a30df390eb896b9e42dea2619662857b8b2c4d24004b9f321a2cd4b97f363",
+            "backupBefore": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "backupAfterFailure": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "temporaryAfterFailure": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "archiveAfterFailure": "700a30df390eb896b9e42dea2619662857b8b2c4d24004b9f321a2cd4b97f363",
+            "primaryAfterRetry": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d",
+            "backupAfterRetry": "4b72bbc8d7603d254add06dac280893196a10ef216b12ff5290e174650ccde3d"
+          },
+          "rawEvidenceSha256": "f182798d787125776215a12295ae66534847d84f2e783cec72315f53f3d6ea4e"
+        }
+      ]
+    }
+  ],
+  "crossPlatformFailureEvidenceEquivalent": true,
+  "limits": [
+    "All device data is artificial and isolated from production storage.",
+    "Failures are intentionally triggered using missing native file paths; no real hardware failure is claimed.",
+    "Force-stop occurred after completed saves, not during commit.",
+    "Directory fsync, sudden power loss, cross-file transactions and uninstall/reinstall data retention were not validated.",
+    "Repository CRUD, operationId and confirmation protocol belong to later tasks."
+  ],
+  "independentInterfaceReview": {
+    "A": "pending",
+    "B": "pending"
+  },
+  "pr5State": "draft, unmerged"
+}
