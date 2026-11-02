@@ -81,7 +81,7 @@ main 的 [T07 网关与接口](setup/T07-B最小模型网关与接口约定.md)�
 
 ## C 的 T14 任务 Repository（开发中）
 
-[实现与接口说明](setup/T14-任务Repository与日期校验.md)记录任务 CRUD、完整编辑、查询、日期校验、版本冲突和基础删除边界。主机85项任务、106项存储、29项对话及双端构建/安装包检查通过，[主机构建摘要](setup/evidence/t14-host-build-20261030.json)绑定源码8f964ff。[Android本轮真机证据](setup/evidence/t14-android-device-20261030.json)已补，鸿蒙同源签名包已准备、等待用户稍后连接验证；A/B接口评审及最终验收仍待完成。T14 未合并，不表示 T11 历史或 T16 确认协议已完成。
+[实现与接口说明](setup/T14-任务Repository与日期校验.md)记录任务 CRUD、完整编辑、查询、日期校验、版本冲突和基础删除边界。主机85项任务、106项存储、29项对话及双端构建/安装包检查通过，[主机构建摘要](setup/evidence/t14-host-build-20261030.json)绑定源码8f964ff。[Android真机证据](setup/evidence/t14-android-device-20261030.json)和[2026-11-02鸿蒙真机/双端比较](setup/evidence/t14-harmony-device-20261102.json)均已补齐，网络恢复原状态；A/B独立接口评审及最终验收仍待完成。T14 未合并，不表示 T11 历史或 T16 确认协议已完成。
 
 ## 维护约定
 
