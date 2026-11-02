@@ -74,10 +74,18 @@ main 的 [T07 网关与接口](setup/T07-B最小模型网关与接口约定.md)�
 |---|---|---|
 | [首批交付与评审入口](setup/d-experience.md) | 两张可编辑 SVG、离线可点击原型、A/B/C 核对清单与复现方式 | T04 初稿待评审，非 ArkUI-X 应用 |
 | [合成开发样例](../fixtures/development/d-notice-samples.json) / [需求收集模板](setup/d-research-template.md) | 五条人工样例及访谈、脱敏通知记录模板 | 真实通知 0 条、访谈 0 人；T05 未完成 |
-| [UI/语音对接草案](ui-and-speech.md) / [T09 探测表](setup/d-speech-probe.md) | 输入、取消、错误反馈和语音生命周期的协作约定 | 待接口评审；真实语音未验证 |
+| [UI/语音对接草案](ui-and-speech.md) / [T09 探测表](setup/d-speech-probe.md) | 输入、取消、错误反馈和语音生命周期的协作约定 | 待接口评审；T09 原生转写已有反馈，TTS 待验证 |
 | [原型验证记录](validation/2026-10-27-d-experience.md) | 14 项确定性检查与本机浏览器表单回归、窄屏观察 | 无真实模型、持久化、系统提醒或跨端验收；C 的日期编辑 P2 修正待复查 |
 
 原型只处理预设合成场景，任务在页面内存中，刷新会重置。请克隆分支后打开 `docs/prototypes/d-experience/index.html`；单看 GitHub 源码页面不能运行交互。
+
+## D 的 T09 鸿蒙语音探测（部分验证，待评审）
+
+| 交付 | 当前结果 |
+| --- | --- |
+| [探测源码与运行导读](../probes/harmony-speech/README.md) / [导出脚本](../scripts/prepare-speech-probe.cjs) | 独立包名、麦克风权限、鸿蒙平台检查；不修改生产 client/server |
+| [T09 逐项验证](setup/d-speech-probe.md) / [验证摘要](setup/evidence/t09-validation-20261102.json) | 21 项主机检查、真实 SDK 编译/签名/安装与首轮启动；ASR 部分验证，TTS/离线/异常真机项待补 |
+| [T15 接入准备](setup/T15-speech-handoff.md) / [探测边界决定](decisions/D-T09-native-probe.md) | 待 A/B/C 核对，尚未接生产页面或真实模型；不代表 T09/T15 完成 |
 
 ## 维护约定
 
