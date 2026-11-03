@@ -19,6 +19,9 @@ try:
 except ImportError:
     pass
 
+from notice_extraction import (DEFAULT_TIMEZONE, apply_answers, build_extraction_messages, empty_draft,
+    is_valid_offset_datetime, is_valid_timezone, normalize_draft, parse_model_json, validate_answers)
+
 # 服务商密钥只在服务端使用，绝不下发客户端
 MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
 API_KEY = os.getenv("DEEPSEEK_API_KEY", "").strip()
@@ -37,6 +40,15 @@ class TurnRequest(BaseModel):
     context: dict = {}
     tools: list = []
     results: list = []
+
+
+class ExtractNoticeRequest(BaseModel):
+    rawText: str
+    publishedAt: str | None = None
+    sourceLabel: str | None = None
+    timezone: str | None = None
+    answers: list = []
+    draft: dict | None = None
 
 
 class RateLimiter:
@@ -165,16 +177,8 @@ def _build_messages(req: TurnRequest) -> list:
     return messages
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok", "model": MODEL}
-
-
-@app.post("/api/model/turn")
-def model_turn(req: TurnRequest, request: Request):
-    request_id = uuid.uuid4().hex[:12]
-    start = time.time()
-
+def _gateway_guard(request: Request, request_id: str, start: float):
+    """配置、凭证、限流三道校验（与业务端点共享）。通过返回 None，失败返回错误响应。"""
     # 配置校验：网关凭证与服务商密钥缺一不可，未配置时拒绝服务（fail-closed）
     if not GATEWAY_TOKEN:
         return _error(request_id, "CONFIG_ERROR", "GATEWAY_TOKEN 未配置，网关拒绝提供服务", 500, start)
@@ -194,6 +198,22 @@ def model_turn(req: TurnRequest, request: Request):
     # 基本限流：在调用上游前拦截，避免任何可达调用方消耗服务商额度
     if not limiter.allow(token):
         return _error(request_id, "RATE_LIMITED", "请求过于频繁，请稍后重试", 429, start)
+    return None
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "model": MODEL}
+
+
+@app.post("/api/model/turn")
+def model_turn(req: TurnRequest, request: Request):
+    request_id = uuid.uuid4().hex[:12]
+    start = time.time()
+
+    guard = _gateway_guard(request, request_id, start)
+    if guard is not None:
+        return guard
 
     # 构造上游消息：上下文 + 工具续轮结果 + 当前用户输入
     try:
@@ -301,3 +321,109 @@ def model_turn(req: TurnRequest, request: Request):
         "requestId": request_id,
         "elapsedMs": ms,
     })
+
+
+class UpstreamError(Exception):
+    def __init__(self, response: JSONResponse):
+        self.response = response
+
+
+def _first_content(data: dict, request_id: str, start: float) -> str:
+    """抽取上游 JSON 结构里的首个 message.content；结构异常抛 UpstreamError。"""
+    choices = data.get("choices")
+    if not isinstance(choices, list) or not choices:
+        raise UpstreamError(_error(request_id, "MODEL_ERROR", "上游响应缺少 choices", 502, start))
+    first = choices[0]
+    if not isinstance(first, dict):
+        raise UpstreamError(_error(request_id, "MODEL_ERROR", "上游响应 choices[0] 不是对象", 502, start))
+    msg = first.get("message")
+    if not isinstance(msg, dict):
+        raise UpstreamError(_error(request_id, "MODEL_ERROR", "上游响应缺少 message", 502, start))
+    content = msg.get("content")
+    if not isinstance(content, str) or not content.strip():
+        raise UpstreamError(_error(request_id, "MODEL_ERROR", "上游未返回有效文本回答", 502, start))
+    return content
+
+
+def _post_upstream(body: dict, request_id: str, start: float) -> dict:
+    """向上游发送一次非流式请求，统一处理网络/非 200/非 JSON 错误。"""
+    try:
+        r = requests.post(BASE_URL, headers={"Authorization": f"Bearer {API_KEY}"}, json=body, timeout=UPSTREAM_TIMEOUT)
+    except requests.RequestException as e:
+        raise UpstreamError(_error(request_id, "MODEL_ERROR", f"上游请求失败：{e}", 502, start))
+    if r.status_code != 200:
+        raise UpstreamError(_error(request_id, "MODEL_ERROR", f"上游返回 {r.status_code}：{r.text[:200]}", 502, start))
+    try:
+        data = r.json()
+    except ValueError:
+        raise UpstreamError(_error(request_id, "MODEL_ERROR", "上游响应不是合法 JSON", 502, start))
+    if not isinstance(data, dict):
+        raise UpstreamError(_error(request_id, "MODEL_ERROR", "上游响应不是 JSON 对象", 502, start))
+    return data
+
+
+def _draft_response(draft: dict, request_id: str, start: float, degraded: bool = False) -> JSONResponse:
+    return JSONResponse(status_code=200, content={
+        "type": "draft",
+        "draft": draft,
+        "degraded": degraded,
+        "requestId": request_id,
+        "elapsedMs": round((time.time() - start) * 1000),
+    })
+
+
+@app.post("/api/agent/extract-notice")
+def extract_notice(req: ExtractNoticeRequest, request: Request):
+    """T12 通知提取与多轮补齐：原文 → 结构化可编辑草案 + 缺项追问。
+
+    无状态端点：多轮时客户端回传上一轮 draft 与结构化 answers，服务端确定性合并；
+    正式保存不在此发生（T13/T16）。
+    """
+    request_id = uuid.uuid4().hex[:12]
+    start = time.time()
+
+    guard = _gateway_guard(request, request_id, start)
+    if guard is not None:
+        return guard
+
+    raw_text = req.rawText
+    if not raw_text.strip():
+        return _error(request_id, "INVALID_REQUEST", "rawText 不能为空", 400, start)
+    if len(raw_text) > 10000:
+        return _error(request_id, "INVALID_REQUEST", "rawText 过长（最多 10000 字符）", 400, start)
+    timezone = (req.timezone or "").strip() or DEFAULT_TIMEZONE
+    if not is_valid_timezone(timezone):
+        return _error(request_id, "INVALID_REQUEST", "timezone 不合法", 400, start)
+    if req.publishedAt is not None and not is_valid_offset_datetime(req.publishedAt):
+        return _error(request_id, "INVALID_REQUEST", "publishedAt 不是合法的带偏移 ISO 8601 时间", 400, start)
+    try:
+        validate_answers(req.answers)
+    except ValueError as e:
+        return _error(request_id, "INVALID_REQUEST", str(e), 400, start)
+
+    messages = build_extraction_messages(
+        raw_text, timezone, req.publishedAt, req.sourceLabel, req.draft, req.answers)
+    body = {
+        "model": MODEL,
+        "messages": messages,
+        "thinking": {"type": "disabled"},
+        "stream": False,
+        "response_format": {"type": "json_object"},
+    }
+
+    try:
+        data = _post_upstream(body, request_id, start)
+        content = _first_content(data, request_id, start)
+    except UpstreamError as e:
+        return e.response
+
+    # 结构修复一次；仍失败则回退为“人工录入”草案：保留原文、全部标记未知/追问。
+    try:
+        raw = parse_model_json(content)
+    except ValueError:
+        draft = empty_draft(raw_text, timezone, req.publishedAt, req.sourceLabel)
+        draft = apply_answers(draft, req.answers)
+        return _draft_response(draft, request_id, start, degraded=True)
+
+    draft = normalize_draft(raw, raw_text, timezone, req.publishedAt, req.sourceLabel, req.draft, req.answers)
+    return _draft_response(draft, request_id, start)
