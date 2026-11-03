@@ -103,6 +103,8 @@ T12 只产出草案，不写业务快照、不生成保存期字段；正式保�
 
 2026-11-04本地增量：[联调导读](../probes/harmony-voicechat/README.md)、[实际验证记录](setup/T15-voice-chat-validation.md)、[结构化证据](setup/evidence/t15-validation-20261104.json)、[装配边界](decisions/D-T15-validation-assembly.md)。新增16项组合检查，既有29/21项回归与真实SDK编译/签名通过；独立包已完成一次ASR→人工发送→真实模型回复→人工播报。正式主页面与任务保存仍未接入，完整设备异常矩阵尚待完成；不将最小成功样例称为全部T15/T19验收。
 
+同日提交复核已同步 main@808fc7e，新增7项导出检查、最新整仓鸿蒙未签名构建通过。T19前置依赖与待验用例见[交互交接](setup/T19-interaction-handoff.md)，本轮主机/构建结果见[发布复核摘要](setup/evidence/t15-publication-checks-20261104.json)。T09表格保留首轮探测快照，最新声音/停止和真实模型结果以T15记录为准。
+
 ## C 的 T14 任务 Repository（开发中）
 
 [实现与接口说明](setup/T14-任务Repository与日期校验.md)记录任务 CRUD、完整编辑、查询、日期校验、版本冲突和基础删除边界。主机85项任务、106项存储、29项对话及双端构建/安装包检查通过，[主机构建摘要](setup/evidence/t14-host-build-20261030.json)绑定源码8f964ff。[Android真机证据](setup/evidence/t14-android-device-20261030.json)和[2026-11-02鸿蒙真机/双端比较](setup/evidence/t14-harmony-device-20261102.json)均已补齐，网络恢复原状态；A/B独立接口评审及最终验收仍待完成。T14 未合并，不表示 T11 历史或 T16 确认协议已完成。

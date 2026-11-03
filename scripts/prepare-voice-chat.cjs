@@ -30,6 +30,11 @@ function prepare(output) {
   fs.writeFileSync(stringsPath, JSON.stringify(strings, null, 2) + '\n');
   fs.writeFileSync(path.join(result.output, 'entry/src/main/resources/base/profile/main_pages.json'),
     JSON.stringify({ src: ['pages/VoiceChat', 'pages/SpeechProbe'] }, null, 2) + '\n');
+  fs.unlinkSync(path.join(result.output, 'T09-PROBE-ONLY.txt'));
+  fs.writeFileSync(path.join(result.output, 'T15-VOICE-CHAT-ONLY.txt'),
+    'HarmonyOS-only voice chat validation; ASR fills an editable draft, manual send and manual playback.\n' +
+    'This export uses the model gateway but never saves tasks. Production UI and other platforms are not integrated.\n' +
+    'Configure the project token at runtime; provider keys and personal signing settings must stay outside Git.\n');
   const hashes = {};
   for (const file of ['client/entry/src/main/ets/speech/VoiceChatController.ts',
     'client/entry/src/main/ets/chat/ChatController.ts', 'probes/harmony-voicechat/VoiceChat.ets',

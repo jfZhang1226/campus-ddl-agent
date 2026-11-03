@@ -17,6 +17,7 @@
 
 ```powershell
 node scripts/test-voice-chat.cjs
+node scripts/test-voice-chat-export.cjs
 node scripts/test-chat.cjs
 node scripts/test-speech-probe.cjs
 node scripts/prepare-voice-chat.cjs C:/Temp/campus-ddl-t15-new
@@ -24,6 +25,17 @@ node scripts/prepare-voice-chat.cjs C:/Temp/campus-ddl-t15-new
 
 导出目录必须全新，不能覆盖已有签名目录；生成时不会复制个人签名配置。打开导出工程，按本机既有 SDK 环境编译并由本人处理必要的签名授权。不要把签名配置或 HAP 提交到 Git。
 
+构建目录应使用纯英文路径，本机工具实际拒绝含中文的工程路径。依赖仓库需区分普通 npm 与 `@ohos` 包；本轮导出工程的本机 `.npmrc` 使用以下公开配置，未关闭 TLS 校验：
+
+```ini
+registry=https://repo.huaweicloud.com/repository/npm/
+@ohos:registry=https://repo.harmonyos.com/npm/
+```
+
+缺少第二行时固定版本插件4.24.1下载曾返回404，补齐后编译通过。依赖安装与编译步骤继续按[鸿蒙构建说明](../../docs/build-harmony.md)设置实际本机工具路径；未配置签名时只能得到未签名HAP，不能直接安装。
+
 若使用仓库已有 `scripts/t10-test-gateway.py`，它只监听电脑 127.0.0.1:18765，手机通过 USB `hdc rport tcp:18765 tcp:18765` 连接；项目凭证是公开人工测试值 `t10-device-check`。测试结束只移除本轮映射、停止本轮服务，不处理其他映射或进程。
 
 实际进展见 [T15 联调记录](../../docs/setup/T15-voice-chat-validation.md)，装配边界见 [决定](../../docs/decisions/D-T15-validation-assembly.md)。
+
+后续正式任务接入见 [T19 交互交接](../../docs/setup/T19-interaction-handoff.md)；该清单依赖 T13/T16/T17，不提供替代保存接口。
