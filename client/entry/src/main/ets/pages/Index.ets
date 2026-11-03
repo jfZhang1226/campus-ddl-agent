@@ -78,6 +78,13 @@ struct Index {
     });
   }
 
+  private openTaskCheck(): void {
+    this.storageNavigationError = '';
+    router.pushUrl({ url: 'pages/TaskCheck' }).catch(() => {
+      this.storageNavigationError = '无法打开任务验证页，请稍后重试。';
+    });
+  }
+
   @Builder
   header() {
     Row({ space: 12 }) {
@@ -132,6 +139,9 @@ struct Index {
         Button('T08 存储验证（开发用）').id('t08-storage-entry')
           .enabled(!this.view.busy)
           .onClick(() => this.openStorageCheck())
+        Button('T14 任务验证（开发用）').id('t14-task-entry')
+          .enabled(!this.view.busy)
+          .onClick(() => this.openTaskCheck())
         if (this.storageNavigationError.length > 0) {
           Text(this.storageNavigationError).fontSize(12).fontColor('#A43B32')
         }

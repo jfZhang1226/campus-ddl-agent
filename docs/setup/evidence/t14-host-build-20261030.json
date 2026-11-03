@@ -1,0 +1,52 @@
+{
+  "task": "T14",
+  "date": "2026-10-30",
+  "timezone": "Asia/Shanghai",
+  "baseMain": "b6032c0b648261d2fa863dde0a13b937fbac5c40",
+  "sourceCommit": "8f964ff356fc8d9f21bdb325d1b6cd4760880405",
+  "branch": "feat/c-t14-task-repository",
+  "validation": {
+    "sharedDataDomainStrictTypecheckFiles": 18,
+    "taskHostChecksPassed": 85,
+    "storageHostChecksPassed": 106,
+    "chatHostChecksPassed": 29,
+    "harmonyBuild": { "result": "success", "tasksExecuted": 66, "signed": false },
+    "androidBuild": { "result": "success", "gradleTasksExecuted": 32, "abi": "arm64-v8a" },
+    "clientSourceFilesUnmodifiedAfterBuild": 95,
+    "trackedSigningConfigsEmpty": true,
+    "compiledTaskSymbolsInBothPackages": true,
+    "apkRequiredNativeLibrariesPresent": 9,
+    "httpPluginDexPresent": true,
+    "apkV2DebugSignatureVerified": true,
+    "apkPackage": "com.campusddl.agent",
+    "apkMinApi": 26,
+    "apkTargetApi": 33
+  },
+  "artifacts": [
+    {
+      "file": "T14-Harmony-unsigned-20261030.hap",
+      "bytes": 404847,
+      "sha256": "feeac689dcc79f752256e4fb3edd168fd66eb20ee0e979a2faf83fda8599e31b"
+    },
+    {
+      "file": "T14-Android-20261030.apk",
+      "bytes": 50942079,
+      "sha256": "d294bc27a6a603da93b8ee6fbc35b2b459a00682f06678868de305b4d9f0d93c"
+    }
+  ],
+  "scopeLimits": {
+    "deviceTestingPerformed": false,
+    "modelRequestsMade": false,
+    "independentInterfaceReviewCompleted": false,
+    "hypiumOrInstrumentationExecuted": false,
+    "crashPowerLossOrCrossFileTransactionVerified": false,
+    "freshMachineT41Verified": false,
+    "operationIdOrConfirmationProtocolImplemented": false,
+    "t11ConversationHistoryImplemented": false,
+    "taskTimezoneSupport": ["Asia/Shanghai (current UTC+08:00 projection)", "UTC", "Etc/UTC"],
+    "deleteRefusesNonemptyCollections": ["planBlocks", "proposals", "operations"],
+    "noticeImportAndChecklistEditingImplemented": false
+  },
+  "remaining": ["Android device validation", "Harmony device signing and validation", "A/B interface review", "User merge confirmation"],
+  "merged": false
+}
