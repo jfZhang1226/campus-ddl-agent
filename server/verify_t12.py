@@ -104,6 +104,14 @@ check("is_valid_offset_datetime 接受带偏移时间",
       ne.is_valid_offset_datetime("2026-11-06T23:59:00+08:00") and ne.is_valid_offset_datetime("2026-11-06T23:59:00Z"))
 check("is_valid_offset_datetime 拒绝无偏移/仅日期",
       not ne.is_valid_offset_datetime("2026-11-06T23:59:00") and not ne.is_valid_offset_datetime("2026-11-06"))
+check("is_valid_offset_datetime 对齐 T14：拒绝缺秒/超范围偏移/-00:00/超毫秒精度",
+      not ne.is_valid_offset_datetime("2026-11-06T20:00+08:00")
+      and not ne.is_valid_offset_datetime("2026-11-06T20:00:00-00:00")
+      and not ne.is_valid_offset_datetime("2026-11-06T20:00:00+15:00")
+      and not ne.is_valid_offset_datetime("2026-11-06T20:00:00.123456+08:00"))
+check("is_valid_offset_datetime 对齐 T14：接受标准时间与毫秒精度",
+      ne.is_valid_offset_datetime("2026-11-06T20:00:00+08:00")
+      and ne.is_valid_offset_datetime("2026-11-06T20:00:00.123Z"))
 check("is_valid_date 接受/拒绝边界",
       ne.is_valid_date("2026-11-08") and not ne.is_valid_date("2026-13-01") and not ne.is_valid_date("2026/11/08"))
 check("_is_fabricated_time 识别 23:59/00:00，放过正常时刻与原文已写时刻",
@@ -114,6 +122,12 @@ check("_is_fabricated_time 识别 23:59/00:00，放过正常时刻与原文已�
       and not ne._is_fabricated_time("2026-11-06T23:59:00+08:00", "请于23:59前提交"))
 check("_is_fabricated_time 其他时钟线索不放行 23:59（如“答疑14:00”）",
       ne._is_fabricated_time("2026-11-06T23:59:00+08:00", "11月6日提交报告，答疑14:00"))
+check("_is_fabricated_time 原文明写 0:00（单零）保留 exact",
+      not ne._is_fabricated_time("2026-11-06T00:00:00+08:00", "11月6日0:00前提交"))
+check("_is_fabricated_time 原文明写 0点00分（单零）保留 exact",
+      not ne._is_fabricated_time("2026-11-06T00:00:00+08:00", "11月6日0点00分前提交"))
+check("_is_fabricated_time 原文明写 00:00（双零）保留 exact",
+      not ne._is_fabricated_time("2026-11-06T00:00:00+08:00", "11月6日00:00前提交"))
 
 # ---------------------------------------------------------------- 纯函数：截止规范化
 p, d, u = ne._normalize_deadline("exact", None, "2026-11-06T14:30:00+08:00")
@@ -185,6 +199,14 @@ check("answers 合并 title+deadline -> 仅 date_only 且无缺项",
 ne.apply_answers(draft, [{"field": "deadline", "value": "2026-11-08T20:00:00+08:00"}])
 check("answers 改为精确时刻 -> exact",
       draft["task"]["deadlinePrecision"] == "exact" and draft["task"]["dueAt"] == "2026-11-08T20:00:00+08:00")
+_pd = ne.empty_draft("周五交作业")
+ne.apply_answers(_pd, [{"field": "publishedAt", "value": "2026-11-02T10:00:00+08:00"}])
+ne.apply_answers(_pd, [{"field": "publishedAt", "value": "2026-11-02T10:00:00+08:00"},
+                       {"field": "publishedAt", "value": None}])
+check("累计 answers 最后值 null 清空 publishedAt", _pd["notice"]["publishedAt"] is None, _pd["notice"]["publishedAt"])
+ne.apply_answers(_pd, [{"field": "publishedAt", "value": "2026-11-02T10:00:00+08:00"},
+                       {"field": "publishedAt", "value": ""}])
+check("累计 answers 最后值空串清空 publishedAt", _pd["notice"]["publishedAt"] is None, _pd["notice"]["publishedAt"])
 
 # 累计 answers：跨轮保留用户修改（模型每轮仍输出原标题/原截止）
 _model_out = {"title": "原标题", "deadlinePrecision": "exact", "dueAt": "2026-11-06T23:59:00+08:00"}
@@ -293,6 +315,26 @@ check("多轮 answers 合并 -> deadline date_only 且不再追问",
       and body["draft"]["task"]["deadlineDate"] == "2026-11-07"
       and body["draft"]["notice"]["publishedAt"] == "2026-11-02T10:00:00+08:00"
       and "deadline" not in body["draft"]["missingFields"], body["draft"])
+
+# 端点：先填发布时间，后用 null 撤回
+install_post(json_body=model_answer({"title": "交作业", "deadlinePrecision": "unknown"}))
+resp, body = call_extract({
+    "rawText": "周五交作业",
+    "answers": [{"field": "publishedAt", "value": "2026-11-02T10:00:00+08:00"}],
+}, GOOD_AUTH)
+_first = body["draft"]
+check("端点设置 publishedAt 后保留",
+      _first["notice"]["publishedAt"] == "2026-11-02T10:00:00+08:00", _first["notice"])
+install_post(json_body=model_answer({"title": "交作业", "deadlinePrecision": "unknown"}))
+resp, body = call_extract({
+    "rawText": "周五交作业",
+    "draft": _first,
+    "answers": [{"field": "publishedAt", "value": "2026-11-02T10:00:00+08:00"},
+                {"field": "publishedAt", "value": None}],
+}, GOOD_AUTH)
+check("端点累计 answers 撤回 publishedAt -> null 且重问发布时间",
+      body["draft"]["notice"]["publishedAt"] is None
+      and any(c["field"] == "deadline" and "发布时间" in c["question"] for c in body["draft"]["clarification"]), body["draft"])
 
 # ---------------------------------------------------------------- 端点/纯函数：畸形上一轮草案安全降级
 install_post(json_body=model_answer({"title": "交作业", "deadlinePrecision": "unknown"}))

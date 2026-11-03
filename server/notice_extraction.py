@@ -30,9 +30,9 @@ _RELATIVE_DATE = re.compile(
     r"|这周|本周|下周|下个?月|月底|月末|月初|几[天个]|下?周[一二三四五六日天])"
 )
 
-# 带偏移的 ISO 8601，例如 2026-11-06T23:59:00+08:00（可选秒，可 Z 结尾）。
+# 带偏移的 ISO 8601（对齐 T14 DateRules）：秒必填、小数最多 3 位（毫秒），可 Z 结尾。
 _OFFSET_DATETIME = re.compile(
-    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$"
 )
 _DATE_ONLY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _TZ = re.compile(r"^[A-Za-z_]+(?:/[A-Za-z_+\-0-9]+)*$")
@@ -69,12 +69,23 @@ SYSTEM_PROMPT = """你是校园通知提取助手。把用户提供的通知原�
 # --------------------------------------------------------------------------- 基础校验
 
 def is_valid_offset_datetime(value) -> bool:
-    """带明确 UTC 偏移的 ISO 8601 时间；拒绝无偏移的裸时间。"""
+    """带明确 UTC 偏移的 ISO 8601 时间（对齐 T14 DateRules.isOffsetTimestamp）。
+
+    秒必填、小数最多 3 位（毫秒）、数字偏移 ≤ ±14:00、拒绝表示未知偏移的 -00:00；
+    拒绝无偏移的裸时间。
+    """
     if not isinstance(value, str) or not value:
         return False
     s = value.strip()
     if not _OFFSET_DATETIME.fullmatch(s):
         return False
+    if not s.endswith("Z"):
+        offset = s[-6:]  # 形如 +HH:MM / -HH:MM（正则已保证）
+        sign, hh, mm = offset[0], int(offset[1:3]), int(offset[4:6])
+        if sign == "-" and hh == 0 and mm == 0:
+            return False  # -00:00 表示未知偏移
+        if hh * 60 + mm > 14 * 60:
+            return False  # 偏移超过 ±14:00
     normalized = s[:-1] + "+00:00" if s.endswith("Z") else s
     try:
         dt = datetime.fromisoformat(normalized)
@@ -104,13 +115,14 @@ def contains_relative_date(raw_text: str) -> bool:
 def _has_specific_clock(raw_text: str, hour: str, minute: str) -> bool:
     """原文是否明确写了与 dueAt 相同的时刻（如 23:59 / 00:00）。
 
-    只认“同一时刻”，不把其他时钟线索（例如“答疑14:00”）当作截止 23:59 的依据。
-    兼容 23:59、23点59、23时59、23：59（全角冒号）等常见写法。
+    按数值比较小时与分钟，兼容单零/双零等价写法（0:00 与 00:00 同值、0点00分），
+    不把其他时钟线索（例如“答疑14:00”）当作截止 23:59 的依据。
     """
     if not raw_text:
         return False
-    for sep in (":", "：", "点", "时"):
-        if f"{hour}{sep}{minute}" in raw_text:
+    target_h, target_m = int(hour), int(minute)
+    for m in re.finditer(r"(\d{1,2})[:：点时](\d{1,2})", raw_text):
+        if int(m.group(1)) == target_h and int(m.group(2)) == target_m:
             return True
     return False
 
@@ -312,8 +324,8 @@ def apply_answers(draft: dict, answers) -> dict:
             task["deadlineDate"] = dd
             task["dueAt"] = due
         elif field == "publishedAt":
-            if is_valid_offset_datetime(value):
-                notice["publishedAt"] = value
+            # 最后值生效：合法时间覆盖，null/空串/非法值显式清空（不静默保留旧锚点）
+            notice["publishedAt"] = value if is_valid_offset_datetime(value) else None
         elif field == "sourceLabel":
             notice["sourceLabel"] = _optional_text(value)
         elif field == "submissionChannel":

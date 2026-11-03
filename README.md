@@ -43,7 +43,7 @@ T06 的模板验收不代表 T08 存储或后续业务通过。签名和设备�
 
 ## B 的 T12 通知提取与多轮补齐
 
-[T12 接入说明](docs/setup/T12-通知提取与多轮补齐.md)记录新增的 `POST /api/agent/extract-notice`：把通知原文提取成 Notice/Task/ChecklistItem 的可编辑草案，缺项追问或标记未知，保留发布时间与来源，多轮通过客户端回传 `draft`+`answers` 确定性合并。实现为 [server/notice_extraction.py](server/notice_extraction.py)（纯逻辑）加网关新端点；主机自测 [server/verify_t12.py](server/verify_t12.py) 41 项通过，并经 [server/.env](server/.env) 真实 DeepSeek 调用通过三条样例（exact/date_only/相对日期缺截止），[草案样例](fixtures/extraction/notice-draft-samples.json) 供 A 的 T13 确认卡对接。
+[T12 接入说明](docs/setup/T12-通知提取与多轮补齐.md)记录新增的 `POST /api/agent/extract-notice`：把通知原文提取成 Notice/Task/ChecklistItem 的可编辑草案，缺项追问或标记未知，保留发布时间与来源，多轮通过客户端回传 `draft`+`answers` 确定性合并。实现为 [server/notice_extraction.py](server/notice_extraction.py)（纯逻辑）加网关新端点；主机自测 [server/verify_t12.py](server/verify_t12.py) 60 项通过，并经 [server/.env](server/.env) 真实 DeepSeek 调用通过三条样例（exact/date_only/相对日期缺截止），[草案样例](fixtures/extraction/notice-draft-samples.json) 供 A 的 T13 确认卡对接。
 
 ## C 的 T03 交付
 
