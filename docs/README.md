@@ -87,6 +87,10 @@ main 的 [T07 网关与接口](setup/T07-B最小模型网关与接口约定.md)�
 | [T09 逐项验证](setup/d-speech-probe.md) / [验证摘要](setup/evidence/t09-validation-20261102.json) | 21 项主机检查、真实 SDK 编译/签名/安装与首轮启动；ASR 部分验证，TTS/离线/异常真机项待补 |
 | [T15 接入准备](setup/T15-speech-handoff.md) / [探测边界决定](decisions/D-T09-native-probe.md) | 待 A/B/C 核对，尚未接生产页面或真实模型；不代表 T09/T15 完成 |
 
+## D：T15 独立鸿蒙语音对话联调
+
+2026-11-04本地增量：[联调导读](../probes/harmony-voicechat/README.md)、[实际验证记录](setup/T15-voice-chat-validation.md)、[结构化证据](setup/evidence/t15-validation-20261104.json)、[装配边界](decisions/D-T15-validation-assembly.md)。新增16项组合检查，既有29/21项回归与真实SDK编译/签名通过；独立包已完成一次ASR→人工发送→真实模型回复→人工播报。正式主页面与任务保存仍未接入，完整设备异常矩阵尚待完成；不将最小成功样例称为全部T15/T19验收。
+
 ## 维护约定
 
 - 后续在本仓库的 `docs/` 中维护现行文档，通过任务分支和 PR 对齐修改。
