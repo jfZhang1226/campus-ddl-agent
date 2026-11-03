@@ -1,0 +1,93 @@
+{
+  "task": "T14",
+  "date": "2026-11-02",
+  "timezone": "Asia/Shanghai",
+  "sourceCommit": "8f964ff356fc8d9f21bdb325d1b6cd4760880405",
+  "device": {
+    "model": "ADY-AL10",
+    "name": "HUAWEI Pura 70",
+    "nativeApi": 26,
+    "openHarmony": "OpenHarmony-7.0.0.105"
+  },
+  "install": {
+    "officialCliSkipBuildSucceeded": true,
+    "keptApplicationData": true,
+    "hapFile": "T14-Harmony-signed-20261030.hap",
+    "hapBytes": 444725,
+    "sourceHapSha256": "71d5d7dcff5f67242b4cfb1d42e309627c1e553b83a10e66fc402e17ac61ece0",
+    "installedHapExportedForByteComparison": false,
+    "reSignedOrRebuiltThisRun": false
+  },
+  "validation": {
+    "platform": "HarmonyOS",
+    "runDate": "2026-11-02",
+    "sourceCommit": "8f964ff356fc8d9f21bdb325d1b6cd4760880405",
+    "writeProbePassed": true,
+    "originalWifiEnabled": true,
+    "wifiInactiveConfirmed": true,
+    "noDefaultNetworkConfirmed": true,
+    "forceStopAndNewProcessConfirmed": true,
+    "offlineColdReadPassed": true,
+    "resultText": "通过：revision=7\n创建三种日期任务，null 保持\n非法日期零提交，正式字节保持\n编辑与无变化结果、并发版本冲突\n受控真实文件 API 替换失败保护与人工重试\n日期范围查询与删除后 NOT_FOUND\n新 Repository 读取结果与已保存样例一致，删除记录未恢复",
+    "readDidNotRewriteFiles": true,
+    "independentJsonChecksPassed": true,
+    "primaryRevision": 7,
+    "backupRevision": 6,
+    "persistedTasks": 2,
+    "primarySha256": "bbbbbb66170d72642b49de87415701262b3972bffcd36d31c2f907680e794e0b",
+    "wifiStateRestored": true,
+    "originalWifiConnectionRestored": true,
+    "otherNetworkTogglesChanged": false
+  },
+  "artificialFileHashes": [
+    {
+      "file": "task-store.json",
+      "sha256": "bbbbbb66170d72642b49de87415701262b3972bffcd36d31c2f907680e794e0b",
+      "readPreservedBytes": true
+    },
+    {
+      "file": "task-store.backup.json",
+      "sha256": "e651ef82cd8cdc80988e09340cbb653a99a47e8441a49f4c8f55d351adbf6d6a",
+      "readPreservedBytes": true
+    },
+    {
+      "file": "task-probe.json",
+      "sha256": "067560099b0be742c25ef86c40c8e6f1eeeed5d57716a344dd7cd7a49e2f6d77",
+      "readPreservedBytes": true
+    }
+  ],
+  "androidHarmonyComparison": [
+    {
+      "file": "task-store.json",
+      "revision": 7,
+      "taskCount": 2,
+      "equivalentBusinessFieldsExcludingGeneratedIdsAndAuditTimes": true
+    },
+    {
+      "file": "task-store.backup.json",
+      "revision": 6,
+      "taskCount": 3,
+      "equivalentBusinessFieldsExcludingGeneratedIdsAndAuditTimes": true
+    }
+  ],
+  "clientSourceFilesVerified": 95,
+  "exportDifferencesLimitedToPrivateSigningConfig": true,
+  "signedUnsignedCompiledBytecodeIdentical": true,
+  "repositorySigningConfigsEmpty": true,
+  "scopeLimits": {
+    "runtimeSourceChanged": false,
+    "androidRetestedThisRun": false,
+    "realModelCalled": false,
+    "hardwareFailureOrPowerLossVerified": false,
+    "crossFileTransactionVerified": false,
+    "hypiumOrInstrumentationExecuted": false,
+    "fullT30DeletionValidated": false,
+    "independentABReviewCompleted": false
+  },
+  "remaining": [
+    "A/B independent interface review",
+    "Final acceptance and user merge confirmation"
+  ],
+  "pushed": false,
+  "merged": false
+}

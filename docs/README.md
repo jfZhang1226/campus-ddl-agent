@@ -52,6 +52,18 @@ T03 中的 `kind`、`priority` 取值和个别字段的空值约定是接口细�
 
 main 的 [T07 网关与接口](setup/T07-B最小模型网关与接口约定.md)和 [server 源码](../server/main.py)已同步到本分支，包括认证、限流、上下文与工具续轮结果。客户端实际接入属于 A 的 T10；网关存在不等于本存储开发页已经调用模型。
 
+## B 的 T12 通知提取与多轮补齐
+
+| 交付 | 内容 | 状态 |
+|---|---|---|
+| [实现与协议](setup/T12-通知提取与多轮补齐.md) | `POST /api/agent/extract-notice` 把原文提取为可编辑草案，缺项追问或标记未知，保留发布时间与来源 | 主机自测 + 真实 DeepSeek 调用通过 |
+| [提取逻辑](../server/notice_extraction.py) | 纯逻辑：截止规范化、拒绝虚构时刻、不臆测用户确认字段、多轮 answers 合并 | 无网络/模型依赖，可直接 import 测试 |
+| [主机检查](../server/verify_t12.py) | 66 项：凭证/限流、原文与来源保留、缺项追问、多轮合并、累计 answers 与 publishedAt 清空、kind 类型守卫、时间格式对齐（偏移分钟/首尾空白）、非法输出回退、畸形草案降级 | 全部通过；网关 verify_gateway 43 项不变 |
+| [真实调用脚本](../scripts/t12-real-extract.py) | 读取 server/.env 跑真实提取（少量费用） | 三条样例通过，记录见 T12 文档第 6 节 |
+| [草案样例](../fixtures/extraction/notice-draft-samples.json) | exact / date_only / 相对日期缺截止三条 | 人工构造，供 A 的 T13 确认卡对接 |
+
+T12 只产出草案，不写业务快照、不生成保存期字段；正式保存与确认归 T13/T16。
+
 ## C 的 T08 存储基础（复查通过，待合并确认）
 
 | 交付 | 内容 | 状态 |
@@ -90,6 +102,10 @@ main 的 [T07 网关与接口](setup/T07-B最小模型网关与接口约定.md)�
 ## D：T15 独立鸿蒙语音对话联调
 
 2026-11-04本地增量：[联调导读](../probes/harmony-voicechat/README.md)、[实际验证记录](setup/T15-voice-chat-validation.md)、[结构化证据](setup/evidence/t15-validation-20261104.json)、[装配边界](decisions/D-T15-validation-assembly.md)。新增16项组合检查，既有29/21项回归与真实SDK编译/签名通过；独立包已完成一次ASR→人工发送→真实模型回复→人工播报。正式主页面与任务保存仍未接入，完整设备异常矩阵尚待完成；不将最小成功样例称为全部T15/T19验收。
+
+## C 的 T14 任务 Repository（开发中）
+
+[实现与接口说明](setup/T14-任务Repository与日期校验.md)记录任务 CRUD、完整编辑、查询、日期校验、版本冲突和基础删除边界。主机85项任务、106项存储、29项对话及双端构建/安装包检查通过，[主机构建摘要](setup/evidence/t14-host-build-20261030.json)绑定源码8f964ff。[Android真机证据](setup/evidence/t14-android-device-20261030.json)和[2026-11-02鸿蒙真机/双端比较](setup/evidence/t14-harmony-device-20261102.json)均已补齐，网络恢复原状态；A/B独立接口评审及最终验收仍待完成。T14 未合并，不表示 T11 历史或 T16 确认协议已完成。
 
 ## 维护约定
 

@@ -155,3 +155,9 @@ T03 资料交付：三类字段表、两条关联样例、本地保存方案均�
 2026-10-28 会话接口补充：SessionDocument 新写入使用 schemaVersion=2，支持文本、回答、追问、工具调用数组与结构化结果；旧 v1 在内存中兼容读取，明确保存后才升级。完整字段、合成样例、调用关联和备份兼容见 [会话消息约定](session-message-contract.md)。业务快照的 schemaVersion 仍为1；不代表多轮网关或 T16 确认协议已实现。
 
 2026-10-29 收尾：LocalStore 与 SessionStore 保存前共用有限 JSON 校验，保留集合也拒绝 NaN/Infinity、undefined、函数、BigInt、Date、循环引用及超过64层的对象/数组嵌套，非法候选返回 INVALID_ARGUMENT 且不调用 FilePort。合法的 0、false、null、中文与 emoji 原样保存，不在此补做未来集合的业务校验。新版会话同源双端回归与106项主机检查已通过，见 [T08 本轮证据](setup/evidence/t08-closeout-20261029.json)；[B 对467a65c的普通评论复查](https://github.com/jfZhang1226/campus-ddl-agent/pull/5#issuecomment-6487027103)已确认无剩余修改项并接受会话契约。本次同步 main 的 T04/T10 并保留对话和诊断入口，存储内核、codec 与诊断不变，组合入口检查另行记录，最终验收及合并确认仍待完成。ChecklistItem.state 继续按本文的 pending/prepared 约定；任务提交仍由 Task/Operation 表达，不在本次为清单添加 submitted。
+
+## 12. T14 Repository 与严格日期规则（2026-10-30，任务分支）
+
+当前 T14 分支已实现任务 CRUD、日期/来源校验及版本保护，接口与限制见 [T14 说明](setup/T14-任务Repository与日期校验.md)。Repository 管理 ID、version 和审计时间；update 完整替换可编辑字段，Task/Checklist 状态枚举保持本文约定。共享 codec 也使用严格公历日期和显式偏移校验：历史非法日期保留文件并返回 CORRUPT_DATA，不自动归一化。代码、85项新增主机检查、106项存储/29项对话回归及双端构建通过；本轮设备验证和 A/B 接口评审未完成，尚未合并。T16 的 operationId/确认记录、T22 的状态转换与通知来源更新仍为后续任务。
+
+2026-11-02 T14接续：同源鸿蒙真机任务流程、停止进程后冷启动、离线读回及人工文件比较通过，与Android排除ID/审计时间后的业务字段一致，详见 [鸿蒙与双端比较证据](setup/evidence/t14-harmony-device-20261102.json)。运行源码仍8f964ff，本轮未改字段/接口或模型工具。技术证据已齐，仍待A/B独立接口评审和最终验收；暂不合并。

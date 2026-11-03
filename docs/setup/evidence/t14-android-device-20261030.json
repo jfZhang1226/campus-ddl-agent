@@ -1,0 +1,47 @@
+{
+  "task": "T14",
+  "runLabel": "20261030",
+  "timezone": "Asia/Shanghai",
+  "sourceCommit": "8f964ff356fc8d9f21bdb325d1b6cd4760880405",
+  "android": {
+    "platform": "Android",
+    "model": "PJE110",
+    "api": 36,
+    "writeProbePassed": true,
+    "sourceCommit": "8f964ff356fc8d9f21bdb325d1b6cd4760880405",
+    "noDefaultNetworkConfirmed": true,
+    "forceStopAndNewProcessConfirmed": true,
+    "offlineColdReadPassed": true,
+    "resultText": "通过：revision=7\n创建三种日期任务，null 保持\n非法日期零提交，正式字节保持\n编辑与无变化结果、并发版本冲突\n受控真实文件 API 替换失败保护与人工重试\n日期范围查询与删除后 NOT_FOUND\n新 Repository 读取结果与已保存样例一致，删除记录未恢复",
+    "readDidNotRewriteFiles": true,
+    "independentJsonChecksPassed": true,
+    "primaryRevision": 7,
+    "backupRevision": 6,
+    "persistedTasks": 2,
+    "primarySha256": "3e8cbfa2dc2c9358901828c104a94b8471875b4df03b11e200fd1bd07d46526e",
+    "networkSettingsRestored": true
+  },
+  "installedApkSha256": "d294bc27a6a603da93b8ee6fbc35b2b459a00682f06678868de305b4d9f0d93c",
+  "signedHarmonyPreparation": {
+    "sourceCommit": "8f964ff356fc8d9f21bdb325d1b6cd4760880405",
+    "unchangedClientFiles": 94,
+    "privateSigningConfigurationOnly": true,
+    "repositorySigningConfigsEmpty": true,
+    "compiledBytecodeMatchesUnsigned": true,
+    "signedHap": {
+      "file": "T14-Harmony-signed-20261030.hap",
+      "bytes": 444725,
+      "sha256": "71d5d7dcff5f67242b4cfb1d42e309627c1e553b83a10e66fc402e17ac61ece0"
+    }
+  },
+  "harmonyDeviceValidationPerformed": false,
+  "independentInterfaceReviewCompleted": false,
+  "merged": false,
+  "limits": [
+    "Controlled missing path is not hardware failure",
+    "No power-loss or cross-file transaction test",
+    "No Hypium or instrumentation execution",
+    "No production task page or model request",
+    "Runtime source unchanged during device checks"
+  ]
+}

@@ -1,6 +1,7 @@
 import { BusinessSnapshot, ChecklistItem, Message, Notice, Session, SessionDocument, Task } from '../../domain/StorageModels';
 import { SnapshotCodec, StorageFailure, checkHeader, isStorageId, requireStorage } from './StorageTypes';
 import { checkMessages } from './MessageCodec';
+import { isCalendarDate, isOffsetTimestamp } from '../../domain/DateRules';
 
 function text(value: string): boolean {
   return typeof value === 'string' && value.trim().length > 0;
@@ -11,8 +12,7 @@ function nullableText(value: string | null): boolean {
 }
 
 function timestamp(value: string): boolean {
-  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?(Z|[+-]\d{2}:\d{2})$/.test(value) &&
-    Number.isFinite(Date.parse(value));
+  return isOffsetTimestamp(value);
 }
 
 function nullableTimestamp(value: string | null): boolean {
@@ -50,7 +50,7 @@ function checkTask(task: Task, noticeIds: string[]): void {
   requireStorage(task.noticeIds.every((id: string) => noticeIds.includes(id)), '任务引用的通知不存在。');
   const exact: boolean = task.deadlinePrecision === 'exact' && task.deadlineDate === null && timestamp(task.dueAt as string);
   const dateOnly: boolean = task.deadlinePrecision === 'date_only' && task.dueAt === null &&
-    typeof task.deadlineDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(task.deadlineDate);
+    isCalendarDate(task.deadlineDate as string);
   const unknown: boolean = task.deadlinePrecision === 'unknown' && task.deadlineDate === null && task.dueAt === null;
   requireStorage(exact || dateOnly || unknown, '截止日期精度与字段组合不一致。');
 }

@@ -41,6 +41,10 @@ T06 的模板验收不代表 T08 存储或后续业务通过。签名和设备�
 
 [T10 接入说明](docs/setup/T10-文本对话与网关接入.md)记录两端共享文本页、T07 HTTP 适配、运行时配置、加载/超时/错误和手动重试。T10 已通过 [PR #9](https://github.com/jfZhang1226/campus-ddl-agent/pull/9) 合入 main（`f34865a`）；其既有同源双端真实模型证据按原提交保留，不作为本次 T08 合并入口的新真机结果。内存对话不是持久历史，每次提问仍独立处理。
 
+## B 的 T12 通知提取与多轮补齐
+
+[T12 接入说明](docs/setup/T12-通知提取与多轮补齐.md)记录新增的 `POST /api/agent/extract-notice`：把通知原文提取成 Notice/Task/ChecklistItem 的可编辑草案，缺项追问或标记未知，保留发布时间与来源，多轮通过客户端回传 `draft`+`answers` 确定性合并。实现为 [server/notice_extraction.py](server/notice_extraction.py)（纯逻辑）加网关新端点；主机自测 [server/verify_t12.py](server/verify_t12.py) 66 项通过，并经 [server/.env](server/.env) 真实 DeepSeek 调用通过三条样例（exact/date_only/相对日期缺截止），[草案样例](fixtures/extraction/notice-draft-samples.json) 供 A 的 T13 确认卡对接。
+
 ## C 的 T03 交付
 
 - [核心数据字段说明](docs/data-contract.md)：Notice、Task、ChecklistItem 的字段、关联与校验规则。

@@ -1,6 +1,7 @@
 {
   "src": [
     "pages/Index",
-    "pages/StorageCheck"
+    "pages/StorageCheck",
+    "pages/TaskCheck"
   ]
 }
