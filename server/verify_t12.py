@@ -112,6 +112,8 @@ check("_is_fabricated_time 识别 23:59/00:00，放过正常时刻与原文已�
       and not ne._is_fabricated_time("2026-11-06T14:30:00+08:00")
       and not ne._is_fabricated_time("2026-11-06T23:58:00+08:00")
       and not ne._is_fabricated_time("2026-11-06T23:59:00+08:00", "请于23:59前提交"))
+check("_is_fabricated_time 其他时钟线索不放行 23:59（如“答疑14:00”）",
+      ne._is_fabricated_time("2026-11-06T23:59:00+08:00", "11月6日提交报告，答疑14:00"))
 
 # ---------------------------------------------------------------- 纯函数：截止规范化
 p, d, u = ne._normalize_deadline("exact", None, "2026-11-06T14:30:00+08:00")
@@ -167,6 +169,10 @@ check("相对日期+未知发布时间 -> 追问提及发布时间",
 draft = ne.normalize_draft({"title": "", "kind": "not-a-kind"}, "某通知")
 check("非法 kind -> null；缺标题 -> 追问 title",
       draft["task"]["kind"] is None and any(c["field"] == "title" for c in draft["clarification"]))
+draft = ne.normalize_draft({"title": "x", "kind": [], "deadlinePrecision": "unknown"}, "某通知")
+check("模型 kind=[] -> 安全降级 null 而非 TypeError/500", draft["task"]["kind"] is None, draft["task"]["kind"])
+draft = ne.normalize_draft({"title": "x", "kind": {}, "deadlinePrecision": "unknown"}, "某通知")
+check("模型 kind={} -> 安全降级 null 而非 TypeError/500", draft["task"]["kind"] is None, draft["task"]["kind"])
 
 # ---------------------------------------------------------------- 纯函数：多轮合并
 draft = ne.empty_draft("周五交作业")
@@ -179,6 +185,26 @@ check("answers 合并 title+deadline -> 仅 date_only 且无缺项",
 ne.apply_answers(draft, [{"field": "deadline", "value": "2026-11-08T20:00:00+08:00"}])
 check("answers 改为精确时刻 -> exact",
       draft["task"]["deadlinePrecision"] == "exact" and draft["task"]["dueAt"] == "2026-11-08T20:00:00+08:00")
+
+# 累计 answers：跨轮保留用户修改（模型每轮仍输出原标题/原截止）
+_model_out = {"title": "原标题", "deadlinePrecision": "exact", "dueAt": "2026-11-06T23:59:00+08:00"}
+d1 = ne.normalize_draft(_model_out, "报告11月6日23:59前交",
+                        answers=[{"field": "title", "value": "用户修改的标题"},
+                                 {"field": "deadline", "value": "2026-11-08"}])
+cumulative = [{"field": "title", "value": "用户修改的标题"},
+              {"field": "deadline", "value": "2026-11-08"},
+              {"field": "course", "value": "数学"}]
+d2 = ne.normalize_draft(_model_out, "报告11月6日23:59前交", draft=d1, answers=cumulative)
+check("第 2 轮累计 answers 保住标题/截止并新增 course",
+      d2["task"]["title"] == "用户修改的标题" and d2["task"]["deadlinePrecision"] == "date_only"
+      and d2["task"]["deadlineDate"] == "2026-11-08" and d2["task"]["course"] == "数学", d2["task"])
+d3 = ne.normalize_draft(_model_out, "报告11月6日23:59前交", draft=d2, answers=cumulative)
+check("第 3 轮累计 answers 仍保住用户修改",
+      d3["task"]["title"] == "用户修改的标题" and d3["task"]["course"] == "数学"
+      and d3["task"]["deadlineDate"] == "2026-11-08", d3["task"])
+msgs = ne.build_extraction_messages("某通知", "Asia/Shanghai")
+check("build_extraction_messages 含时区上下文",
+      any("Asia/Shanghai" in m["content"] for m in msgs if m["role"] == "user"))
 
 # ---------------------------------------------------------------- 端点：访问凭证/限流
 install_post(json_body=model_answer({"title": "x", "deadlinePrecision": "unknown"}))
@@ -206,6 +232,17 @@ resp, body = call_extract({"rawText": "hi", "publishedAt": "2026-11-01 09:00"}, 
 check("publishedAt 非法 -> 400 INVALID_REQUEST", resp.status_code == 400 and body["errorCode"] == "INVALID_REQUEST", body)
 resp, body = call_extract({"rawText": "hi", "timezone": "../etc"}, GOOD_AUTH)
 check("timezone 非法 -> 400 INVALID_REQUEST", resp.status_code == 400 and body["errorCode"] == "INVALID_REQUEST", body)
+install_post(json_body=model_answer({"title": "x", "deadlinePrecision": "unknown"}))
+resp, body = call_extract({"rawText": "hi", "answers": [{"field": "kind", "value": []}]}, GOOD_AUTH)
+check("回答 kind=[] -> 400 INVALID_REQUEST 而非 500", resp.status_code == 400 and body["errorCode"] == "INVALID_REQUEST", body)
+resp, body = call_extract({"rawText": "hi", "answers": [{"field": "kind", "value": {}}]}, GOOD_AUTH)
+check("回答 kind={} -> 400 INVALID_REQUEST 而非 500", resp.status_code == 400 and body["errorCode"] == "INVALID_REQUEST", body)
+install_post(json_body=model_answer({"title": "x", "kind": [], "deadlinePrecision": "unknown"}))
+resp, body = call_extract({"rawText": "hi"}, GOOD_AUTH)
+check("模型 kind=[] -> 200 且 kind null 而非 500", resp.status_code == 200 and body["draft"]["task"]["kind"] is None, body)
+install_post(json_body=model_answer({"title": "x", "kind": {}, "deadlinePrecision": "unknown"}))
+resp, body = call_extract({"rawText": "hi"}, GOOD_AUTH)
+check("模型 kind={} -> 200 且 kind null 而非 500", resp.status_code == 200 and body["draft"]["task"]["kind"] is None, body)
 
 # ---------------------------------------------------------------- 端点：正常提取
 install_post(json_body=model_answer({

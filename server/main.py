@@ -20,7 +20,7 @@ except ImportError:
     pass
 
 from notice_extraction import (DEFAULT_TIMEZONE, apply_answers, build_extraction_messages, empty_draft,
-    is_valid_offset_datetime, is_valid_timezone, normalize_draft, parse_model_json)
+    is_valid_offset_datetime, is_valid_timezone, normalize_draft, parse_model_json, validate_answers)
 
 # 服务商密钥只在服务端使用，绝不下发客户端
 MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
@@ -396,6 +396,10 @@ def extract_notice(req: ExtractNoticeRequest, request: Request):
         return _error(request_id, "INVALID_REQUEST", "timezone 不合法", 400, start)
     if req.publishedAt is not None and not is_valid_offset_datetime(req.publishedAt):
         return _error(request_id, "INVALID_REQUEST", "publishedAt 不是合法的带偏移 ISO 8601 时间", 400, start)
+    try:
+        validate_answers(req.answers)
+    except ValueError as e:
+        return _error(request_id, "INVALID_REQUEST", str(e), 400, start)
 
     messages = build_extraction_messages(
         raw_text, timezone, req.publishedAt, req.sourceLabel, req.draft, req.answers)

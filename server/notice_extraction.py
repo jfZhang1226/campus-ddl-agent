@@ -30,9 +30,6 @@ _RELATIVE_DATE = re.compile(
     r"|这周|本周|下周|下个?月|月底|月末|月初|几[天个]|下?周[一二三四五六日天])"
 )
 
-# 原文里出现“具体时刻”的线索，例如 23:59、14点、9时30分。用于区分“模型虚构 23:59”和“原文真的写了 23:59”。
-_CLOCK_HINT = re.compile(r"\d{1,2}:\d{2}|\d{1,2}点|\d{1,2}时|\d{1,2}点半")
-
 # 带偏移的 ISO 8601，例如 2026-11-06T23:59:00+08:00（可选秒，可 Z 结尾）。
 _OFFSET_DATETIME = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
@@ -49,7 +46,7 @@ SYSTEM_PROMPT = """你是校园通知提取助手。把用户提供的通知原�
 4. 只写了日期、没有具体时刻时，deadlinePrecision 用 date_only，不要补成 23:59 或 00:00 的虚构时刻。
 5. “当天提交”“周五交”这类相对日期，若没有明确日期，就保持 deadlinePrecision=unknown，不要自行推算。
 6. priority 与 remainingMinutes 必须始终为 null：它们只能由用户确认，模型不得臆测。
-7. dueAt/publishedAt 用带时区偏移的 ISO 8601，例如 2026-11-06T23:59:00+08:00；deadlineDate 用 YYYY-MM-DD。
+7. dueAt/publishedAt 用带时区偏移的 ISO 8601，例如 2026-11-06T23:59:00+08:00；deadlineDate 用 YYYY-MM-DD。原文只给了时刻、没有时区偏移时，按调用方提供的时区解释。
 8. kind 取值只允许 assignment/report/registration/other，不确定时用 null。
 9. materials 是材料名称数组（可为空数组），例如 ["PDF 报告","源代码"]。
 10. 课程名不确定时 course 用 null；提交渠道不确定时 submissionChannel 用 null。
@@ -104,15 +101,26 @@ def contains_relative_date(raw_text: str) -> bool:
     return bool(raw_text) and bool(_RELATIVE_DATE.search(raw_text))
 
 
-def _has_explicit_clock(raw_text: str) -> bool:
-    return bool(raw_text) and bool(_CLOCK_HINT.search(raw_text))
+def _has_specific_clock(raw_text: str, hour: str, minute: str) -> bool:
+    """原文是否明确写了与 dueAt 相同的时刻（如 23:59 / 00:00）。
+
+    只认“同一时刻”，不把其他时钟线索（例如“答疑14:00”）当作截止 23:59 的依据。
+    兼容 23:59、23点59、23时59、23：59（全角冒号）等常见写法。
+    """
+    if not raw_text:
+        return False
+    for sep in (":", "：", "点", "时"):
+        if f"{hour}{sep}{minute}" in raw_text:
+            return True
+    return False
 
 
 def _is_fabricated_time(due_at: str, raw_text: str = "") -> bool:
     """把“当天到期”补成 23:59 或 00:00 视为模型虚构，应降级为 date_only。
 
-    仅当原文没有出现具体时刻（23:59、14点、9时等）时才视为虚构；
-    原文真的写了 23:59 时保留为 exact，不降级。
+    仅当原文没有明确写出同一时刻（23:59 / 00:00）时才视为虚构；
+    原文真的写了 23:59 时保留为 exact，不降级。其他时钟线索（如“答疑14:00”）
+    不再放行虚构的 23:59。
     """
     if not isinstance(due_at, str) or "T" not in due_at:
         return False
@@ -128,7 +136,7 @@ def _is_fabricated_time(due_at: str, raw_text: str = "") -> bool:
     hour, minute = parts[0], parts[1]
     if not ((hour == "00" and minute == "00") or (hour == "23" and minute == "59")):
         return False
-    return not _has_explicit_clock(raw_text)
+    return not _has_specific_clock(raw_text, hour, minute)
 
 
 # --------------------------------------------------------------------------- 解析与规范化
@@ -297,7 +305,7 @@ def apply_answers(draft: dict, answers) -> dict:
         elif field == "course":
             task["course"] = _optional_text(value)
         elif field == "kind":
-            task["kind"] = value if value in TASK_KINDS else None
+            task["kind"] = value if (isinstance(value, str) and value in TASK_KINDS) else None
         elif field == "deadline":
             prec, dd, due = _deadline_from_answer(value)
             task["deadlinePrecision"] = prec
@@ -311,6 +319,25 @@ def apply_answers(draft: dict, answers) -> dict:
         elif field == "submissionChannel":
             task["submissionChannel"] = _optional_text(value)
     return _recompute(draft)
+
+
+def validate_answers(answers) -> None:
+    """校验客户端 answers；非法时抛 ValueError，由端点转 INVALID_REQUEST。
+
+    仅拦截会触发类型异常/裸 500 的取值：kind 的 value 必须是字符串或 null。
+    其余字段与非对象条目保持宽松（apply_answers 安全忽略）。
+    """
+    if answers is None:
+        return
+    if not isinstance(answers, list):
+        raise ValueError("answers 必须是数组")
+    for item in answers:
+        if not isinstance(item, dict):
+            continue  # 非对象条目按既有约定忽略
+        if item.get("field") == "kind":
+            value = item.get("value")
+            if value is not None and not isinstance(value, str):
+                raise ValueError("answers 中 kind 取值必须是字符串或 null")
 
 
 def _is_prior_draft(value) -> bool:
@@ -339,7 +366,7 @@ def _draft_for_prompt(draft: dict) -> dict:
 def build_extraction_messages(raw_text: str, timezone: str, published_at=None, source_label=None,
                               draft=None, answers=None) -> list:
     """构造给 DeepSeek 的 messages；多轮时把上一轮草案与用户回答作为上下文，便于模型细化。"""
-    parts = [f"通知原文：\n{raw_text}"]
+    parts = [f"通知原文：\n{raw_text}", f"时区：{timezone}"]
     if published_at:
         parts.append(f"已知发布时间：{published_at}")
     if source_label:
@@ -373,7 +400,7 @@ def normalize_draft(raw, raw_text: str, timezone: str = DEFAULT_TIMEZONE, publis
     if _optional_text(raw.get("submissionChannel")) is not None:
         result["task"]["submissionChannel"] = _optional_text(raw.get("submissionChannel"))
     kind = raw.get("kind")
-    if kind in TASK_KINDS:
+    if isinstance(kind, str) and kind in TASK_KINDS:
         result["task"]["kind"] = kind
 
     # sourceLabel / publishedAt：模型建议仅在无显式入参时采用
