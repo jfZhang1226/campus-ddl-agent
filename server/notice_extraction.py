@@ -71,17 +71,19 @@ SYSTEM_PROMPT = """你是校园通知提取助手。把用户提供的通知原�
 def is_valid_offset_datetime(value) -> bool:
     """带明确 UTC 偏移的 ISO 8601 时间（对齐 T14 DateRules.isOffsetTimestamp）。
 
-    秒必填、小数最多 3 位（毫秒）、数字偏移 ≤ ±14:00、拒绝表示未知偏移的 -00:00；
-    拒绝无偏移的裸时间。
+    秒必填、小数最多 3 位（毫秒）、数字偏移 ≤ ±14:00 且分钟 0–59、
+    拒绝表示未知偏移的 -00:00；拒绝无偏移裸时间与带首尾空白的时间（不裁剪校验副本）。
     """
     if not isinstance(value, str) or not value:
         return False
-    s = value.strip()
+    s = value  # 不裁剪：首尾空白视为非法，避免“校验裁了、输出仍保留原串”
     if not _OFFSET_DATETIME.fullmatch(s):
         return False
     if not s.endswith("Z"):
         offset = s[-6:]  # 形如 +HH:MM / -HH:MM（正则已保证）
         sign, hh, mm = offset[0], int(offset[1:3]), int(offset[4:6])
+        if mm > 59:
+            return False  # 偏移分钟必须 0–59（拒绝 +08:60 等）
         if sign == "-" and hh == 0 and mm == 0:
             return False  # -00:00 表示未知偏移
         if hh * 60 + mm > 14 * 60:

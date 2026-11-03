@@ -112,6 +112,16 @@ check("is_valid_offset_datetime 对齐 T14：拒绝缺秒/超范围偏移/-00:00
 check("is_valid_offset_datetime 对齐 T14：接受标准时间与毫秒精度",
       ne.is_valid_offset_datetime("2026-11-06T20:00:00+08:00")
       and ne.is_valid_offset_datetime("2026-11-06T20:00:00.123Z"))
+check("is_valid_offset_datetime 拒绝偏移分钟越界（+08:60/-13:60）",
+      not ne.is_valid_offset_datetime("2026-11-06T20:00:00+08:60")
+      and not ne.is_valid_offset_datetime("2026-11-06T20:00:00-13:60"))
+check("is_valid_offset_datetime 接受 ±13:59 / ±14:00 边界",
+      ne.is_valid_offset_datetime("2026-11-06T20:00:00+13:59")
+      and ne.is_valid_offset_datetime("2026-11-06T20:00:00+14:00")
+      and ne.is_valid_offset_datetime("2026-11-06T20:00:00-14:00"))
+check("is_valid_offset_datetime 拒绝带首/尾空格的时间",
+      not ne.is_valid_offset_datetime(" 2026-11-06T20:00:00+08:00")
+      and not ne.is_valid_offset_datetime("2026-11-06T20:00:00+08:00 "))
 check("is_valid_date 接受/拒绝边界",
       ne.is_valid_date("2026-11-08") and not ne.is_valid_date("2026-13-01") and not ne.is_valid_date("2026/11/08"))
 check("_is_fabricated_time 识别 23:59/00:00，放过正常时刻与原文已写时刻",
@@ -207,6 +217,13 @@ check("累计 answers 最后值 null 清空 publishedAt", _pd["notice"]["publish
 ne.apply_answers(_pd, [{"field": "publishedAt", "value": "2026-11-02T10:00:00+08:00"},
                        {"field": "publishedAt", "value": ""}])
 check("累计 answers 最后值空串清空 publishedAt", _pd["notice"]["publishedAt"] is None, _pd["notice"]["publishedAt"])
+_d2 = ne.empty_draft("某通知")
+ne.apply_answers(_d2, [{"field": "deadline", "value": "2026-11-06T20:00:00+08:60"}])
+check("deadline 回答偏移分钟越界 -> unknown 待补充", _d2["task"]["deadlinePrecision"] == "unknown", _d2["task"])
+ne.apply_answers(_d2, [{"field": "publishedAt", "value": " 2026-11-06T20:00:00+08:00"}])
+check("publishedAt 回答带前导空格 -> 清空 null", _d2["notice"]["publishedAt"] is None, _d2["notice"])
+_d3 = ne.normalize_draft({"title": "x", "deadlinePrecision": "exact", "dueAt": "2026-11-06T20:00:00+08:00 "}, "某通知")
+check("模型 dueAt 带尾空格 -> 安全降级而非保留", _d3["task"]["deadlinePrecision"] == "unknown", _d3["task"])
 
 # 累计 answers：跨轮保留用户修改（模型每轮仍输出原标题/原截止）
 _model_out = {"title": "原标题", "deadlinePrecision": "exact", "dueAt": "2026-11-06T23:59:00+08:00"}
