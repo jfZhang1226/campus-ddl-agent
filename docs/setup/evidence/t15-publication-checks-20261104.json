@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-04",
+  "scope": "T15 publication preparation after syncing latest main; not T19 task-write acceptance",
+  "teamMain": "808fc7e",
+  "integrationMergeCommit": "664971493cf0761ed19bce7707e63062c3430345",
+  "initialT15Commit": "f8b2ee7",
+  "originalDeviceEvidence": "t15-validation-20261104.json",
+  "originalDeviceSnapshotIsHistorical": true,
+  "hostChecks": {
+    "voiceChatIntegrationAfterMerge": 16,
+    "exportArtifactInspection": 7,
+    "taskRegressionAfterMerge": 85,
+    "storageRegressionAfterMerge": 106,
+    "unchangedChatBeforeMerge": 29,
+    "unchangedSpeechProbeBeforeMerge": 21,
+    "allPassed": true,
+    "networkOrModelCallsMadeByTheseTests": false
+  },
+  "freshExportBuild": {
+    "api": 26,
+    "studio": "26.0.0.865",
+    "fixedPlugin": "4.24.1",
+    "copiedTrackedClientFiles": 96,
+    "buildSuccessful": true,
+    "signed": false,
+    "installed": false,
+    "artifactBytes": 190128,
+    "artifactSha256": "269d5339f7e0c10b0e77aec09eca56010ff10795c6e61b8cd43b3e527fcd4efd",
+    "publicArtifactCommitted": false,
+    "personalSigningCopied": false,
+    "warningsRetained": true,
+    "englishOnlyBuildPathRequiredOnThisToolchain": true,
+    "initialRegistry404ResolvedWithOhOsScopedRegistry": true,
+    "tlsVerificationDisabled": false
+  },
+  "phoneStillRunsPreviouslySignedValidatedBuild": true,
+  "sevenSpeechSourceFingerprintsStillMatchDeviceEvidence": true,
+  "teamProductionPagesGatewayAndExistingCoreUnchangedFromMain": true,
+  "newSharedCoordinatorAdded": true,
+  "t19HandoffAdded": true,
+  "t19TaskWriteOrReminderClaimedComplete": false,
+  "noNewRecordingPlaybackOrRealModelRequestDuringPublicationPreparation": true
+}

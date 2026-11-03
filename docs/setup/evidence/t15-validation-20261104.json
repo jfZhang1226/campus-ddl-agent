@@ -1,0 +1,90 @@
+{
+  "date": "2026-11-04",
+  "scope": "T15 Harmony-only development assembly, not production page or task-write acceptance",
+  "branch": "codex/d-t15-speech-chat",
+  "baseCommit": "cb7b4ae979cb285ee253320adc5236ff5125bb4b",
+  "localChangesUncommitted": true,
+  "hostChecks": {
+    "voiceChatIntegration": 16,
+    "existingChat": 29,
+    "existingSpeechProbe": 21,
+    "allPassed": true
+  },
+  "build": {
+    "studio": "26.0.0.865",
+    "api": 26,
+    "arkuiX": "26.0.0.28 Beta2",
+    "fixedPlugin": "4.24.1",
+    "sdkBuildAndSigningPassed": true,
+    "warningsRetained": true,
+    "bundle": "com.campusddl.speechprobe",
+    "versionName": "0.2.0",
+    "versionCode": 200,
+    "permissions": [
+      "ohos.permission.MICROPHONE",
+      "ohos.permission.INTERNET"
+    ],
+    "installedInputBytes": 227860,
+    "installedInputSha256": "6a8dcc27b42cffff62c9412da0d85eb579f96c05c846f4f9de2c8a2f0424ffb8",
+    "installedHapIndependentlyExported": false,
+    "sourceFingerprintsMatched": true,
+    "fingerprintedFiles": 7
+  },
+  "device": {
+    "model": "ADY-AL10",
+    "api": 26,
+    "installAndVisibleLaunchObserved": true,
+    "fixtureAsrFinal": "这是一次合成语音测试。",
+    "asrDidNotAutomaticallySend": true,
+    "fixtureManualSendNewRequests": 1,
+    "fixtureHttpStatus": 200,
+    "fixtureAudibleAndStopConfirmedByOperator": true,
+    "completedUserRowPhaseObserved": "done",
+    "realGatewayModelConfiguration": "deepseek-flash",
+    "realGatewayPostCountObserved": 1,
+    "realGatewayHttpStatus": 200,
+    "realTestSentText": "这是一次真实模型语音连掉请只回复连接成功。",
+    "realAsrVerbatimAccuracyClaimed": false,
+    "realAssistantReplyObserved": "连接成功。",
+    "realReplyAudibleConfirmedByOperator": true,
+    "finalPhaseObserved": "ready",
+    "finalComposerEmpty": true,
+    "finalStopPlaybackEnabled": false
+  },
+  "deployment": {
+    "productionPagesAndGatewaySourceChanged": false,
+    "newSharedCoordinatorAdded": true,
+    "teamBusinessAppOverwritten": false,
+    "realGatewayLoopbackOnly": true,
+    "usbPort": 8000,
+    "transferredServerFiles": [
+      "main.py",
+      "notice_extraction.py",
+      "requirements.txt",
+      ".env"
+    ],
+    "serverSourceMatchesReviewedT12": "5d951c6344608422041df444326a767c7c87b212",
+    "virtualEnvironmentRecreated": true,
+    "uploadedVirtualEnvironmentOrCacheCopied": false,
+    "credentialsOnlyInIgnoredLocalConfigurationAndRuntime": true,
+    "providerKeySentToPhone": false,
+    "syntheticServiceAnd18765MappingStopped": true
+  },
+  "notVerified": [
+    "T15 real-device background/error matrix",
+    "production page assembly",
+    "Android/iOS speech",
+    "task confirmation/persistence",
+    "system reminders"
+  ],
+  "noPushPrOrMerge": true,
+  "sourceSha256": {
+    "client/entry/src/main/ets/speech/VoiceChatController.ts": "9d4a43ff38e76b7e2be278c6fcb4638939487a22648ac45b8be22ded589674c2",
+    "client/entry/src/main/ets/chat/ChatController.ts": "9fcc74fad44b7db4b77b8930a290a0e2d995a051595f63d896019a7260ebdd47",
+    "probes/harmony-voicechat/VoiceChat.ets": "dc33ed3a7a3b91c8519fa64c1ae89a5327c65b25e3c0fa96e452bba219348769",
+    "probes/harmony-voicechat/VoiceChatOwner.ets": "552cbe52ef3d429eb489d4a9713a018d0da25060ac139f5dece64108c6ec5300",
+    "probes/harmony-voicechat/EntryAbility.ets": "aa8f76404e5afe5acd06aea68fbe0f49ebd8493bb9383c93571dbbce7e0de58b",
+    "probes/harmony-speech/SpeechProbeController.ts": "9f2949c21334edc6bbb85db287fd3eeec740929f2d8f2a0d72c71d87e955cc68",
+    "probes/harmony-speech/HarmonySpeechPort.ets": "828a0bfdf4f9d6a8cb078dac4f436069c645ca3506e9d7394110adf7641cba83"
+  }
+}
