@@ -211,6 +211,36 @@ test('new conversation requires input resolution and keeps the previous persiste
   assert.equal(h.controller.snapshot().messages.length, 0); await complete(h);
   assert.notEqual(h.controller.snapshot().sessionId, first.sessionId); assert.equal(ok(await h.repo.list()).sessions.length, 2);
 });
+test('opening a selected history requires input resolution, never rewrites it, and appends only to that session', async t => {
+  const h = await harness(t); await ready(h); const first = await complete(h);
+  const beforeFirst = await h.port.readText(primary(first.sessionId));
+  assert.equal(h.controller.newConversation(), true); const second = await complete(h, 'clarification');
+  const beforeSecond = await h.port.readText(primary(second.sessionId));
+  h.controller.setDraft('切换前尚未发送');
+  assert.equal(await h.controller.openHistory(first.sessionId), false);
+  assert.equal(h.controller.snapshot().sessionId, second.sessionId);
+  assert.equal(h.controller.snapshot().draft, '切换前尚未发送');
+  assert.equal(await h.controller.openHistory(first.sessionId, true), true);
+  assert.equal(h.controller.snapshot().sessionId, first.sessionId); assert.equal(h.controller.snapshot().draft, '');
+  assert.equal(h.transport.calls.length, 2);
+  assert.equal(await h.port.readText(primary(first.sessionId)), beforeFirst);
+  assert.equal(await h.port.readText(primary(second.sessionId)), beforeSecond);
+  await complete(h);
+  assert.equal(ok(await h.repo.get(first.sessionId)).messages.length, 4);
+  assert.equal(await h.port.readText(primary(second.sessionId)), beforeSecond);
+});
+test('selected-history read failure preserves current text and transcript until an explicit successful read', async t => {
+  const h = await harness(t); await ready(h); const first = await complete(h); h.controller.setDraft('不能因读取失败丢失');
+  const before = await h.port.readText(primary(first.sessionId)), calls = h.transport.calls.length;
+  assert.equal(await h.controller.openHistory('not-there', true), false);
+  assert.equal(h.controller.snapshot().storageErrorCode, 'NOT_FOUND');
+  assert.equal(h.controller.snapshot().draft, '不能因读取失败丢失');
+  assert.deepEqual(h.controller.snapshot().messages, first.messages);
+  h.controller.send(); assert.equal(h.transport.calls.length, calls);
+  assert.equal(await h.controller.openHistory(first.sessionId, true), true);
+  assert.equal(h.controller.snapshot().historyReady, true); assert.equal(h.controller.snapshot().storageErrorCode, '');
+  assert.equal(await h.port.readText(primary(first.sessionId)), before); assert.equal(h.transport.calls.length, calls);
+});
 for (const fixture of [legacy, structured]) test('read/append preserves prior structured or legacy data: v' + fixture.schemaVersion, async t => {
   const h = await harness(t); await h.port.ensureDirectory('sessions');
   const raw = JSON.stringify(fixture), id = fixture.session.id; await h.port.writeText(primary(id), raw);
