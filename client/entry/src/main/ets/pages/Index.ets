@@ -15,6 +15,7 @@
 
 // Explicit import keeps the Android router adapter in the ACE package.
 import router from '@ohos.router';
+import common from '@ohos.app.ability.common';
 import { ChatMessage, ChatState, GatewayConfig } from '../chat/ChatModels';
 import { chatOwner } from '../chat/ChatOwner';
 import { KeyboardAvoidMode } from '@ohos.arkui.UIContext';
@@ -35,15 +36,19 @@ struct Index {
   aboutToAppear(): void {
     this.previousKeyboardMode = this.getUIContext().getKeyboardAvoidMode();
     this.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
-    const controller = chatOwner.get();
+    const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
+    const controller = chatOwner.get(context.filesDir);
     const config = controller.configuration();
     this.gatewayUrl = config.baseUrl;
     this.projectToken = config.token;
     this.timeoutSeconds = String(config.timeoutMs / 1000);
-    this.settingsOpen = !controller.snapshot().configured;
+    this.settingsOpen = !controller.snapshot().configured && controller.snapshot().messages.length === 0;
     controller.subscribe((state: ChatState) => {
+      const wasLoading: boolean = this.view.historyLoading;
       const shouldScroll = state.messages.length !== this.view.messages.length || state.busy !== this.view.busy;
       this.view = state;
+      if (wasLoading && state.historyReady && state.messages.length > 0 &&
+        this.gatewayUrl.length === 0 && this.projectToken.length === 0) this.settingsOpen = false;
       if (shouldScroll && !this.settingsOpen) {
         clearTimeout(this.scrollTimer);
         this.scrollTimer = setTimeout((): void => {
@@ -82,6 +87,13 @@ struct Index {
     this.storageNavigationError = '';
     router.pushUrl({ url: 'pages/TaskCheck' }).catch(() => {
       this.storageNavigationError = '无法打开任务验证页，请稍后重试。';
+    });
+  }
+
+  private openHistoryCheck(): void {
+    this.storageNavigationError = '';
+    router.pushUrl({ url: 'pages/HistoryCheck' }).catch(() => {
+      this.storageNavigationError = '无法打开历史验证页，请稍后重试。';
     });
   }
 
@@ -142,6 +154,9 @@ struct Index {
         Button('T14 任务验证（开发用）').id('t14-task-entry')
           .enabled(!this.view.busy)
           .onClick(() => this.openTaskCheck())
+        Button('T11 历史验证（开发用）').id('t11-history-entry')
+          .enabled(!this.view.busy)
+          .onClick(() => this.openHistoryCheck())
         if (this.storageNavigationError.length > 0) {
           Text(this.storageNavigationError).fontSize(12).fontColor('#A43B32')
         }
@@ -170,13 +185,15 @@ struct Index {
         Blank().width('10%')
       }
       Column({ space: 7 }) {
-        Text(message.role === 'user' ? '你' : '校园助手')
+        Text(message.role === 'user' ? '你' : (message.role === 'tool' ? '工具记录（仅回看）' :
+          (message.role === 'system' ? '系统记录' : '校园助手')))
           .fontSize(12).fontWeight(FontWeight.Medium)
           .fontColor(message.role === 'user' ? '#D3E8E2' : '#617589')
         Text(message.text).fontSize(16).lineHeight(25).copyOption(CopyOptions.InApp)
           .fontColor(message.role === 'user' ? '#FFFFFF' : '#142C43')
-        if (message.phase === 'pending' || message.phase === 'failed' || message.phase === 'stopped') {
-          Text(message.phase === 'pending' ? '等待回复' : (message.phase === 'failed' ? '未获得回复' : '已停止等待'))
+        if (['pending', 'failed', 'stopped', 'interrupted'].includes(message.phase)) {
+          Text(message.phase === 'pending' ? '等待回复' : (message.phase === 'failed' ? '未获得回复' :
+            (message.phase === 'interrupted' ? '上次请求未完成，未自动重发' : '已停止等待')))
             .fontSize(11).fontColor('#D3E8E2')
         }
       }.alignItems(HorizontalAlign.Start).padding(15).width('90%').borderRadius(16)
@@ -205,11 +222,27 @@ struct Index {
           ListItem() {
             Row({ space: 10 }) {
               LoadingProgress().width(22).height(22).color('#176766')
-              Text('正在获取回复…').fontSize(13).fontColor('#617589')
+              Text(this.view.savePending ? '正在保存对话…' : '正在获取回复…').fontSize(13).fontColor('#617589')
             }.padding(10)
           }
         }
       }.layoutWeight(1).width('100%').padding({ left: 16, right: 16 })
+      if (this.view.historyLoading) {
+        Text('正在读取本机历史…').fontSize(13).fontColor('#617589').padding(10)
+      }
+      if (this.view.storageNotice.length > 0) {
+        Column({ space: 5 }) {
+          Text(this.view.storageNotice).fontSize(12).lineHeight(18)
+            .fontColor(this.view.storageErrorCode.length > 0 ? '#A43B32' : '#617589')
+          if (this.view.storageErrorCode.length > 0 && this.view.savePending) {
+            Button('重试保存对话').enabled(!this.view.busy).fontSize(12)
+              .onClick(() => { chatOwner.get().retryHistorySave(); })
+          } else if (this.view.storageErrorCode.length > 0 && !this.view.historyReady) {
+            Button('重试读取历史').enabled(!this.view.historyLoading).fontSize(12)
+              .onClick(() => { chatOwner.get().initializeHistory(); })
+          }
+        }.alignItems(HorizontalAlign.Start).width('100%').padding({ left: 20, right: 20, top: 5 })
+      }
       if (this.view.notice.length > 0) {
         Column({ space: 5 }) {
           Text(this.view.notice).fontSize(13).lineHeight(19)
@@ -232,7 +265,8 @@ struct Index {
           Text(String(this.view.draft.length) + '/4000').fontSize(11).fontColor('#617589').layoutWeight(1)
           Button(this.view.busy ? '停止等待' : '发送')
             .height(39).width(110).fontSize(14).backgroundColor(this.view.busy ? '#647789' : '#176766')
-            .enabled(this.view.busy || this.view.draft.trim().length > 0)
+            .enabled(!this.view.savePending && !this.view.historyLoading && this.view.historyReady &&
+              (this.view.busy || this.view.draft.trim().length > 0))
             .onClick(() => {
               if (this.view.busy) {
                 chatOwner.get().stop();
@@ -244,7 +278,7 @@ struct Index {
               }
             })
         }.width('100%')
-        Text('关闭应用后，本次对话和设置不会保留。').fontSize(10).fontColor('#617589')
+        Text('已保存的对话可离线回看；网关设置和未发送输入仅保留本次运行。').fontSize(10).fontColor('#617589')
       }.width('100%').padding({ left: 16, right: 16, top: 10, bottom: 12 })
     }.layoutWeight(1).width('100%')
   }

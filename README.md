@@ -45,6 +45,10 @@ T06 的模板验收不代表 T08 存储或后续业务通过。签名和设备�
 
 [T12 接入说明](docs/setup/T12-通知提取与多轮补齐.md)记录新增的 `POST /api/agent/extract-notice`：把通知原文提取成 Notice/Task/ChecklistItem 的可编辑草案，缺项追问或标记未知，保留发布时间与来源，多轮通过客户端回传 `draft`+`answers` 确定性合并。实现为 [server/notice_extraction.py](server/notice_extraction.py)（纯逻辑）加网关新端点；主机自测 [server/verify_t12.py](server/verify_t12.py) 66 项通过，并经 [server/.env](server/.env) 真实 DeepSeek 调用通过三条样例（exact/date_only/相对日期缺截止），[草案样例](fixtures/extraction/notice-draft-samples.json) 供 A 的 T13 确认卡对接。
 
+## C 的 T11 会话历史（任务分支）
+
+[T11 接入说明](docs/setup/T11-会话历史与恢复接入.md)记录实际聊天的消息持久化、启动恢复、历史查询/切换接口及保存失败后的明确重试。正式历史列表与详情需 A 配合，双端真机尚未验证；开发诊断只使用隔离的人工数据。本轮不推送或合并。
+
 ## C 的 T03 交付
 
 - [核心数据字段说明](docs/data-contract.md)：Notice、Task、ChecklistItem 的字段、关联与校验规则。
