@@ -42,7 +42,7 @@ T06 已于 2026-10-27 通过 [PR #4](https://github.com/jfZhang1226/campus-ddl-a
 
 | 交付 | 内容 | 状态 |
 |---|---|---|
-| [实现与协议](setup/T13-通知输入与创建确认卡.md) | 主页面入口、T12 草案解析、可编辑确认卡、取消/错误状态、Notice+Task+Checklist 单快照保存 | 主机检查、HarmonyOS HAP 与 Android APK 构建通过；真机交互和重启验收待补齐 |
+| [实现与协议](setup/T13-通知输入与创建确认卡.md) | 主页面入口、T12 草案解析、可编辑确认卡、取消/错误状态、Notice+Task+Checklist 单快照保存 | 双端构建通过；Android 契约模拟真机流程通过；真实模型与鸿蒙真机仍待补 |
 | [专项检查](../scripts/test-notice-import.cjs) | 26 个共享 TS 严格检查；10 项草案、控制器、原子保存、版本冲突、SHA-256 与原生 HTTP 边界检查 | 2026-11-04 全部通过 |
 | [共享页面](../client/entry/src/main/ets/pages/NoticeImport.ets) | 原文、来源/发布时间、任务字段、截止精度、工时、材料及确认结果 | 同一源码双端工程构建通过；无设备连接，不能标记真机通过 |
 
