@@ -255,6 +255,8 @@ struct NoticeImportPage {
             }.alignItems(HorizontalAlign.Start).layoutWeight(1)
           }
         }.width('100%')
+        Text('截止时区：' + this.view.timezone + ' · 修改日期或时刻会按此时区重新计算实际截止时刻')
+          .fontSize(11).fontColor('#617589').lineHeight(17)
       }
 
       Text('优先级').fontSize(12).fontColor('#617589')
@@ -326,6 +328,14 @@ struct NoticeImportPage {
           Text('请求编号：' + this.view.requestId).fontSize(10).fontColor('#617589')
             .copyOption(CopyOptions.InApp)
         }
+        if (this.view.errorCode === 'VERSION_CONFLICT') {
+          Button('重新读取本地版本')
+            .id('notice-refresh-revision').height(34).fontSize(12).backgroundColor('#176766')
+            .enabled(!this.busy())
+            .onClick(() => {
+              if (this.controller !== null) this.controller.refreshRevision();
+            })
+        }
       }.alignItems(HorizontalAlign.Start).width('100%')
     }
   }
@@ -366,7 +376,8 @@ struct NoticeImportPage {
             if (this.busy()) {
               Row({ space: 9 }) {
                 LoadingProgress().width(20).height(20).color('#176766')
-                Text(this.view.phase === 'saving' ? '正在保存…' : '正在整理通知…')
+                Text(this.view.phase === 'saving' ? '正在保存…' :
+                  (this.view.phase === 'refreshing' ? '正在刷新本地版本…' : '正在整理通知…'))
                   .fontSize(12).fontColor('#617589')
               }.width('100%')
             }

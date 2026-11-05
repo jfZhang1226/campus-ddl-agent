@@ -2,7 +2,9 @@ import { GatewayConfig, GatewayResponse } from '../chat/ChatModels';
 import { validateConfig } from '../chat/GatewayProtocol';
 import { NoticeImportInput, NoticeImportWrite } from '../data/NoticeImportRepository';
 import { StorageResult } from '../data/storage/StorageTypes';
-import { isCalendarDate, isOffsetTimestamp, isTaskTimezone } from '../domain/DateRules';
+import {
+  ZonedDateTimeParts, isCalendarDate, isOffsetTimestamp, isTaskTimezone, zonedDateTimeParts, zonedTimestamp
+} from '../domain/DateRules';
 import { NoticeDraft, NoticeDraftChecklistItem, cloneNoticeDraft } from './NoticeDraftModels';
 import {
   NoticeExtractionCall, NoticeExtractionRequest, NoticeExtractionResult, NoticeExtractionTransport,
@@ -11,6 +13,7 @@ import {
 
 export interface NoticeImportWriter {
   create(input: NoticeImportInput, expectedRevision: number): Promise<StorageResult<NoticeImportWrite>>;
+  revision(): Promise<StorageResult<number>>;
 }
 
 export class NoticeImportState {
@@ -270,6 +273,29 @@ export class NoticeImportController {
     this.publish();
   }
 
+  /** Re-read storage without discarding the editable draft, then require a fresh user confirmation. */
+  async refreshRevision(): Promise<void> {
+    if (this.busy() || this.state.draft === null) return;
+    this.state.phase = 'refreshing';
+    this.state.errorCode = '';
+    this.state.notice = '正在重新读取本地数据版本…';
+    const generation: number = ++this.generation;
+    this.publish();
+    const result: StorageResult<number> = await this.writer.revision();
+    if (generation !== this.generation) return;
+    this.state.phase = 'idle';
+    if (!result.success || result.data === null) {
+      this.state.errorCode = result.errorCode === null ? 'STORAGE_FAILED' : result.errorCode;
+      this.state.notice = noticeErrorText(this.state.errorCode);
+      this.publish();
+      return;
+    }
+    this.state.expectedRevision = result.data;
+    this.state.errorCode = '';
+    this.state.notice = '已重新读取本地版本 ' + String(result.data) + '；草案和修改均已保留，请再次确认保存。';
+    this.publish();
+  }
+
   cancel(): void {
     if (this.state.phase === 'saving') return;
     this.release('CANCELLED');
@@ -310,14 +336,22 @@ export class NoticeImportController {
     this.state.course = result.draft.task.course === null ? '' : result.draft.task.course;
     this.state.kind = result.draft.task.kind === null ? '' : result.draft.task.kind;
     this.state.deadlinePrecision = result.draft.task.deadlinePrecision;
+    this.state.timezone = result.draft.task.timezone;
     this.state.deadlineDate = '';
     this.state.deadlineTime = '';
     this.state.originalDueAt = result.draft.task.dueAt === null ? '' : result.draft.task.dueAt;
     if (result.draft.task.deadlinePrecision === 'date_only' && result.draft.task.deadlineDate !== null) {
       this.state.deadlineDate = result.draft.task.deadlineDate;
     } else if (result.draft.task.deadlinePrecision === 'exact' && result.draft.task.dueAt !== null) {
-      this.state.deadlineDate = result.draft.task.dueAt.slice(0, 10);
-      this.state.deadlineTime = result.draft.task.dueAt.slice(11, 16);
+      const parts: ZonedDateTimeParts | null = zonedDateTimeParts(
+        result.draft.task.dueAt, result.draft.task.timezone);
+      if (parts === null) {
+        this.state.deadlinePrecision = 'unknown';
+        this.state.originalDueAt = '';
+      } else {
+        this.state.deadlineDate = parts.date;
+        this.state.deadlineTime = parts.time;
+      }
     }
     this.state.priority = result.draft.task.priority === null ? '' : result.draft.task.priority;
     this.state.remainingMinutes = result.draft.task.remainingMinutes === null ?
@@ -395,13 +429,8 @@ export class NoticeImportController {
   }
 
   private dueAt(): string | null {
-    if (!isCalendarDate(this.state.deadlineDate) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(this.state.deadlineTime)) {
-      return null;
-    }
-    const unchanged: boolean = this.state.originalDueAt.length > 0 &&
-      this.state.originalDueAt.slice(0, 16) === this.state.deadlineDate + 'T' + this.state.deadlineTime;
-    return unchanged ? this.state.originalDueAt :
-      this.state.deadlineDate + 'T' + this.state.deadlineTime + ':00+08:00';
+    if (this.state.originalDueAt.length > 0) return this.state.originalDueAt;
+    return zonedTimestamp(this.state.deadlineDate, this.state.deadlineTime, this.state.timezone);
   }
 
   private remainingMinutes(): number | null {
@@ -418,7 +447,8 @@ export class NoticeImportController {
   }
 
   private busy(): boolean {
-    return this.state.phase === 'extracting' || this.state.phase === 'saving';
+    return this.state.phase === 'extracting' || this.state.phase === 'saving' ||
+      this.state.phase === 'refreshing';
   }
 
   private clearDraft(clearRawText: boolean): void {

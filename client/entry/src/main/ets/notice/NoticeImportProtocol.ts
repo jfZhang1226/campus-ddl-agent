@@ -105,7 +105,7 @@ export function noticeErrorText(code: string): string {
     case 'CONFIG_ERROR': return '网关尚未配置好模型服务，请联系服务维护者。';
     case 'MODEL_ERROR': return '模型服务暂时没有返回有效结果，原文和当前填写已保留。';
     case 'INVALID_RESPONSE': return '模型返回的草案格式不符合约定，原文和当前填写已保留。';
-    case 'VERSION_CONFLICT': return '本地数据在确认前发生变化，请重新提取或刷新后再确认。';
+    case 'VERSION_CONFLICT': return '本地数据在确认前发生变化；草案和修改已保留，请重新读取本地版本后再次确认。';
     case 'STORAGE_FAILED': return '未能保存，草案和原文已保留；请检查本地存储后重试。';
     case 'TIMEOUT': return '等待模型超时，原文已保留，可稍后手动重试。';
     case 'NETWORK': return '无法连接网关，请检查网络、地址和服务后重试。';

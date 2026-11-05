@@ -1,0 +1,52 @@
+{
+  "task": "T13",
+  "date": "2026-11-05",
+  "reviewSource": "https://github.com/jfZhang1226/campus-ddl-agent/pull/13#issuecomment-6657368700",
+  "reviewItems": [
+    {
+      "severity": "P2",
+      "issue": "Non-+08:00 exact deadlines were displayed using their raw offset wall time and edited as +08:00, changing the instant",
+      "resolution": "Project exact instants into the supported task timezone for display; build edited timestamps in that same timezone; preserve the original instant string when date/time is not edited"
+    },
+    {
+      "severity": "P2",
+      "issue": "After VERSION_CONFLICT, the page had no way to reload the current revision while retaining the draft",
+      "resolution": "Add a visible '重新读取本地版本' action, refresh only expectedRevision, preserve all draft fields, and require a new user confirmation"
+    }
+  ],
+  "hostChecks": {
+    "command": "node scripts/test-notice-import.cjs",
+    "testsPassed": 19,
+    "strictTypeScriptSources": 26,
+    "taskTestsPassed": 85,
+    "storageTestsPassed": 106,
+    "chatTestsPassed": 29,
+    "coverage": [
+      "Z and +00:00 exact deadlines",
+      "-05:00 and +14:00 exact deadlines",
+      "Asia/Shanghai cross-midnight display",
+      "UTC edit behavior",
+      "unchanged exact timestamp preserves the original string",
+      "editing displayed wall time changes the real instant by exactly one minute",
+      "conflict retains edited title",
+      "refresh updates expectedRevision without clearing the draft",
+      "second confirmation after refresh succeeds"
+    ]
+  },
+  "builds": {
+    "signedHap": {
+      "result": "BUILD SUCCESSFUL",
+      "sha256": "b07387c9d5af6280df2daf5f3d95a28ba204aee98cef58df1b3f6d12622ddd3a"
+    },
+    "productionApk": {
+      "result": "BUILD SUCCESSFUL",
+      "sha256": "9dc7507730b93e89b49644341410953f12672773eabe94bbdee4f15c1870070b"
+    },
+    "androidVerificationApk": {
+      "result": "BUILD SUCCESSFUL",
+      "applicationId": "com.campusddl.agent.t13",
+      "sha256": "63331aaef5df1eba68912c24f1f873e29024b29615494c1403f534408c0f24ef"
+    }
+  },
+  "deviceRegressionAfterFix": "pending: Android and HarmonyOS devices were disconnected when this patch was ready"
+}

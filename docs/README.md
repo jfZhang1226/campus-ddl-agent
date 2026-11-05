@@ -43,10 +43,12 @@ T06 已于 2026-10-27 通过 [PR #4](https://github.com/jfZhang1226/campus-ddl-a
 | 交付 | 内容 | 状态 |
 |---|---|---|
 | [实现与协议](setup/T13-通知输入与创建确认卡.md) | 主页面入口、T12 草案解析、可编辑确认卡、取消/错误状态、Notice+Task+Checklist 单快照保存 | 双端构建、真机契约流程及真实模型保存通过；PR 评审待完成 |
-| [专项检查](../scripts/test-notice-import.cjs) | 26 个共享 TS 严格检查；10 项草案、控制器、原子保存、版本冲突、SHA-256 与原生 HTTP 边界检查 | 2026-11-04 全部通过 |
+| [专项检查](../scripts/test-notice-import.cjs) | 26 个共享 TS 严格检查；19 项草案、时区、冲突恢复、原子保存与原生 HTTP 边界检查 | 2026-11-05 全部通过 |
 | [共享页面](../client/entry/src/main/ets/pages/NoticeImport.ets) | 原文、来源/发布时间、任务字段、截止精度、工时、材料及确认结果 | 鸿蒙签名安装、Android 验证安装及两端真实模型保存通过 |
 
 T13 的成功页只证明本次本地导入结果，不替代 T18 任务列表/详情、T16/T17 持久确认协议或 T21/T24 后续界面。
+
+C 对 T13 提出的两项 P2 已修正，见 [复查修正证据](setup/evidence/t13-review-fixes-20261105.json)。
 
 ## C 的 T03 资料
 

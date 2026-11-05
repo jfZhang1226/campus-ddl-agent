@@ -16,6 +16,8 @@ const { NoticeImportRepository, NoticeImportInput } =
 const { LocalStore } = require('../../client/entry/src/main/ets/data/LocalStore.ts');
 const { StorageCoordinator } = require('../../client/entry/src/main/ets/data/storage/StorageCoordinator.ts');
 const { GatewayConfig, GatewayResponse } = require('../../client/entry/src/main/ets/chat/ChatModels.ts');
+const { timestampMillis, zonedDateTimeParts, zonedTimestamp } =
+  require('../../client/entry/src/main/ets/domain/DateRules.ts');
 const fixtures = require('../../fixtures/extraction/notice-draft-samples.json');
 
 const runtimeRoot = path.resolve(__dirname, '../../runtime/t13-host-tests');
@@ -82,6 +84,15 @@ async function harness(t) {
     await fs.rm(root, { recursive: true, force: true });
   });
   return { root, port, store, clock, repository };
+}
+function exactDraft(zone, dueAt) {
+  const value = JSON.parse(JSON.stringify(fixtures.samples[0].draft));
+  value.notice.timezone = zone;
+  value.task.timezone = zone;
+  value.task.deadlinePrecision = 'exact';
+  value.task.deadlineDate = null;
+  value.task.dueAt = dueAt;
+  return value;
 }
 
 test('SHA-256 matches Node for ASCII, Chinese, emoji and long exact text', () => {
@@ -206,6 +217,7 @@ test('stale confirmation is refused and draft remains recoverable', async t => {
   controller.extract();
   transport.calls[0].resolve(wireDraft(fixtures.samples[0].draft));
   await flush();
+  controller.edit('title', '保留编辑后的实验报告');
   const other = new NoticeImportRepository(h.store, h.clock);
   const competing = new NoticeImportInput();
   competing.draft = cloneNoticeDraft(parseNoticeDraft(fixtures.samples[1].draft));
@@ -213,7 +225,20 @@ test('stale confirmation is refused and draft remains recoverable', async t => {
   await controller.confirm();
   assert.equal(controller.snapshot().errorCode, 'VERSION_CONFLICT');
   assert.notEqual(controller.snapshot().draft, null);
+  assert.equal(controller.snapshot().title, '保留编辑后的实验报告');
+  assert.equal(controller.snapshot().expectedRevision, 0);
   assert.equal((await h.store.read()).data.tasks.length, 1);
+  await controller.refreshRevision();
+  assert.equal(controller.snapshot().errorCode, '');
+  assert.equal(controller.snapshot().expectedRevision, 1);
+  assert.equal(controller.snapshot().title, '保留编辑后的实验报告');
+  assert.notEqual(controller.snapshot().draft, null);
+  await controller.confirm();
+  assert.equal(controller.snapshot().phase, 'saved');
+  assert.equal(controller.snapshot().savedRevision, 2);
+  const saved = (await h.store.read()).data;
+  assert.equal(saved.tasks.length, 2);
+  assert.ok(saved.tasks.some(task => task.title === '保留编辑后的实验报告'));
 });
 test('invalid editable fields fail locally without writing and preserve the draft', async t => {
   const h = await harness(t);
@@ -277,3 +302,63 @@ test('native extraction adapter sends only endpoint, bearer, draft input and rel
   assert.equal(decodeNoticeExtraction(response).draft.task.title, '提交数据库实验报告');
   assert.equal(nativeRequest.destroys, 1);
 });
+
+test('zoned deadline helpers project offsets and compute edited instants correctly', () => {
+  assert.deepEqual(zonedDateTimeParts('2026-11-06T18:30:00Z', 'Asia/Shanghai'),
+    { date: '2026-11-07', time: '02:30' });
+  assert.equal(zonedTimestamp('2026-11-07', '02:31', 'Asia/Shanghai'), '2026-11-07T02:31:00+08:00');
+  assert.equal(timestampMillis('2026-11-07T02:31:00+08:00') -
+    timestampMillis('2026-11-06T18:30:00Z'), 60000);
+  assert.equal(zonedTimestamp('2026-11-07', '18:31', 'UTC'), '2026-11-07T18:31:00+00:00');
+});
+
+for (const [zone, dueAt, date, time] of [
+  ['Asia/Shanghai', '2026-11-06T18:30:00Z', '2026-11-07', '02:30'],
+  ['Asia/Shanghai', '2026-11-06T18:30:00+00:00', '2026-11-07', '02:30'],
+  ['Asia/Shanghai', '2026-11-06T23:30:00-05:00', '2026-11-07', '12:30'],
+  ['Asia/Shanghai', '2026-11-06T23:30:00+14:00', '2026-11-06', '17:30'],
+  ['UTC', '2026-11-06T18:30:00Z', '2026-11-06', '18:30']
+]) {
+  test(`un-edited ${zone} ${dueAt} preserves the original instant string`, async t => {
+    const h = await harness(t);
+    const transport = new FakeTransport();
+    const controller = new NoticeImportController(transport, h.repository);
+    controller.configure(new GatewayConfig('https://example.test', 'token', 45000));
+    controller.setExpectedRevision(0);
+    controller.setRawText('offset deadline test');
+    controller.extract();
+    transport.calls[0].resolve(wireDraft(exactDraft(zone, dueAt)));
+    await flush();
+    assert.equal(controller.snapshot().deadlineDate, date);
+    assert.equal(controller.snapshot().deadlineTime, time);
+    await controller.confirm();
+    assert.equal(controller.snapshot().phase, 'saved');
+    assert.equal((await h.store.read()).data.tasks[0].dueAt, dueAt);
+  });
+}
+
+for (const [zone, dueAt, editedDate, editedTime] of [
+  ['Asia/Shanghai', '2026-11-06T18:30:00Z', '2026-11-07', '02:31'],
+  ['Asia/Shanghai', '2026-11-06T23:30:00-05:00', '2026-11-07', '12:31'],
+  ['UTC', '2026-11-06T18:30:00Z', '2026-11-06', '18:31']
+]) {
+  test(`edited ${zone} ${dueAt} preserves the intended one-minute change`, async t => {
+    const h = await harness(t);
+    const transport = new FakeTransport();
+    const controller = new NoticeImportController(transport, h.repository);
+    controller.configure(new GatewayConfig('https://example.test', 'token', 45000));
+    controller.setExpectedRevision(0);
+    controller.setRawText('edited offset deadline test');
+    controller.extract();
+    transport.calls[0].resolve(wireDraft(exactDraft(zone, dueAt)));
+    await flush();
+    controller.edit('precision', 'exact');
+    controller.edit('date', editedDate);
+    controller.edit('time', editedTime);
+    await controller.confirm();
+    assert.equal(controller.snapshot().phase, 'saved');
+    const saved = (await h.store.read()).data.tasks[0];
+    assert.equal(saved.dueAt, zonedTimestamp(editedDate, editedTime, zone));
+    assert.equal(timestampMillis(saved.dueAt) - timestampMillis(dueAt), 60000);
+  });
+}
