@@ -17,9 +17,18 @@
     "provisionType": "debug"
   },
   "extraction": {
-    "mode": "deterministic-contract-mock",
-    "realModelCalled": false,
-    "reason": "Configured DeepSeek key was rejected by the provider with HTTP 401"
+    "mode": "real DeepSeek cloud model through project gateway",
+    "realModelCalled": true,
+    "sample": "数据库课程通知：请于2026年11月12日23:59前在学习通提交数据库实验报告PDF和源代码。",
+    "result": {
+      "title": "数据库实验报告提交",
+      "course": "数据库",
+      "deadlinePrecision": "exact",
+      "dueAt": "2026-11-12T23:59:00+08:00",
+      "submissionChannel": "学习通",
+      "materials": ["PDF报告", "源代码"],
+      "degraded": false
+    }
   },
   "passed": [
     "Signed debug HAP built and installed on HarmonyOS API 26 device",
@@ -30,30 +39,29 @@
     "Confirmation saved Notice, Task and ChecklistItem and displayed revision 1",
     "Force-stop and cold start produced a new application process",
     "Second confirmed save after restart displayed revision 2, proving prior snapshot recovery",
-    "With the mock gateway stopped, the network error was shown and no new draft was created"
+    "With the mock gateway stopped, the network error was shown and no new draft was created",
+    "A new valid API key produced a real DeepSeek draft with title, course, exact deadline, submission channel and materials",
+    "The real-model draft was confirmed and saved as revision 3"
   ],
   "savedSnapshotChecks": {
-    "finalRevision": 2,
-    "notices": 2,
-    "tasks": 2,
-    "checklistItems": 4,
+    "finalRevision": 3,
+    "notices": 3,
+    "tasks": 3,
+    "checklistItems": 6,
     "taskStatus": "todo",
     "deadlinePrecision": "exact",
+    "realModelTaskTitle": "数据库实验报告提交",
+    "realModelSubmissionChannel": "学习通",
     "networkFailureRevisionUnchanged": true
-  },
-  "realModelBlock": {
-    "errorCode": "MODEL_ERROR",
-    "providerHttpStatus": 401,
-    "providerMeaning": "API key invalid"
   },
   "screenshots": [
     "docs/images/t13/harmony-draft.jpeg",
     "docs/images/t13/harmony-saved.jpeg",
-    "docs/images/t13/harmony-network-error.jpeg"
+    "docs/images/t13/harmony-network-error.jpeg",
+    "docs/images/t13/harmony-real-draft.jpeg",
+    "docs/images/t13/harmony-real-saved.jpeg"
   ],
   "notClaimed": [
-    "HarmonyOS real-model extraction",
-    "T13 final acceptance",
-    "PR review"
+    "T13 final acceptance pending Android real-model rerun and PR review"
   ]
 }
