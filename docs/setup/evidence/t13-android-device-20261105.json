@@ -18,10 +18,18 @@
     "source": "Exported from commit a4ae118 with only a runtime-only debug applicationIdSuffix"
   },
   "extraction": {
-    "mode": "deterministic-contract-mock",
-    "realModelCalled": false,
-    "claimedAsFinal": false,
-    "reason": "No DEEPSEEK_API_KEY or server .env was available in the current environment"
+    "mode": "deterministic-contract-mock plus real DeepSeek cloud model through project gateway",
+    "realModelCalled": true,
+    "realModelSample": "Database course notice: submit the database lab report as PDF and source code to Learning Platform before 2026-11-12 23:59.",
+    "realModelResult": {
+      "title": "Submit database lab report",
+      "course": "Database",
+      "deadlinePrecision": "exact",
+      "dueAt": "2026-11-12T23:59:00+08:00",
+      "submissionChannel": "Learning Platform",
+      "materials": ["PDF lab report", "source code"],
+      "degraded": false
+    }
   },
   "passed": [
     "APK installed and cold-started on real Android device",
@@ -35,13 +43,15 @@
     "Confirmed import saved Notice, Task and all ChecklistItem records in one snapshot",
     "Three confirmed imports increased revision from 1 through 3 with matching counts",
     "A cold restart changed the app process but left the revision-2 snapshot bytes unchanged with two tasks",
-    "With the mock gateway stopped, the page showed a reachable network error and left revision/task count unchanged"
+    "With the mock gateway stopped, the page showed a reachable network error and left revision/task count unchanged",
+    "A valid DeepSeek key produced a real-model draft with title, course, exact deadline, submission channel and materials",
+    "The real-model draft was confirmed and saved as revision 4"
   ],
   "savedSnapshotChecks": {
-    "finalRevision": 3,
-    "notices": 3,
-    "tasks": 3,
-    "checklistItems": 5,
+    "finalRevision": 4,
+    "notices": 4,
+    "tasks": 4,
+    "checklistItems": 7,
     "exactTimeSample": {
       "title": "Relative report follow-up",
       "deadlinePrecision": "exact",
@@ -54,6 +64,8 @@
       "priority": "high",
       "status": "todo"
     },
+    "realModelTaskTitle": "Submit database lab report",
+    "realModelSubmissionChannel": "Learning Platform",
     "networkFailureRevisionUnchanged": true
   },
   "screenshots": [
@@ -61,11 +73,11 @@
     "docs/images/t13/android-draft-bottom.png",
     "docs/images/t13/android-clarification.png",
     "docs/images/t13/android-saved.png",
-    "docs/images/t13/android-network-error.png"
+    "docs/images/t13/android-network-error.png",
+    "docs/images/t13/android-real-draft.png",
+    "docs/images/t13/android-real-saved.png"
   ],
   "notClaimed": [
-    "Android real-model extraction",
-    "HarmonyOS device execution",
     "T13 final acceptance",
     "Clean install of the production applicationId on a matching signing certificate"
   ]

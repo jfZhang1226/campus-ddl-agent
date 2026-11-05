@@ -62,6 +62,7 @@
     "docs/images/t13/harmony-real-saved.jpeg"
   ],
   "notClaimed": [
-    "T13 final acceptance pending Android real-model rerun and PR review"
+    "T13 final acceptance pending PR review",
+    "Android production applicationId install on a matching signing certificate"
   ]
 }
