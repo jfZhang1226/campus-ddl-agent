@@ -30,3 +30,4 @@ const compile = (module, filename) => module._compile(ts.transpileModule(fs.read
 require.extensions['.ts'] = compile;
 require.extensions['.ets'] = compile;
 require('../tests/history/history.test.cjs');
+require('../tests/history/history-page.test.cjs');

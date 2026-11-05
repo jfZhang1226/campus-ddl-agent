@@ -19,6 +19,9 @@ import common from '@ohos.app.ability.common';
 import { ChatMessage, ChatState, GatewayConfig } from '../chat/ChatModels';
 import { chatOwner } from '../chat/ChatOwner';
 import { KeyboardAvoidMode } from '@ohos.arkui.UIContext';
+import { HistoryController, HistoryViewState } from '../chat/HistoryController';
+import { getClientStorage } from '../data/ClientStorage';
+import { HistoryPanel } from './HistoryPanel';
 
 @Entry
 @Component
@@ -29,6 +32,8 @@ struct Index {
   @State gatewayUrl: string = '';
   @State projectToken: string = '';
   @State timeoutSeconds: string = '45';
+  @State historyView: HistoryViewState = new HistoryViewState();
+  private history: HistoryController | null = null;
   private scroller: Scroller = new Scroller();
   private scrollTimer: number = -1;
   private previousKeyboardMode: KeyboardAvoidMode = KeyboardAvoidMode.OFFSET;
@@ -38,6 +43,9 @@ struct Index {
     this.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
     const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
     const controller = chatOwner.get(context.filesDir);
+    if (this.history !== null) this.history.dispose();
+    this.history = new HistoryController(getClientStorage(context.filesDir).history, controller);
+    this.history.subscribe((state: HistoryViewState) => { this.historyView = state; });
     const config = controller.configuration();
     this.gatewayUrl = config.baseUrl;
     this.projectToken = config.token;
@@ -66,6 +74,7 @@ struct Index {
     this.getUIContext().setKeyboardAvoidMode(this.previousKeyboardMode);
     chatOwner.pause();
     chatOwner.detach();
+    if (this.history !== null) { this.history.dispose(); this.history = null; }
     clearTimeout(this.scrollTimer);
   }
 
@@ -99,16 +108,51 @@ struct Index {
 
   @Builder
   header() {
-    Row({ space: 12 }) {
+    Column({ space: 12 }) {
+      Row({ space: 12 }) {
       Column({ space: 3 }) {
         Text('校园 DDL').fontSize(23).fontWeight(FontWeight.Bold).fontColor('#142C43')
         Text('文本助手').fontSize(12).fontColor('#617589')
       }.alignItems(HorizontalAlign.Start).layoutWeight(1)
       Button(this.settingsOpen ? '返回对话' : '网关设置')
         .fontSize(13).fontColor('#176766').backgroundColor('#E1F0EC')
-        .enabled(!this.view.busy)
+        .enabled(!this.view.busy && this.historyView.confirmation.length === 0)
         .onClick(() => this.settingsOpen = !this.settingsOpen)
+      }.width('100%')
+      Row({ space: 10 }) {
+        Button('历史会话').id('history-open-list').fontSize(12).fontColor('#176766').backgroundColor('#E1F0EC')
+          .enabled(this.historyAvailable()).onClick(() => { if (this.history !== null) this.history.showList(); })
+        Button('新对话').id('chat-new-conversation').fontSize(12).fontColor('#176766').backgroundColor('#E1F0EC')
+          .enabled(this.historyAvailable()).onClick(() => {
+            this.settingsOpen = false;
+            if (this.history !== null) this.history.requestNew();
+          })
+        Text(this.view.sessionTitle.length > 0 ? this.view.sessionTitle : '新对话').fontSize(12).fontColor('#617589')
+          .layoutWeight(1).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+      }.width('100%')
     }.width('100%').padding({ left: 20, right: 20, top: 18, bottom: 14 })
+  }
+
+  private historyAvailable(): boolean {
+    return !this.view.busy && !this.view.historyLoading && !this.view.savePending &&
+      !this.historyView.loading && !this.historyView.switching && this.historyView.confirmation.length === 0;
+  }
+
+  @Builder
+  discardConfirmation() {
+    Column({ space: 9 }) {
+      Text(this.historyView.confirmation === 'new' ? '清空当前输入并开始新对话？' : '清空当前输入并切换会话？')
+        .fontSize(17).fontWeight(FontWeight.Bold).fontColor('#142C43')
+      Text('这段文字尚未发送。继续后会清空输入，已保存的对话会保留。').fontSize(13).fontColor('#617589').lineHeight(20)
+      Text(this.historyView.confirmDraft).fontSize(14).fontColor('#334155').maxLines(3)
+        .textOverflow({ overflow: TextOverflow.Ellipsis }).copyOption(CopyOptions.InApp)
+      Row({ space: 12 }) {
+        Button('保留输入').id('history-cancel-discard').fontSize(13)
+          .onClick(() => { if (this.history !== null) this.history.cancelConfirmation(); })
+        Button('清空输入并继续').id('history-confirm-discard').fontSize(13).backgroundColor('#176766')
+          .onClick(() => { if (this.history !== null) this.history.confirmDiscard(); })
+      }.width('100%')
+    }.padding(18).width('100%').alignItems(HorizontalAlign.Start).backgroundColor('#FFF4DD')
   }
 
   @Builder
@@ -259,13 +303,14 @@ struct Index {
       Column({ space: 8 }) {
         TextArea({ text: this.view.draft, placeholder: '写下你的问题…' })
           .fontColor('#142C43')
+          .enabled(this.historyView.confirmation.length === 0)
           .id('chat-input').height(88).fontSize(16).maxLength(4000).backgroundColor('#FFFFFF').borderRadius(14)
           .onChange((value: string) => chatOwner.get().setDraft(value))
         Row() {
           Text(String(this.view.draft.length) + '/4000').fontSize(11).fontColor('#617589').layoutWeight(1)
           Button(this.view.busy ? '停止等待' : '发送')
             .height(39).width(110).fontSize(14).backgroundColor(this.view.busy ? '#647789' : '#176766')
-            .enabled(!this.view.savePending && !this.view.historyLoading && this.view.historyReady &&
+            .enabled(this.historyView.confirmation.length === 0 && !this.view.savePending && !this.view.historyLoading && this.view.historyReady &&
               (this.view.busy || this.view.draft.trim().length > 0))
             .onClick(() => {
               if (this.view.busy) {
@@ -285,11 +330,29 @@ struct Index {
 
   build() {
     Column() {
-      this.header()
-      if (this.settingsOpen) {
-        this.settings()
+      if (this.historyView.confirmation.length > 0) { this.discardConfirmation() }
+      if (this.historyView.page !== 'chat') {
+        HistoryPanel({ view: this.historyView, activeSessionId: this.view.sessionId,
+          chatAvailable: !this.view.busy && !this.view.savePending && !this.view.historyLoading,
+          onChat: () => { if (this.history !== null) this.history.showChat(); },
+          onList: () => { if (this.history !== null) this.history.showList(); },
+          onDetail: (id: string) => { if (this.history !== null) this.history.openDetail(id); },
+          onContinue: (id: string) => {
+            this.settingsOpen = false;
+            if (this.history !== null) this.history.requestOpen(id);
+          },
+          onNew: () => {
+            this.settingsOpen = false;
+            if (this.history !== null) this.history.requestNew();
+          }
+        })
       } else {
-        this.conversation()
+        this.header()
+        if (this.historyView.error.length > 0 || this.historyView.notice.length > 0) {
+          Text(this.historyView.error.length > 0 ? this.historyView.error : this.historyView.notice)
+            .fontSize(13).fontColor('#A43B32').padding(12)
+        }
+        if (this.settingsOpen) { this.settings() } else { this.conversation() }
       }
     }.width('100%').height('100%').backgroundColor('#F2F6F7')
   }

@@ -82,6 +82,8 @@ async function complete(h, type = 'answer') {
 }
 const primary = id => 'sessions/' + id + '.json';
 
+module.exports = { harness, ready, pending, complete, until, primary, ok, wire, structured, legacy };
+
 test('fresh startup lists no fabricated conversations and performs no gateway call', async t => {
   const h = await harness(t); await ready(h);
   assert.deepEqual(ok(await h.repo.list()).sessions, []);
