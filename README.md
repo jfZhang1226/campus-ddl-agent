@@ -41,6 +41,10 @@ T06 的模板验收不代表 T08 存储或后续业务通过。签名和设备�
 
 [T10 接入说明](docs/setup/T10-文本对话与网关接入.md)记录两端共享文本页、T07 HTTP 适配、运行时配置、加载/超时/错误和手动重试。T10 已通过 [PR #9](https://github.com/jfZhang1226/campus-ddl-agent/pull/9) 合入 main（`f34865a`）；其既有同源双端真实模型证据按原提交保留，不作为本次 T08 合并入口的新真机结果。内存对话不是持久历史，每次提问仍独立处理。
 
+## A 的 T13 通知输入与创建确认
+
+[T13 接入说明](docs/setup/T13-通知输入与创建确认卡.md)记录新的共享通知导入页：调用 T12 提取接口，展示可编辑草案、缺项追问和原通知，取消不写，确认后把 Notice、Task 与 ChecklistItem 在同一本地快照 revision 中保存。C 复查提出的非 `+08:00` 截止时区问题和冲突后缺少版本重读入口均已修正；19 项 T13 检查及相关回归、双端构建通过，等待设备重连页面复验与 C 复查。
+
 ## B 的 T12 通知提取与多轮补齐
 
 [T12 接入说明](docs/setup/T12-通知提取与多轮补齐.md)记录新增的 `POST /api/agent/extract-notice`：把通知原文提取成 Notice/Task/ChecklistItem 的可编辑草案，缺项追问或标记未知，保留发布时间与来源，多轮通过客户端回传 `draft`+`answers` 确定性合并。实现为 [server/notice_extraction.py](server/notice_extraction.py)（纯逻辑）加网关新端点；主机自测 [server/verify_t12.py](server/verify_t12.py) 66 项通过，并经 [server/.env](server/.env) 真实 DeepSeek 调用通过三条样例（exact/date_only/相对日期缺截止），[草案样例](fixtures/extraction/notice-draft-samples.json) 供 A 的 T13 确认卡对接。
