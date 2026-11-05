@@ -1,0 +1,59 @@
+{
+  "task": "T13",
+  "date": "2026-11-05",
+  "scope": "HarmonyOS signed installation, UI flow and local persistence verification",
+  "device": {
+    "model": "ADY-AL10",
+    "productName": "HUAWEI Pura 70",
+    "system": "ADY-AL10 7.0.0.109(SP6C00E105R5P2)",
+    "api": 26,
+    "abi": "arm64-v8a"
+  },
+  "signedHap": {
+    "artifact": "client/entry/build/default/outputs/default/entry-default-signed.hap",
+    "bytes": 671647,
+    "sha256": "d93b8add3d91e505c8b64df4ce759b09bbf9f9cc69cc95f1d3b836c12489ca38",
+    "installResult": "install bundle successfully",
+    "provisionType": "debug"
+  },
+  "extraction": {
+    "mode": "deterministic-contract-mock",
+    "realModelCalled": false,
+    "reason": "Configured DeepSeek key was rejected by the provider with HTTP 401"
+  },
+  "passed": [
+    "Signed debug HAP built and installed on HarmonyOS API 26 device",
+    "Application cold-started and rendered the shared ArkUI-X page",
+    "Gateway settings were entered through the native UI",
+    "Notice extraction draft displayed source, title, course, channel, date and time",
+    "Cancel retained raw text and created no task",
+    "Confirmation saved Notice, Task and ChecklistItem and displayed revision 1",
+    "Force-stop and cold start produced a new application process",
+    "Second confirmed save after restart displayed revision 2, proving prior snapshot recovery",
+    "With the mock gateway stopped, the network error was shown and no new draft was created"
+  ],
+  "savedSnapshotChecks": {
+    "finalRevision": 2,
+    "notices": 2,
+    "tasks": 2,
+    "checklistItems": 4,
+    "taskStatus": "todo",
+    "deadlinePrecision": "exact",
+    "networkFailureRevisionUnchanged": true
+  },
+  "realModelBlock": {
+    "errorCode": "MODEL_ERROR",
+    "providerHttpStatus": 401,
+    "providerMeaning": "API key invalid"
+  },
+  "screenshots": [
+    "docs/images/t13/harmony-draft.jpeg",
+    "docs/images/t13/harmony-saved.jpeg",
+    "docs/images/t13/harmony-network-error.jpeg"
+  ],
+  "notClaimed": [
+    "HarmonyOS real-model extraction",
+    "T13 final acceptance",
+    "PR review"
+  ]
+}
