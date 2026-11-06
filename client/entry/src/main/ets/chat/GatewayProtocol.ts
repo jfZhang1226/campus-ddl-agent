@@ -88,7 +88,7 @@ export function decodeTurn(response: GatewayResponse): TurnResult {
   if (typeof text !== 'string' || text.trim().length === 0) {
     return new TurnResult('', 'INVALID_RESPONSE', requestId);
   }
-  return new TurnResult(text, '', requestId);
+  return new TurnResult(text, '', requestId, reply.type === 'clarification' ? 'clarification' : 'answer');
 }
 
 function isGatewayError(code: string): boolean {

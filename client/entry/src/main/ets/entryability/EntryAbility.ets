@@ -7,6 +7,7 @@ import { chatOwner } from '../chat/ChatOwner';
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam) {
+    chatOwner.get(this.context.filesDir);
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
   }
 

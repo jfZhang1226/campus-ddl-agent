@@ -1,0 +1,65 @@
+{
+  "recordedAt": "2026-11-06",
+  "sourceCommit": "d3e4fd91a0b405b7c11694165cd95d58c7695990",
+  "bothNewInteractionDeviceValidationsComplete": true,
+  "androidEvidence": "t11-p2-android-device-20261106.json",
+  "harmonyEvidence": "t11-p2-harmony-device-20261106.json",
+  "sameSourceAndSignedUnsignedBytecodeVerified": true,
+  "all101ClientSourcesUnchanged": true,
+  "sharedPassedInteractions": [
+    "settled failure permits readonly list/detail while runtime content stays",
+    "cancel keeps unsaved input/reply",
+    "confirmed new abandons runtime only and does not send",
+    "empty input with unsaved reply still requires confirmation",
+    "confirmed switch appends only to selected conversation",
+    "force-stop/no-process/new-PID and no-default-network offline read",
+    "abandoned unsaved reply is not falsely claimed saved or automatically resent"
+  ],
+  "faultCoverage": {
+    "android": "persistent native file write failure in a verified artificial tmp directory",
+    "harmony": "persistent VERSION_CONFLICT through two deliberate external artificial revision advances"
+  },
+  "syntheticHttpRequests": {
+    "android": 2,
+    "harmony": 2
+  },
+  "realModelCalls": 0,
+  "preexistingCampusFilesByteIdentical": {
+    "android": 102,
+    "harmony": 106
+  },
+  "namespaceFilesByteIdenticalAcrossColdOffline": {
+    "android": 13,
+    "harmony": 15
+  },
+  "originalNetworksAndOtherUsbMappingsRestored": true,
+  "testFixturePortsClosed": true,
+  "comparisons": [
+    {
+      "session": "target",
+      "businessFieldsEqualExcludingIdsAndAuditTimes": true,
+      "androidRevision": 3,
+      "harmonyRevision": 3,
+      "revisionExplanation": "equal",
+      "messages": 2
+    },
+    {
+      "session": "work",
+      "businessFieldsEqualExcludingIdsAndAuditTimes": true,
+      "androidRevision": 2,
+      "harmonyRevision": 4,
+      "revisionExplanation": "Harmony deliberately advanced this artificial file twice to induce persistent version conflict; Android used a native I/O fault.",
+      "messages": 1
+    }
+  ],
+  "limits": [
+    "synthetic HTTP; no production model/gateway or business task execution",
+    "fault mechanisms differ by platform; do not claim identical native I/O faults or work revision",
+    "host-only additional tmp-only/conflict/stale/late/read-failure branches remain scoped to host",
+    "no simulated true disk-full, power-loss or hardware failure; T16/T17/T30 separate",
+    "independent review/CI/final acceptance remain separate"
+  ],
+  "thisFixPushed": false,
+  "githubReplyPublished": false,
+  "merged": false
+}
