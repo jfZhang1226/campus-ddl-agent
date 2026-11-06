@@ -70,6 +70,8 @@ export class HistoryViewState {
   confirmDraft: string = '';
   confirmSessionId: string = '';
   confirmTarget: string = '';
+  confirmUnsaved: boolean = false;
+  confirmToken: string = '';
 }
 
 /** Page navigation is read-only. Only explicit continuation delegates to the one chat owner. */
@@ -129,9 +131,10 @@ export class HistoryController {
     if (!this.available() || (action === 'open' && id.length === 0)) return false;
     const chat: ChatState = this.chat.snapshot();
     if (action === 'open' && chat.sessionId === id && chat.historyReady) return this.showChat();
-    if (chat.draft.length > 0) {
+    if (chat.draft.length > 0 || chat.savePending) {
       this.state.confirmation = action; this.state.confirmTarget = id;
       this.state.confirmDraft = chat.draft; this.state.confirmSessionId = chat.sessionId;
+      this.state.confirmUnsaved = chat.savePending; this.state.confirmToken = chat.navigationToken;
       this.state.notice = ''; this.state.error = ''; this.publish(); return false;
     }
     return this.commit(action, id, false);
@@ -147,20 +150,23 @@ export class HistoryController {
     const chat: ChatState = this.chat.snapshot();
     const action: string = this.state.confirmation;
     const target: string = this.state.confirmTarget;
-    const unchanged: boolean = chat.draft === this.state.confirmDraft && chat.sessionId === this.state.confirmSessionId;
+    const saveToken: string = this.state.confirmUnsaved ? this.state.confirmToken : '';
+    const unchanged: boolean = chat.draft === this.state.confirmDraft && chat.sessionId === this.state.confirmSessionId &&
+      chat.savePending === this.state.confirmUnsaved && chat.navigationToken === this.state.confirmToken;
     this.clearConfirmation();
     if (!unchanged) {
-      this.state.notice = '当前输入或会话已变化，请重新选择并确认。'; this.publish(); return false;
+      this.state.notice = '当前输入、会话或保存状态已变化，请重新选择并确认。'; this.publish(); return false;
     }
     if (!this.available()) return false;
-    return this.commit(action, target, true);
+    return this.commit(action, target, true, saveToken);
   }
 
-  private async commit(action: string, id: string, discard: boolean): Promise<boolean> {
+  private async commit(action: string, id: string, discard: boolean, saveToken: string = ''): Promise<boolean> {
     const request: number = ++this.generation;
     this.state.switching = true; this.state.error = ''; this.state.notice = ''; this.publish();
     try {
-      const success: boolean = action === 'new' ? this.chat.newConversation(discard) : await this.chat.openHistory(id, discard);
+      const success: boolean = action === 'new' ? this.chat.newConversation(discard, saveToken) :
+        await this.chat.openHistory(id, discard, saveToken);
       if (!this.current(request)) return false;
       if (success) {
         this.state.page = 'chat'; this.state.detail = null; this.state.messages = []; this.state.selectedId = '';
@@ -176,7 +182,7 @@ export class HistoryController {
   private available(): boolean {
     if (this.disposed || this.state.switching || this.state.loading || this.state.confirmation.length > 0) return false;
     const chat: ChatState = this.chat.snapshot();
-    if (chat.busy || chat.savePending || chat.historyLoading) {
+    if (chat.busy || chat.historyLoading || (chat.savePending && !chat.canAbandonSave)) {
       this.state.notice = '请先结束当前请求或完成对话保存，再查看或切换会话。'; this.publish(); return false;
     }
     return true;
@@ -188,6 +194,7 @@ export class HistoryController {
   }
   private clearConfirmation(): void {
     this.state.confirmation = ''; this.state.confirmDraft = ''; this.state.confirmSessionId = ''; this.state.confirmTarget = '';
+    this.state.confirmUnsaved = false; this.state.confirmToken = '';
   }
   private current(request: number): boolean { return !this.disposed && this.generation === request; }
   private publish(): void { if (!this.disposed && this.listener !== undefined) this.listener(this.snapshot()); }

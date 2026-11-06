@@ -31,3 +31,4 @@ require.extensions['.ts'] = compile;
 require.extensions['.ets'] = compile;
 require('../tests/history/history.test.cjs');
 require('../tests/history/history-page.test.cjs');
+require('../tests/history/history-recovery.test.cjs');

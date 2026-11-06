@@ -19,7 +19,7 @@
 | calls | 必填数组，每项 `{id, action, params}`；params 必须是 JSON 对象 |
 | results | 必填数组，每项 `{id, action, params, success, data, errorCode, message}` |
 | toolName / toolResultSummary | string 或 null；兼容旧版的展示提示，不代替 calls/results |
-| status | 保留非空字符串校验；细分状态仍由 A/B/C 在 T11 前对齐，不推定工具成功 |
+| status | 保留非空字符串兼容校验；T11 新写状态与读取投影见文末当前约定，不推定工具成功 |
 | createdAt | 带偏移的时间字符串 |
 
 | type | role 与内容约束 |
@@ -95,3 +95,13 @@ T11 将实际聊天接入会话存储：用户消息保存后请求、回复保�
 ### T11 双端技术验证完成（2026-11-05）
 
 C 已完成正式列表/详情、切换/新建与输入确认；同源一加 Ace 3 和 Pura 70 的实际人工 HTTP 保存、只读历史、输入保护、无进程冷启动与无默认网络离线回看通过，文件字节保持，原网络恢复。隔离目录的真实文件替换失败/明确本地重试也通过；未使用真实模型、清除原数据、重放工具或扩展 T16/T30。实现仍为96ae184，之后只补文档/证据。详见 [T11 第6节](setup/T11-会话历史与恢复接入.md#6-同源双端真机技术验证2026-11-05)及 [设备摘要](setup/evidence/t11-device-validation-20261105.json)。不等同独立评审/CI/最终验收，继续暂不合并。
+
+## T11 当前状态与重试约定（2026-11-06，B 评审后）
+
+T11 新写消息使用 pending/completed/failed/stopped/interrupted；运行态 done 写为 completed。读取 pending 仅在界面投影为 interrupted，不写回、不自动请求。读取支持旧 done 和其他合法非空状态，不把 schema 收紧成封闭枚举；结构化工具记录原样保留。消息 status 只描述聊天记录阶段，工具结果看 results.success/errorCode，任务是否提交看实际业务结果，三者不能混同。
+
+恢复的末条未完成用户消息可回填输入；用户明确再次发送仍走 T10 单条 message，不附带此前多轮历史。retryRow 仅表示该条输入身份，不是 Agent 历史重放、operationId 或 T16 确认协议；T17 接入时需另定上下文、配对和重试规则。
+
+clarification 在客户端解码、持久化和回看中受支持，主机与双端人工 HTTP 已有覆盖；当前生产 `/api/model/turn` 并无独立 clarification 返回分支，T12 的 `/api/agent/extract-notice` 返回 draft，与它不同。不把人工服务/样例称为真实模型或生产网关支持，也不在 T11 扩展网关。
+
+2026-11-06 修正保存失败退出：只有读写/请求已结束的稳定失败才允许只读浏览；离开未保存会话必须可取消且绑定当前内容/保存尝试的确认。取消或目标读取失败保留内存回复和输入；明确放弃不写保存成功标记、不改旧文件、不处理 tmp 或自动发网关。完整 T30 恢复及新版页面真机结果独立记录，见 [T11 第8节](setup/T11-会话历史与恢复接入.md#8-b-评审-p2保存失败后的明确退出2026-11-06)。

@@ -89,12 +89,13 @@ test('a stale discard confirmation cannot erase text changed after the prompt', 
   assert.ok(p.snapshot().notice.includes('已变化')); assert.equal(p.snapshot().confirmation, '');
   assert.equal(h.transport.calls.length, 0);
 });
-test('requests and failed local saves block history navigation and new sessions', async t => {
+test('requests block navigation; a settled failed save allows read-only history and requires confirmation to leave', async t => {
   const h = await harness(t); await ready(h); const p = page(h, t), call = await pending(h);
   assert.equal(await p.showList(), false); assert.equal(await p.requestNew(), false);
   h.port.fail = 'replace:sessions/history-1.json'; call.resolve(wire()); await until(() => !h.controller.snapshot().busy);
-  assert.equal(h.controller.snapshot().savePending, true); assert.equal(await p.openDetail('history-1'), false);
+  assert.equal(h.controller.snapshot().savePending, true); assert.equal(await p.openDetail('history-1'), true);
   assert.equal(await p.requestNew(), false); assert.equal(h.controller.snapshot().messages.length, 2);
+  assert.equal(p.snapshot().confirmUnsaved, true); p.cancelConfirmation();
   assert.equal(await h.controller.retryHistorySave(), true); assert.equal(await p.showList(), true);
   assert.equal(h.transport.calls.length, 1);
 });

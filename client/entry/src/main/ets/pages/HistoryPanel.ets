@@ -7,6 +7,7 @@ export struct HistoryPanel {
   @Prop view: HistoryViewState = new HistoryViewState();
   @Prop activeSessionId: string = '';
   @Prop chatAvailable: boolean = true;
+  @Prop unsavedSave: boolean = false;
   onChat: () => void = () => {};
   onList: () => void = () => {};
   onDetail: (id: string) => void = (id: string) => {};
@@ -36,6 +37,10 @@ export struct HistoryPanel {
         Button('新对话').id('history-new-chat').fontSize(13).enabled(this.interactive()).onClick(() => this.onNew())
         Blank()
       }.width('100%')
+      if (this.unsavedSave) {
+        Text('当前对话尚未保存，输入和回复仍保留在内存。此处只显示已保存记录；可返回重试保存，离开当前对话需再次确认。')
+          .id('history-unsaved-notice').fontSize(12).fontColor('#A43B32').lineHeight(19)
+      }
     }.padding(18).width('100%').alignItems(HorizontalAlign.Start)
   }
 

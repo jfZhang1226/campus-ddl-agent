@@ -36,6 +36,9 @@ export class ChatState {
   historyReady: boolean = true;
   historyLoading: boolean = false;
   savePending: boolean = false;
+  canAbandonSave: boolean = false;
+  // Runtime-only identity for an explicit navigation confirmation, never persisted.
+  navigationToken: string = '';
   storageErrorCode: string = '';
   storageNotice: string = '';
   sessionId: string = '';

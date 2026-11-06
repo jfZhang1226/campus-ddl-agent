@@ -11,6 +11,7 @@ export class ChatController {
   private timer: number | undefined;
   private generation: number = 0;
   private saveSerial: number = 0;
+  private draftSerial: number = 0;
   private nextId: number = 0;
   private retryRow: string = '';
   private retryDraft: string = '';
@@ -41,6 +42,9 @@ export class ChatController {
     copy.historyReady = this.state.historyReady;
     copy.historyLoading = this.state.historyLoading;
     copy.savePending = this.state.savePending;
+    copy.canAbandonSave = copy.savePending && !copy.busy && !copy.historyLoading &&
+      this.state.storageErrorCode.length > 0;
+    copy.navigationToken = String(this.generation) + ':' + String(this.saveSerial) + ':' + String(this.draftSerial);
     copy.storageErrorCode = this.state.storageErrorCode;
     copy.storageNotice = this.state.storageNotice;
     copy.sessionId = this.state.sessionId;
@@ -64,25 +68,27 @@ export class ChatController {
     return request;
   }
 
-  openHistory(id: string, discardDraft: boolean = false): Promise<boolean> {
-    if (!this.canSwitch(discardDraft) || id.length === 0) return Promise.resolve(false);
+  openHistory(id: string, discardDraft: boolean = false, discardSaveToken: string = ''): Promise<boolean> {
+    if (!this.canSwitch(discardDraft, discardSaveToken) || id.length === 0) return Promise.resolve(false);
     return this.readHistory(id, discardDraft);
   }
 
   /** Explicit user action. An empty chat is not written until the first send. */
-  newConversation(discardDraft: boolean = false): boolean {
-    if (!this.canSwitch(discardDraft)) return false;
+  newConversation(discardDraft: boolean = false, discardSaveToken: string = ''): boolean {
+    if (!this.canSwitch(discardDraft, discardSaveToken)) return false;
     if (this.history !== undefined) this.history.fresh();
     this.state = new ChatState();
     this.state.configured = validateConfig(this.config).length === 0;
-    this.retryRow = ''; this.retryDraft = ''; this.pendingAnswer = false;
-    ++this.generation;
+    this.retryRow = ''; this.retryDraft = ''; this.pendingAnswer = false; this.answerDraft = '';
+    ++this.generation; ++this.saveSerial;
     this.publish();
     return true;
   }
 
-  private canSwitch(discardDraft: boolean): boolean {
-    if (this.disposed || this.state.busy || this.state.historyLoading || this.state.savePending) return false;
+  private canSwitch(discardDraft: boolean, discardSaveToken: string): boolean {
+    if (this.disposed || this.state.busy || this.state.historyLoading) return false;
+    if (this.state.savePending && (!discardDraft || !this.snapshot().canAbandonSave ||
+      discardSaveToken.length === 0 || discardSaveToken !== this.snapshot().navigationToken)) return false;
     if (!discardDraft && this.state.draft.length > 0) {
       this.state.storageNotice = '输入尚未发送，请先保留输入，再确认切换会话。';
       this.publish(); return false;
@@ -92,6 +98,7 @@ export class ChatController {
 
   private async readHistory(id: string, discardDraft: boolean = false): Promise<boolean> {
     if (this.history === undefined) return true;
+    const readyBefore: boolean = this.state.historyReady;
     this.state.historyLoading = true; this.state.historyReady = false;
     const draftBefore: string = this.state.draft;
     const generation: number = ++this.generation;
@@ -107,7 +114,7 @@ export class ChatController {
       const data: ChatHistorySnapshot = result.data;
       this.state.messages = data.messages;
       this.metadata(data);
-      this.state.historyReady = true; this.state.storageErrorCode = '';
+      this.state.historyReady = true; this.state.savePending = false; this.state.storageErrorCode = '';
       this.state.notice = ''; this.state.errorCode = ''; this.state.requestId = '';
       this.retryRow = ''; this.retryDraft = ''; this.pendingAnswer = false;
       // Do not erase text entered while the initial disk read was pending.
@@ -129,6 +136,8 @@ export class ChatController {
       return false;
     } finally {
       if (!this.disposed && generation === this.generation) {
+        // A failed target read must not abandon the original unsaved transcript or disable its local retry.
+        if (this.state.savePending) this.state.historyReady = readyBefore;
         this.state.historyLoading = false; this.loading = null; this.publish();
       }
     }
@@ -145,7 +154,12 @@ export class ChatController {
     return true;
   }
 
-  setDraft(value: string): void { if (!this.disposed) { this.state.draft = value; this.publish(); } }
+  setDraft(value: string): void {
+    if (!this.disposed) {
+      if (value !== this.state.draft) ++this.draftSerial;
+      this.state.draft = value; this.publish();
+    }
+  }
 
   send(): void {
     if (this.disposed || this.state.busy || !this.state.historyReady || this.state.savePending) return;
@@ -199,7 +213,8 @@ export class ChatController {
 
   /** Explicit retry of local persistence only; it never calls the gateway. */
   async retryHistorySave(): Promise<boolean> {
-    if (this.disposed || this.state.busy || !this.state.savePending || this.history === undefined) return false;
+    if (this.disposed || this.state.busy || this.state.historyLoading || !this.state.savePending ||
+      this.history === undefined) return false;
     const generation: number = this.generation;
     this.state.busy = true;
     const saved: boolean = await this.persist(true);

@@ -134,22 +134,29 @@ struct Index {
   }
 
   private historyAvailable(): boolean {
-    return !this.view.busy && !this.view.historyLoading && !this.view.savePending &&
+    return !this.view.busy && !this.view.historyLoading && (!this.view.savePending || this.view.canAbandonSave) &&
       !this.historyView.loading && !this.historyView.switching && this.historyView.confirmation.length === 0;
   }
 
   @Builder
   discardConfirmation() {
     Column({ space: 9 }) {
-      Text(this.historyView.confirmation === 'new' ? '清空当前输入并开始新对话？' : '清空当前输入并切换会话？')
+      Text(this.historyView.confirmUnsaved ?
+        (this.historyView.confirmation === 'new' ? '放弃未保存内容并开始新对话？' : '放弃未保存内容并切换会话？') :
+        (this.historyView.confirmation === 'new' ? '清空当前输入并开始新对话？' : '清空当前输入并切换会话？'))
         .fontSize(17).fontWeight(FontWeight.Bold).fontColor('#142C43')
-      Text('这段文字尚未发送。继续后会清空输入，已保存的对话会保留。').fontSize(13).fontColor('#617589').lineHeight(20)
-      Text(this.historyView.confirmDraft).fontSize(14).fontColor('#334155').maxLines(3)
-        .textOverflow({ overflow: TextOverflow.Ellipsis }).copyOption(CopyOptions.InApp)
+      Text(this.historyView.confirmUnsaved ?
+        '当前输入和未保存的消息或回复会丢失，请先复制需要的内容。已保存的文件会保留，待恢复内容不会自动处理。' :
+        '这段文字尚未发送。继续后会清空输入，已保存的对话会保留。').fontSize(13).fontColor('#617589').lineHeight(20)
+      if (this.historyView.confirmDraft.length > 0) {
+        Text(this.historyView.confirmDraft).fontSize(14).fontColor('#334155').maxLines(3)
+          .textOverflow({ overflow: TextOverflow.Ellipsis }).copyOption(CopyOptions.InApp)
+      }
       Row({ space: 12 }) {
-        Button('保留输入').id('history-cancel-discard').fontSize(13)
+        Button(this.historyView.confirmUnsaved ? '保留内容' : '保留输入').id('history-cancel-discard').fontSize(13)
           .onClick(() => { if (this.history !== null) this.history.cancelConfirmation(); })
-        Button('清空输入并继续').id('history-confirm-discard').fontSize(13).backgroundColor('#176766')
+        Button(this.historyView.confirmUnsaved ? '放弃未保存并继续' : '清空输入并继续')
+          .id('history-confirm-discard').fontSize(13).backgroundColor('#176766')
           .onClick(() => { if (this.history !== null) this.history.confirmDiscard(); })
       }.width('100%')
     }.padding(18).width('100%').alignItems(HorizontalAlign.Start).backgroundColor('#FFF4DD')
@@ -279,8 +286,11 @@ struct Index {
           Text(this.view.storageNotice).fontSize(12).lineHeight(18)
             .fontColor(this.view.storageErrorCode.length > 0 ? '#A43B32' : '#617589')
           if (this.view.storageErrorCode.length > 0 && this.view.savePending) {
-            Button('重试保存对话').enabled(!this.view.busy).fontSize(12)
+            Button('重试保存对话')
+              .enabled(!this.view.busy && !this.view.historyLoading && this.historyView.confirmation.length === 0).fontSize(12)
               .onClick(() => { chatOwner.get().retryHistorySave(); })
+            Button('放弃未保存并新建').id('history-abandon-save').enabled(this.view.canAbandonSave && this.historyAvailable())
+              .fontSize(12).onClick(() => { if (this.history !== null) this.history.requestNew(); })
           } else if (this.view.storageErrorCode.length > 0 && !this.view.historyReady) {
             Button('重试读取历史').enabled(!this.view.historyLoading).fontSize(12)
               .onClick(() => { chatOwner.get().initializeHistory(); })
@@ -333,7 +343,8 @@ struct Index {
       if (this.historyView.confirmation.length > 0) { this.discardConfirmation() }
       if (this.historyView.page !== 'chat') {
         HistoryPanel({ view: this.historyView, activeSessionId: this.view.sessionId,
-          chatAvailable: !this.view.busy && !this.view.savePending && !this.view.historyLoading,
+          chatAvailable: !this.view.busy && !this.view.historyLoading && (!this.view.savePending || this.view.canAbandonSave),
+          unsavedSave: this.view.savePending,
           onChat: () => { if (this.history !== null) this.history.showChat(); },
           onList: () => { if (this.history !== null) this.history.showList(); },
           onDetail: (id: string) => { if (this.history !== null) this.history.openDetail(id); },
