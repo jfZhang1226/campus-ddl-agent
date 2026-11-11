@@ -1,0 +1,150 @@
+{
+  "recordedAt": "2026-11-05",
+  "task": "T11",
+  "sourceCommit": "96ae184d7c18f2197994bc166820b024bd51030d",
+  "android": {
+    "answerSaved": true,
+    "newCancelAndConfirm": true,
+    "switchCancelAndConfirm": true,
+    "appendToSelectedOnly": true,
+    "readOnlyStructuredAndV1": true,
+    "unreadableDetailAndRetry": true,
+    "pendingForceStopConfirmed": true,
+    "noDefaultNetworkConfirmed": true,
+    "forceStopAndNewProcessConfirmed": true,
+    "pendingRestoredAndConfigNotPersisted": true,
+    "formalOfflineListAndDetailPassed": true,
+    "allFormalFilesByteIdenticalAfterColdAndOfflineRead": true,
+    "noAutomaticRequestsOrToolExecution": true,
+    "formalSessionCount": 6,
+    "formalPrimaryAndBackupFiles": 9,
+    "networkSettingsRestored": true,
+    "platform": "Android",
+    "model": "PJE110",
+    "api": 36,
+    "sourceCommit": "96ae184d7c18f2197994bc166820b024bd51030d",
+    "installedApkMatches": true,
+    "installedApkSha256": "0748456c81eb7ee76f30a153ebf9cea2e663f74d1f531c2fe002e018af75f233",
+    "controlledRealFileFailureAndLocalRetryPassed": true,
+    "diagnosticWriteChecks": [
+      "通过：真实文件替换失败保留旧记录、回复和输入",
+      "通过：明确重试只保存对话，不重发请求",
+      "通过：回答与追问分别保存",
+      "通过：保留待中断的独立会话"
+    ],
+    "diagnosticReadChecks": [
+      "通过：重开读取完整会话",
+      "通过：未完成请求仍是原始记录",
+      "通过：恢复界面标中断且没有自动请求",
+      "通过：读取不改报告文件"
+    ],
+    "preexistingCampusDataFilesUnchanged": 89,
+    "formalFilesUnchangedAfterDiagnostic": true,
+    "testUsbForwardRemoved": true,
+    "realModelCalls": 0,
+    "syntheticHttpRequests": 5,
+    "oldApkBackedUp": true,
+    "dataCleared": false,
+    "oldApkRestored": false,
+    "interruptedAttemptsExcluded": true
+  },
+  "harmony": {
+    "answerSaved": true,
+    "newCancelAndConfirm": true,
+    "switchCancelAndConfirm": true,
+    "appendToSelectedOnly": true,
+    "readOnlyStructuredAndV1": true,
+    "unreadableDetailAndRetry": true,
+    "pendingForceStopConfirmed": true,
+    "wifiInactiveConfirmed": true,
+    "noDefaultNetworkConfirmed": true,
+    "forceStopAndNewProcessConfirmed": true,
+    "pendingRestoredAndConfigNotPersisted": true,
+    "formalOfflineListAndDetailPassed": true,
+    "allFormalNamespaceFilesByteIdenticalAfterColdAndOfflineRead": true,
+    "noAutomaticRequestsOrToolExecution": true,
+    "formalSessionCount": 6,
+    "formalNamespaceFiles": 11,
+    "wifiStateRestored": true,
+    "originalWifiConnectionRestored": true,
+    "otherNetworkTogglesChanged": false,
+    "platform": "HarmonyOS",
+    "model": "ADY-AL10",
+    "api": 26,
+    "system": "OpenHarmony-7.0.0.105",
+    "sourceCommit": "96ae184d7c18f2197994bc166820b024bd51030d",
+    "controlledRealFileFailureAndLocalRetryPassed": true,
+    "diagnosticWriteChecks": [
+      "通过：真实文件替换失败保留旧记录、回复和输入",
+      "通过：明确重试只保存对话，不重发请求",
+      "通过：回答与追问分别保存",
+      "通过：保留待中断的独立会话"
+    ],
+    "diagnosticReadChecks": [
+      "通过：重开读取完整会话",
+      "通过：未完成请求仍是原始记录",
+      "通过：恢复界面标中断且没有自动请求",
+      "通过：读取不改报告文件"
+    ],
+    "preexistingCampusDataFilesUnchanged": 93,
+    "formalFilesUnchangedAfterDiagnostic": true,
+    "testReversePortRemoved": true,
+    "realModelCalls": 0,
+    "syntheticHttpRequests": 6,
+    "oldDataBackedUp": true,
+    "dataCleared": false,
+    "oldPackageRestored": false,
+    "signedHapSha256": "6ccd2772622eafd5de7dee4c2f88814a7acb0aeb45e61424ae86506835f7e321"
+  },
+  "signedHarmonyPreparation": {
+    "sourceCommit": "96ae184d7c18f2197994bc166820b024bd51030d",
+    "unchangedClientFiles": 100,
+    "privateSigningOnly": true,
+    "repositorySigningConfigsEmpty": true,
+    "bytecodeMatchesUnsigned": true,
+    "signedHap": {
+      "file": "T11-pages-Harmony-signed-20261105.hap",
+      "bytes": 665347,
+      "sha256": "6ccd2772622eafd5de7dee4c2f88814a7acb0aeb45e61424ae86506835f7e321"
+    },
+    "newLoginOrDeviceRegistration": false
+  },
+  "crossDeviceComparisons": [
+    {
+      "case": "first",
+      "revision": 6,
+      "messages": 6,
+      "normalizedFieldsEqual": true
+    },
+    {
+      "case": "second",
+      "revision": 2,
+      "messages": 2,
+      "normalizedFieldsEqual": true
+    },
+    {
+      "case": "pending",
+      "revision": 1,
+      "messages": 1,
+      "normalizedFieldsEqual": true
+    }
+  ],
+  "v1AndStructuredFixturesByteIdenticalToRepositoryAndAcrossDevices": true,
+  "credentialsAndUnsentInputNotPersisted": true,
+  "allRuntimeSourceUnchanged": true,
+  "clientSourceFiles": 101,
+  "formalPagesImplementedBy": "C",
+  "waitingForAImplementation": false,
+  "independentReviewCompleted": false,
+  "finalAcceptanceCompleted": false,
+  "pushed": false,
+  "merged": false,
+  "limits": [
+    "Synthetic HTTP fixture and diagnostic data, no real model or business commits",
+    "Only the recorded two devices/API combinations",
+    "Controlled missing-file failure is not hardware/power-loss testing",
+    "Tmp-only recovery, deletion and proposal cleanup remain T30",
+    "Interrupted harness attempts excluded; final successful cases and exact file bytes audited",
+    "Both devices retain T11 test packages; prior data backed up, no uninstall or data clearing"
+  ]
+}

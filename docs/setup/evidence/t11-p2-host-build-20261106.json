@@ -1,0 +1,86 @@
+{
+  "recordedAt": "2026-11-06",
+  "sourceCommit": "d3e4fd91a0b405b7c11694165cd95d58c7695990",
+  "parentCommit": "8732b7eed1676e1231c19ac9b93e98aa94c6d0e7",
+  "baseMain": "808fc7e3dc5139a470d948472b10e2a8725cd34d",
+  "branch": "feat/c-t11-session-history",
+  "pullRequest": "https://github.com/jfZhang1226/campus-ddl-agent/pull/14",
+  "sourceArchiveSha256": "2f67aec842c0c777caa7152eda61d1762d9ae265ee2c7efaddcd6bd945d9c822",
+  "clientSourceFiles": 101,
+  "allClientSourcesUnmodifiedDuringBuild": true,
+  "trackedSigningConfigsEmpty": true,
+  "tests": {
+    "history": 66,
+    "additionalRecoveryAndCompatibilityCases": 16,
+    "strictTsFiles": 25,
+    "chat": 29,
+    "storage": 106,
+    "tasks": 85
+  },
+  "behavior": [
+    "settled save failure permits read-only history with all runtime content retained",
+    "cancelable content-bound confirmation before abandoning unsaved messages or replies",
+    "input edits and save retries invalidate prior confirmation",
+    "in-flight requests/reads/writes remain guarded",
+    "failed target read retains local-save retry",
+    "no automatic gateway retry, tool replay, conflict overwrite, tmp promotion or deletion"
+  ],
+  "harmonyBuild": {
+    "command": "devecocli build",
+    "success": true,
+    "tasksExecuted": 66,
+    "tasksUpToDate": 0,
+    "signed": false
+  },
+  "androidBuild": {
+    "command": "ace build apk --debug --target-platform arm64",
+    "success": true,
+    "gradleTasksExecuted": 32,
+    "gradleTasksUpToDate": 0,
+    "hvigorTaskPasses": [
+      {
+        "executed": 3,
+        "upToDate": 10
+      },
+      {
+        "executed": 3,
+        "upToDate": 10
+      }
+    ],
+    "nativeAdapterLibraries": 9,
+    "httpPluginDex": true,
+    "apkSignatureV2Verified": true,
+    "packageName": "com.campusddl.agent",
+    "minSdk": 26,
+    "targetSdk": 33,
+    "abi": "arm64-v8a"
+  },
+  "compiledNewConfirmationAndExitSymbolsVerified": true,
+  "artifacts": [
+    {
+      "file": "T11-P2-Harmony-unsigned-20261106.hap",
+      "bytes": 637498,
+      "sha256": "29069ab3b280947901c194fbde93007f3468cf59ee115644d12da1d8d4987595"
+    },
+    {
+      "file": "T11-P2-Android-20261106.apk",
+      "bytes": 51017227,
+      "sha256": "2f7465c9d0d3a068dd0a83c4c489abd11b308bf99898e1e98d9ffc8857dd6d06"
+    }
+  ],
+  "changedSourceTextScanned": 10,
+  "noNewSecretPattern": true,
+  "deviceValidationForThisFixPerformed": false,
+  "realModelCalls": 0,
+  "thisFixPushed": false,
+  "githubReplyPublished": false,
+  "merged": false,
+  "limits": [
+    "updated formal UI/touch and device fault-recovery flow require both phones",
+    "prior dual-device validation binds source96ae184, not this fix",
+    "Harmony HAP unsigned until existing authorized signing configuration is reused outside repo",
+    "a genuinely unwritable disk may still reject future saves after explicitly leaving",
+    "T30 recovery/deletion and T16/T17 agent semantics remain separate",
+    "no new CI result, independent review or final acceptance claimed"
+  ]
+}

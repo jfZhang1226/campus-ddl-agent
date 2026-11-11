@@ -1,13 +1,25 @@
 import { ArkGatewayTransport } from '../adapters/ArkGatewayTransport';
 import { ChatController } from './ChatController';
+import { SystemChatClock } from './ChatModels';
+import { StoredChatHistory } from './StoredChatHistory';
+import { getClientStorage } from '../data/ClientStorage';
+import { StorageFailure } from '../data/storage/StorageTypes';
 
-// Runtime-only owner. T11 will connect the reviewed conversation store through this boundary.
+// Runtime credentials stay in memory; history uses the one application storage owner.
 class ChatOwner {
   private controller: ChatController | undefined;
+  private filesDir: string = '';
 
-  get(): ChatController {
+  get(filesDir?: string): ChatController {
     if (this.controller === undefined) {
-      this.controller = new ChatController(new ArkGatewayTransport());
+      if (filesDir === undefined) throw new StorageFailure('INVALID_ARGUMENT', '请先初始化应用会话目录。');
+      this.filesDir = filesDir;
+      this.controller = new ChatController(new ArkGatewayTransport(), new SystemChatClock(),
+        new StoredChatHistory(getClientStorage(filesDir).history));
+      this.controller.initializeHistory();
+    }
+    if (filesDir !== undefined && filesDir !== this.filesDir) {
+      throw new StorageFailure('INVALID_ARGUMENT', '运行中不能切换会话目录。');
     }
     return this.controller;
   }
@@ -28,6 +40,7 @@ class ChatOwner {
     if (this.controller !== undefined) {
       this.controller.dispose();
       this.controller = undefined;
+      this.filesDir = '';
     }
   }
 }
