@@ -1,0 +1,83 @@
+{
+  "recordedAt": "2026-11-11",
+  "task": "T16",
+  "sourceCommit": "3f02e4ae868e8d219c40f429d9ac7910cbfd1b36",
+  "device": {
+    "model": "ADY-AL10 / Pura70",
+    "system": "OpenHarmony7.0.0.105",
+    "api": 26
+  },
+  "signedHapSha256": "673b44467ba49f47737d88325b1e943687f3d36493b992badde82b8c88c6cf8e",
+  "officialCliInstallAndRunSucceeded": true,
+  "bytecodeEqualUnsignedBuild": true,
+  "sourceFilesRestoredToFixed106": true,
+  "newLoginOrDeviceRegistration": false,
+  "checks": {
+    "pendingForceStopRestartNoAutoApply": true,
+    "pendingReadFileBytesUnchanged": true,
+    "explicitCancelNoTasksOrOperations": true,
+    "cancelledColdBytesUnchanged": true,
+    "foreignRevisionAdvanceBlockedConfirmation": true,
+    "conflictPrimaryBytesUnchangedAfterConfirm": true,
+    "staleProposalExplicitlyCancelled": true,
+    "screenExplicitConfirm": true,
+    "controlledNativeReplaceFailureChecked": true,
+    "sameOperationExplicitRetryCommittedOnce": true,
+    "singleSnapshotTaskProposalAndReceipt": true,
+    "readOnlyReplaySameReceiptAndAllFileBytes": true,
+    "noDefaultNetworkConfirmed": true,
+    "newProcessConfirmed": true,
+    "offlineOldOperationReplayPassed": true,
+    "allT16FileBytesUnchangedAcrossColdAndOffline": true,
+    "originalWifiStateRestored": true,
+    "originalWifiConnectionRestored": true,
+    "originalDefaultNetworkPresenceRestored": true,
+    "usbMappingsUnchanged": true,
+    "appForceStoppedAfterValidation": true
+  },
+  "businessResults": {
+    "cancelledRevision": 2,
+    "staleCancelledRevision": 3,
+    "appliedSnapshotRevision": 3,
+    "receiptCommittedRevision": 2,
+    "receiptExpectedRevision": 1,
+    "taskCount": 2,
+    "operationCount": 1,
+    "affectedTaskCount": 1,
+    "secondTaskPurpose": "Independent T14 write to prove replay after later revision"
+  },
+  "dataProtection": {
+    "backupFiles": 110,
+    "preexistingCampusFilesCompared": 110,
+    "preexistingCampusFilesByteIdentical": true,
+    "preexistingFormalNamespaceFilesCompared": 15,
+    "newFiles": 10,
+    "newNamespaces": 3,
+    "indexFiles": 1,
+    "allNewFilesConfinedToFreshArtificialNamespaces": true,
+    "allT16FilesColdOfflineByteIdentical": true,
+    "testPackageAndDataRetained": true,
+    "uninstallOrDataClear": false
+  },
+  "network": {
+    "originalWifiInactiveAndNoDefault": true,
+    "allOriginalNetworkStatesPreserved": true,
+    "networkTogglesChanged": false,
+    "syntheticHttpRequests": 0,
+    "realModelCalls": 0,
+    "newUsbMappings": 0,
+    "existingUsbMappingsUnchanged": true
+  },
+  "limits": [
+    "Isolated synthetic diagnostic UI, not formal T13/T17 integration or real model execution",
+    "Device case creates one target task plus one unrelated control task; batch notice import and update matrix are host coverage",
+    "A diagnostic button explicitly drives the fault and same-request retry calls; no formal production failure/retry UI is exercised",
+    "Controlled native missing-source replacement failure, not physical disk-full/power-loss/hardware-failure evidence",
+    "Device version mismatch blocked confirmation and preserved bytes, but UI exposes generic diagnostic failure; exact VERSION_CONFLICT is host evidence",
+    "Full concurrency/authorization/lost-acknowledgement/corruption matrix is host coverage, not all induced on this phone",
+    "Independent A/B review, CI, formal integration and project final acceptance remain pending"
+  ],
+  "pushed": false,
+  "prCreated": false,
+  "merged": false
+}
