@@ -53,6 +53,10 @@ export class NoticeImportController {
   private listener: ((state: NoticeImportState) => void) | undefined;
   private active: NoticeExtractionCall | undefined;
   private generation: number = 0;
+  private edited: string[] = [];
+  private sourceEdited: boolean = false;
+  private publishedEdited: boolean = false;
+  private materialsEdited: boolean = false;
 
   constructor(transport: NoticeExtractionTransport, writer: NoticeImportWriter) {
     this.transport = transport;
@@ -131,12 +135,14 @@ export class NoticeImportController {
   setSourceLabel(value: string): void {
     if (this.busy()) return;
     this.state.sourceLabel = value;
+    this.sourceEdited = true;
     this.publish();
   }
 
   setPublishedAt(value: string): void {
     if (this.busy()) return;
     this.state.publishedAt = value;
+    this.publishedEdited = true;
     this.publish();
   }
 
@@ -163,6 +169,7 @@ export class NoticeImportController {
       case 'channel': this.state.submissionChannel = value; break;
       default: return;
     }
+    if (!this.edited.includes(field)) this.edited.push(field);
     this.state.errorCode = '';
     this.state.notice = '';
     this.publish();
@@ -171,18 +178,21 @@ export class NoticeImportController {
   setMaterial(index: number, value: string): void {
     if (this.busy() || index < 0 || index >= this.state.materials.length) return;
     this.state.materials[index] = value;
+    this.materialsEdited = true;
     this.publish();
   }
 
   addMaterial(): void {
     if (this.busy() || this.state.draft === null || this.state.phase === 'saved') return;
     this.state.materials.push('');
+    this.materialsEdited = true;
     this.publish();
   }
 
   removeMaterial(index: number): void {
     if (this.busy() || index < 0 || index >= this.state.materials.length) return;
     this.state.materials.splice(index, 1);
+    this.materialsEdited = true;
     this.publish();
   }
 
@@ -211,6 +221,9 @@ export class NoticeImportController {
     request.sourceLabel = this.nullable(this.state.sourceLabel);
     request.publishedAt = this.nullable(this.state.publishedAt);
     request.timezone = this.state.timezone;
+    // Return the original model draft and cumulative explicit answers; never replace the source text.
+    request.draft = this.state.draft === null ? null : cloneNoticeDraft(this.state.draft);
+    request.answers = this.extractionAnswers();
     try {
       const call: NoticeExtractionCall = this.transport.start(this.config, request);
       this.active = call;
@@ -331,6 +344,7 @@ export class NoticeImportController {
       this.publish();
       return;
     }
+    const previous: NoticeImportState = this.snapshot();
     this.state.draft = result.draft;
     this.state.title = result.draft.task.title;
     this.state.course = result.draft.task.course === null ? '' : result.draft.task.course;
@@ -363,6 +377,39 @@ export class NoticeImportController {
     this.state.questions = result.draft.clarification.map((item) => item.question);
     this.state.sourceLabel = result.draft.notice.sourceLabel === null ? '' : result.draft.notice.sourceLabel;
     this.state.publishedAt = result.draft.notice.publishedAt === null ? '' : result.draft.notice.publishedAt;
+    // The endpoint does not accept material/priority/effort answers. Preserve those explicit client edits too.
+    for (const field of this.edited) {
+      switch (field) {
+        case 'title': this.state.title = previous.title; break;
+        case 'course': this.state.course = previous.course; break;
+        case 'kind': this.state.kind = previous.kind; break;
+        case 'channel': this.state.submissionChannel = previous.submissionChannel; break;
+        case 'priority': this.state.priority = previous.priority; break;
+        case 'remaining': this.state.remainingMinutes = previous.remainingMinutes; break;
+        default: break;
+      }
+    }
+    if (this.edited.some((field: string) => ['precision', 'date', 'time'].includes(field))) {
+      this.state.deadlinePrecision = previous.deadlinePrecision;
+      this.state.deadlineDate = previous.deadlineDate;
+      this.state.deadlineTime = previous.deadlineTime;
+      this.state.originalDueAt = previous.originalDueAt;
+    }
+    if (this.sourceEdited) this.state.sourceLabel = previous.sourceLabel;
+    if (this.publishedEdited) this.state.publishedAt = previous.publishedAt;
+    if (this.materialsEdited) this.state.materials = previous.materials.slice();
+    // Recompute only the two established clarification fields after applying local edits.
+    this.state.missingFields = [];
+    this.state.questions = [];
+    if (this.state.title.trim().length === 0) {
+      this.state.missingFields.push('title');
+      this.state.questions.push('这份通知对应什么任务？请补充标题。');
+    }
+    if (this.state.deadlinePrecision === 'unknown') {
+      this.state.missingFields.push('deadline');
+      const question = result.draft.clarification.find((item) => item.field === 'deadline');
+      this.state.questions.push(question === undefined ? '截止日期暂不确定，可先保留为待补充。' : question.question);
+    }
     this.state.phase = 'idle';
     this.state.errorCode = '';
     this.state.notice = result.degraded ?
@@ -397,6 +444,27 @@ export class NoticeImportController {
     draft.missingFields = [];
     draft.clarification = [];
     return draft;
+  }
+
+  private extractionAnswers(): Object[] {
+    const answers: Object[] = [];
+    for (const field of this.edited) {
+      switch (field) {
+        case 'title': answers.push({ field: 'title', value: this.state.title }); break;
+        case 'course': answers.push({ field: 'course', value: this.nullable(this.state.course) }); break;
+        case 'kind': answers.push({ field: 'kind', value: this.nullable(this.state.kind) }); break;
+        case 'channel': answers.push({ field: 'submissionChannel', value: this.nullable(this.state.submissionChannel) }); break;
+        default: break;
+      }
+    }
+    if (this.sourceEdited) answers.push({ field: 'sourceLabel', value: this.nullable(this.state.sourceLabel) });
+    if (this.publishedEdited) answers.push({ field: 'publishedAt', value: this.nullable(this.state.publishedAt) });
+    if (this.edited.some((field: string) => ['precision', 'date', 'time'].includes(field))) {
+      const deadline: string | null = this.state.deadlinePrecision === 'date_only' ?
+        this.state.deadlineDate : (this.state.deadlinePrecision === 'exact' ? this.dueAt() : null);
+      answers.push({ field: 'deadline', value: deadline });
+    }
+    return answers;
   }
 
   private validateDraft(draft: NoticeDraft): string {
@@ -452,6 +520,10 @@ export class NoticeImportController {
   }
 
   private clearDraft(clearRawText: boolean): void {
+    this.edited = [];
+    this.materialsEdited = false;
+    this.sourceEdited = false;
+    this.publishedEdited = false;
     this.state.draft = null;
     this.state.title = '';
     this.state.course = '';

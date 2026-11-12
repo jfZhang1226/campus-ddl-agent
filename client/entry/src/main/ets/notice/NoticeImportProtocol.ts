@@ -107,6 +107,7 @@ export function noticeErrorText(code: string): string {
     case 'INVALID_RESPONSE': return '模型返回的草案格式不符合约定，原文和当前填写已保留。';
     case 'VERSION_CONFLICT': return '本地数据在确认前发生变化；草案和修改已保留，请重新读取本地版本后再次确认。';
     case 'STORAGE_FAILED': return '未能保存，草案和原文已保留；请检查本地存储后重试。';
+    case 'COMMIT_UNAVAILABLE': return '正式保存暂未接通，草案和材料仍保留。';
     case 'TIMEOUT': return '等待模型超时，原文已保留，可稍后手动重试。';
     case 'NETWORK': return '无法连接网关，请检查网络、地址和服务后重试。';
     case 'CANCELLED': return '已停止等待，原文和当前填写已保留。';
