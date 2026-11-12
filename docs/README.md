@@ -131,6 +131,10 @@ T12 只产出草案，不写业务快照、不生成保存期字段；正式保�
 
 T16当前任务分支的[接口与验证说明](setup/T16-幂等提交与业务快照.md)、[主机构建摘要](setup/evidence/t16-host-build-20261111.json)和[双端实际文件对照](setup/evidence/t16-device-comparison-20261111.json)记录幂等回执、受信确认、版本冲突与一次业务快照提交；同源Android/鸿蒙隔离真机已验证确认/取消、受控失败/重试、冷启动/离线与106/110份旧文件保持。现按授权发布原分支供A/B评审，正式页面/Agent及最终验收另行推进，暂不合并。
 
+## D 的 T19 本机集成候选
+
+[原文与语音草案入口](../probes/harmony-noticechat/README.md)、[本轮验证](setup/T19-notice-interaction-validation.md)和[脱敏摘要](setup/evidence/t19-interaction-validation-20261112.json)记录本机合入T13/T16候选后的D增量：原文直接提取、累计修改保留、取消和语音组合。178项主机/导出检查及API26未签名构建通过，未安装或调用真实模型；材料一致提交的[接口缺口](setup/T19-material-commit-handoff.md)尚未补齐，独立导出明确禁用正式保存。候选依赖未合并，不作为T19全闭环或组员批准。
+
 ## 维护约定
 
 - 后续在本仓库的 `docs/` 中维护现行文档，通过任务分支和 PR 对齐修改。
