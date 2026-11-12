@@ -1,0 +1,72 @@
+{
+  "sourceCommit": "300ab3c1f37188520e9776d058a82697b1e06dca",
+  "baseMain": "808fc7e3dc5139a470d948472b10e2a8725cd34d",
+  "branch": "feat/c-t11-session-history",
+  "clientSourceFiles": 99,
+  "allSourceUnmodified": true,
+  "trackedClientSigningConfigsEmpty": true,
+  "compiledHistorySymbols": true,
+  "apkRequiredLibraries": 9,
+  "httpPluginDex": true,
+  "sourceArchiveSha256": "d99df273d6a76e852e125dbd5f03bb88731f6655367be86f55378da6b5f9bf2c",
+  "tests": {
+    "history": 36,
+    "historyStrictTsFiles": 24,
+    "chat": 29,
+    "storage": 106,
+    "task": 85,
+    "historyTestSha256Lf": "b01f7a936b1db039ac39af1d0b33d6c6b74585dbae56b6a5b2afc919cfdb9d65"
+  },
+  "artifacts": [
+    {
+      "file": "T11-Harmony-unsigned-20261104.hap",
+      "bytes": 506583,
+      "sha256": "b8b70d3c15b3236fa756485d77edaff8b06d180cfc878e4276fd55cab1811e03"
+    },
+    {
+      "file": "T11-Android-20261104.apk",
+      "bytes": 50976407,
+      "sha256": "11bbc8469e143355807bdcd28bf598eb8c1c8a8b59055963b027d735b738f1eb"
+    }
+  ],
+  "deviceValidationPerformed": false,
+  "realModelCalls": 0,
+  "formalHistoryPagesIntegrated": false,
+  "limits": [
+    "A formal history list/detail integration pending",
+    "dual-device cold/offline validation pending",
+    "tmp-only recovery and deletion remain T30",
+    "no stored-history network replay",
+    "not pushed or merged"
+  ],
+  "harmonyBuild": {
+    "command": "devecocli build",
+    "success": true,
+    "tasksExecuted": 66,
+    "tasksUpToDate": 0,
+    "signed": false
+  },
+  "androidBuild": {
+    "command": "ace build apk --debug --target-platform arm64",
+    "success": true,
+    "gradleTasksExecuted": 32,
+    "gradleTasksUpToDate": 0,
+    "hvigorPasses": [
+      {
+        "executed": 3,
+        "upToDate": 10
+      },
+      {
+        "executed": 3,
+        "upToDate": 10
+      }
+    ],
+    "abi": "arm64-v8a",
+    "packageName": "com.campusddl.agent",
+    "minSdk": 26,
+    "targetSdk": 33,
+    "apkSignatureV2Verified": true
+  },
+  "postBuildChanges": "documentation, evidence and two switch/read-failure regressions only; all 99 client files unchanged",
+  "recordedAt": "2026-11-04"
+}

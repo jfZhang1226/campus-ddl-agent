@@ -109,6 +109,12 @@ T12 只产出草案，不写业务快照、不生成保存期字段；正式保�
 
 [实现与接口说明](setup/T14-任务Repository与日期校验.md)记录任务 CRUD、完整编辑、查询、日期校验、版本冲突和基础删除边界。主机85项任务、106项存储、29项对话及双端构建/安装包检查通过，[主机构建摘要](setup/evidence/t14-host-build-20261030.json)绑定源码8f964ff。[Android真机证据](setup/evidence/t14-android-device-20261030.json)和[2026-11-02鸿蒙真机/双端比较](setup/evidence/t14-harmony-device-20261102.json)均已补齐，网络恢复原状态；A/B独立接口评审及最终验收仍待完成。T14 未合并，不表示 T11 历史或 T16 确认协议已完成。
 
+## C 的 T11 会话历史（任务分支）
+
+[接入与验证说明](setup/T11-会话历史与恢复接入.md)记录 C 完成的实际聊天保存/恢复、正式列表/详情、切换/新建及失败重试；[主机检查](../scripts/test-history.cjs)含50项T11，[正式页面构建证据](setup/evidence/t11-pages-host-build-20261105.json)和[同源双端真机/对照证据](setup/evidence/t11-device-validation-20261105.json)均已补齐。没有真实模型调用；独立评审及最终验收待完成，暂不合并。
+
+2026-11-06 最新：B提出的保存失败无法退出已补只读回看/保留内存和明确确认放弃路径；[P2主机与双端构建证据](setup/evidence/t11-p2-host-build-20261106.json)记录25TS严格、66T11及29/106/85回归通过，绑定d3e4fd9。协议说明区分T11新写状态与旧状态兼容、消息status与工具success、单条恢复重试与T17上下文、人工clarification与生产网关。[本轮双端真机/对照](setup/evidence/t11-p2-device-comparison-20261106.json)已补齐：Android原生写失败、鸿蒙持续版本冲突，新交互/冷启动/离线通过，102/106份旧campus文件不变，原网络与测试端口已清理。无真实模型、独立复查/CI或最终验收结论；本轮按授权更新原PR #14并以普通评论请B复查，暂不合并。
+
 ## 维护约定
 
 - 后续在本仓库的 `docs/` 中维护现行文档，通过任务分支和 PR 对齐修改。

@@ -45,6 +45,12 @@ T06 的模板验收不代表 T08 存储或后续业务通过。签名和设备�
 
 [T12 接入说明](docs/setup/T12-通知提取与多轮补齐.md)记录新增的 `POST /api/agent/extract-notice`：把通知原文提取成 Notice/Task/ChecklistItem 的可编辑草案，缺项追问或标记未知，保留发布时间与来源，多轮通过客户端回传 `draft`+`answers` 确定性合并。实现为 [server/notice_extraction.py](server/notice_extraction.py)（纯逻辑）加网关新端点；主机自测 [server/verify_t12.py](server/verify_t12.py) 66 项通过，并经 [server/.env](server/.env) 真实 DeepSeek 调用通过三条样例（exact/date_only/相对日期缺截止），[草案样例](fixtures/extraction/notice-draft-samples.json) 供 A 的 T13 确认卡对接。
 
+## C 的 T11 会话历史（任务分支）
+
+[T11 接入说明](docs/setup/T11-会话历史与恢复接入.md)记录实际聊天持久化、启动恢复、正式列表/详情、切换/新建与保存重试。2026-11-05 由 C 完成页面、50项T11及既有29/106/85项回归、新目录双端构建和同源一加Ace3/Pura70技术验证；[设备证据](docs/setup/evidence/t11-device-validation-20261105.json)区分人工HTTP与真实模型、正式页与隔离故障检查。现发布任务分支供A/B评审；独立评审和最终验收仍待完成，暂不合并。
+
+2026-11-06 按B评审修正保存失败后的退出：空闲失败时可只读浏览，离开未保存会话需可取消且绑定当前内容/保存尝试的确认。25TS严格、66T11及29/106/85既有回归、新目录双端构建与包核验通过，[主机构建证据](docs/setup/evidence/t11-p2-host-build-20261106.json)绑定修正源码d3e4fd9；[本轮双端新交互与对照](docs/setup/evidence/t11-p2-device-comparison-20261106.json)已完成，分别限定Android真实写失败和鸿蒙持续版本冲突，未用旧包结果代替。原数据与网络保持，人工服务已清理，无真实模型。本轮按授权将修正发布到原PR #14并以普通评论请B复查；暂不合并，独立复查/CI/最终验收另行完成。
+
 ## C 的 T03 交付
 
 - [核心数据字段说明](docs/data-contract.md)：Notice、Task、ChecklistItem 的字段、关联与校验规则。
