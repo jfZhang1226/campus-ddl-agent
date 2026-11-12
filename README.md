@@ -43,11 +43,17 @@ T06 的模板验收不代表 T08 存储或后续业务通过。签名和设备�
 
 ## A 的 T13 通知输入与创建确认
 
-[T13 接入说明](docs/setup/T13-通知输入与创建确认卡.md)记录新的共享通知导入页：调用 T12 提取接口，展示可编辑草案、缺项追问和原通知，取消不写，确认后把 Notice、Task 与 ChecklistItem 在同一本地快照 revision 中保存。C 复查提出的非 `+08:00` 截止时区问题和冲突后缺少版本重读入口均已修正；19 项 T13 检查及相关回归、双端构建通过，等待设备重连页面复验与 C 复查。
+[T13 接入说明](docs/setup/T13-通知输入与创建确认卡.md)记录新的共享通知导入页：调用 T12 提取接口，展示可编辑草案、缺项追问和原通知，取消不写，确认后把 Notice、Task 与 ChecklistItem 在同一本地快照 revision 中保存。C 提出的非 `+08:00` 截止时区和冲突恢复问题已通过；2026-11-12 已把 T11 后的最新 main 合入本分支，历史会话与通知导入入口共存。T13 19项、T11 66项及对话/存储/任务回归、双端构建通过；PR 仍保持 Draft，待针对新 head 最终复查。
 
 ## B 的 T12 通知提取与多轮补齐
 
 [T12 接入说明](docs/setup/T12-通知提取与多轮补齐.md)记录新增的 `POST /api/agent/extract-notice`：把通知原文提取成 Notice/Task/ChecklistItem 的可编辑草案，缺项追问或标记未知，保留发布时间与来源，多轮通过客户端回传 `draft`+`answers` 确定性合并。实现为 [server/notice_extraction.py](server/notice_extraction.py)（纯逻辑）加网关新端点；主机自测 [server/verify_t12.py](server/verify_t12.py) 66 项通过，并经 [server/.env](server/.env) 真实 DeepSeek 调用通过三条样例（exact/date_only/相对日期缺截止），[草案样例](fixtures/extraction/notice-draft-samples.json) 供 A 的 T13 确认卡对接。
+
+## C 的 T11 会话历史（任务分支）
+
+[T11 接入说明](docs/setup/T11-会话历史与恢复接入.md)记录实际聊天持久化、启动恢复、正式列表/详情、切换/新建与保存重试。2026-11-05 由 C 完成页面、50项T11及既有29/106/85项回归、新目录双端构建和同源一加Ace3/Pura70技术验证；[设备证据](docs/setup/evidence/t11-device-validation-20261105.json)区分人工HTTP与真实模型、正式页与隔离故障检查。T11 经 A/B 正式 Approve 后由 PR #14 于 2026-11-11 合入 main。
+
+2026-11-06 按B评审修正保存失败后的退出：空闲失败时可只读浏览，离开未保存会话需可取消且绑定当前内容/保存尝试的确认。25TS严格、66T11及29/106/85既有回归、新目录双端构建与包核验通过，[主机构建证据](docs/setup/evidence/t11-p2-host-build-20261106.json)绑定修正源码d3e4fd9；[本轮双端新交互与对照](docs/setup/evidence/t11-p2-device-comparison-20261106.json)已完成，分别限定Android真实写失败和鸿蒙持续版本冲突，未用旧包结果代替。原数据与网络保持，人工服务已清理，无真实模型。A/B 正式评审通过后，PR #14 已合入 main。
 
 ## C 的 T03 交付
 

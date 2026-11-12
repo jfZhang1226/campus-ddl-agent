@@ -3,6 +3,7 @@
     "pages/Index",
     "pages/NoticeImport",
     "pages/StorageCheck",
-    "pages/TaskCheck"
+    "pages/TaskCheck",
+    "pages/HistoryCheck"
   ]
 }
