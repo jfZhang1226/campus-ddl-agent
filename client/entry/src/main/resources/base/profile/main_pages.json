@@ -4,6 +4,7 @@
     "pages/NoticeImport",
     "pages/StorageCheck",
     "pages/TaskCheck",
-    "pages/HistoryCheck"
+    "pages/HistoryCheck",
+    "pages/CommitCheck"
   ]
 }

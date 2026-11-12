@@ -1,0 +1,85 @@
+{
+  "recordedAt": "2026-11-11",
+  "task": "T16",
+  "sourceCommit": "3f02e4ae868e8d219c40f429d9ac7910cbfd1b36",
+  "device": {
+    "model": "PJE110 / OnePlus Ace3",
+    "system": "Android16",
+    "api": 36,
+    "abi": "arm64-v8a"
+  },
+  "installedApkSha256": "fca29e3dfa3ef28103a2bd61ca02c08f668de7946e189ef23d524deb506a27b7",
+  "installedBytesEqualBuild": true,
+  "backupFiles": 413,
+  "checks": {
+    "pendingForceStopRestartNoAutoApply": true,
+    "pendingReadFileBytesUnchanged": true,
+    "explicitCancelNoTasksOrOperations": true,
+    "cancelledColdBytesUnchanged": true,
+    "foreignRevisionAdvanceBlockedConfirmation": true,
+    "conflictPrimaryBytesUnchangedAfterConfirm": true,
+    "staleProposalExplicitlyCancelled": true,
+    "screenExplicitConfirm": true,
+    "controlledNativeReplaceFailureChecked": true,
+    "sameOperationExplicitRetryCommittedOnce": true,
+    "singleSnapshotTaskProposalAndReceipt": true,
+    "readOnlyReplaySameReceiptAndAllFileBytes": true,
+    "noDefaultNetworkConfirmed": true,
+    "newProcessConfirmed": true,
+    "offlineOldOperationReplayPassed": true,
+    "allT16FileBytesUnchangedAcrossColdAndOffline": true,
+    "originalNetworkSwitchesRestored": true,
+    "defaultNetworkRestored": true,
+    "usbMappingsUnchanged": true,
+    "uiLayoutTemporaryFileRestoredOrRemoved": true,
+    "appForceStoppedAfterValidation": true
+  },
+  "businessResults": {
+    "cancelledRevision": 2,
+    "staleCancelledRevision": 3,
+    "appliedSnapshotRevision": 3,
+    "receiptCommittedRevision": 2,
+    "receiptExpectedRevision": 1,
+    "taskCount": 2,
+    "operationCount": 1,
+    "affectedTaskCount": 1,
+    "secondTaskPurpose": "Independent T14 write to prove replay after later revision"
+  },
+  "dataProtection": {
+    "preexistingCampusFilesCompared": 106,
+    "preexistingCampusFilesByteIdentical": true,
+    "preexistingFormalHistoryFilesCompared": 13,
+    "newFiles": 10,
+    "newNamespaces": 3,
+    "indexFiles": 1,
+    "allNewFilesConfinedToFreshArtificialNamespaces": true,
+    "allT16FilesColdOfflineByteIdentical": true,
+    "testPackageAndDataRetained": true,
+    "uninstallOrDataClear": false
+  },
+  "network": {
+    "wifiOriginallyOffAndRemainsOff": true,
+    "mobileDataRestoredOn": true,
+    "defaultNetworkRestored": true,
+    "syntheticHttpRequests": 0,
+    "realModelCalls": 0,
+    "newUsbMappings": 0,
+    "existingUsbMappingsUnchanged": true
+  },
+  "incompleteAttempts": {
+    "initialSettingsTargetBelowViewport": "Scrolled the observed settings container; no data action repeated",
+    "execOutTransferTimeout": "Primary unchanged; exact temporary writer checked absent; completed same case using staged copy; no residual temp"
+  },
+  "limits": [
+    "Isolated synthetic diagnostic UI, not formal T13/T17 integration or real model execution",
+    "Device case creates one target task plus one unrelated control task; batch notice import and update matrix are host coverage",
+    "A diagnostic button explicitly drives the fault and same-request retry calls; no formal production failure/retry UI is exercised",
+    "Controlled native missing-source replacement failure, not physical disk-full/power-loss/hardware-failure evidence",
+    "Device version mismatch blocked confirmation and preserved bytes, but UI exposes generic diagnostic failure; exact VERSION_CONFLICT is host evidence",
+    "Full concurrency/authorization/lost-acknowledgement/corruption matrix is host coverage, not all induced on this phone",
+    "HarmonyOS validation, independent A/B review, CI and project final acceptance remain pending"
+  ],
+  "pushed": false,
+  "prCreated": false,
+  "merged": false
+}

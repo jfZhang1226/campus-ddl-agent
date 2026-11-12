@@ -5,18 +5,21 @@ import { LocalStore } from './LocalStore';
 import { SessionStore } from './SessionStore';
 import { TaskRepository } from './TaskRepository';
 import { SessionRepository } from './SessionRepository';
+import { CommitServices } from './CommitServices';
 
 export class ClientStorage {
   local: LocalStore;
   sessions: SessionStore;
   tasks: TaskRepository;
   history: SessionRepository;
+  commits: CommitServices;
 
   constructor(coordinator: StorageCoordinator) {
     this.local = new LocalStore(coordinator);
     this.sessions = new SessionStore(coordinator);
     this.tasks = new TaskRepository(this.local);
     this.history = new SessionRepository(this.sessions);
+    this.commits = new CommitServices(this.local);
   }
 }
 
