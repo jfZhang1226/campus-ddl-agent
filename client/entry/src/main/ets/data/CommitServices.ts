@@ -1,7 +1,7 @@
 import { BusinessSnapshot, ChecklistItem, Notice, Task } from '../domain/StorageModels';
 import { LocalTaskRuntime, TaskDraft, TaskRuntime } from '../domain/TaskContracts';
-import { CommitProposal, CommitReceipt, ConfirmedCommitRequest, ProposalDraft, ProposedTaskChange, TaskChangeDraft } from '../domain/CommitModels';
-import { OPERATION_RECORD, PROPOSAL_RECORD, validatePreparedNotice, validateProposal } from '../domain/CommitValidation';
+import { ChecklistCreateDraft, CommitProposal, CommitReceipt, ConfirmedCommitRequest, ProposalDraft, ProposedTaskChange, TaskChangeDraft } from '../domain/CommitModels';
+import { LEGACY_OPERATION_RECORD, OPERATION_RECORD, PROPOSAL_RECORD, isOperationRecord, isProposalRecord, validatePreparedNotice, validateProposal } from '../domain/CommitValidation';
 import { isOffsetTimestamp, timestampMillis } from '../domain/DateRules';
 import { requireArgument, validateDraft, validateTask } from '../domain/TaskValidation';
 import { LocalStore } from './LocalStore';
@@ -50,7 +50,7 @@ class CommitEngine {
       snapshot.tasks.forEach((task: Task) => validateTask(task));
       snapshot.operations.forEach((entry: Object) => {
         const operation: CommitReceipt = entry as CommitReceipt;
-        if (operation.recordType === OPERATION_RECORD && operation.committedRevision > snapshot.revision) {
+        if (isOperationRecord(operation.recordType) && operation.committedRevision > snapshot.revision) {
           throw new StorageFailure('CORRUPT_DATA', '操作回执版本超出正式快照。');
         }
       });
@@ -62,14 +62,14 @@ class CommitEngine {
     const entry: Object | undefined = snapshot.proposals.find((item: Object) => (item as CommitProposal).id === id);
     if (entry === undefined) throw new StorageFailure('NOT_FOUND', '方案不存在。');
     const proposal: CommitProposal = entry as CommitProposal;
-    if (proposal.recordType !== PROPOSAL_RECORD) throw new StorageFailure('UNSUPPORTED_SCHEMA', '该方案仅可保留回看，当前不能执行。');
+    if (!isProposalRecord(proposal.recordType)) throw new StorageFailure('UNSUPPORTED_SCHEMA', '该方案仅可保留回看，当前不能执行。');
     return proposal;
   }
   private operation(snapshot: BusinessSnapshot, id: string): CommitReceipt | null {
     const entry: Object | undefined = snapshot.operations.find((item: Object) => (item as CommitReceipt).operationId === id);
     if (entry === undefined) return null;
     const receipt: CommitReceipt = entry as CommitReceipt;
-    if (receipt.recordType !== OPERATION_RECORD) throw new StorageFailure('INVALID_ARGUMENT', 'operationId 已由不支持的记录使用。');
+    if (!isOperationRecord(receipt.recordType)) throw new StorageFailure('INVALID_ARGUMENT', 'operationId 已由不支持的记录使用。');
     return receipt;
   }
   private replay(snapshot: BusinessSnapshot, request: ConfirmedCommitRequest): CommitReceipt | null {
@@ -88,7 +88,9 @@ class CommitEngine {
   }
   private id(prefix: string, used: string[]): string {
     for (let attempt: number = 0; attempt < 8; attempt++) {
-      const id: string = prefix + this.runtime.nextId();
+      // T14's shared runtime returns task-prefixed IDs. Keep its contract and old IDs intact.
+      const token: string = this.runtime.nextId();
+      const id: string = prefix + (token.startsWith('task-') ? token.slice(5) : token);
       if (isStorageId(id) && !used.includes(id)) return id;
     }
     throw new StorageFailure('INVALID_ARGUMENT', '本地标识生成失败，未覆盖已有记录。');
@@ -109,13 +111,28 @@ class CommitEngine {
   stage(input: ProposalDraft): Promise<StorageResult<CommitProposal>> {
     return guard(async () => {
       const draft: ProposalDraft = copy(input);
+      requireArgument(Object.keys(draft).every((key: string) => ['sessionId', 'expectedRevision', 'notices', 'changes'].includes(key)),
+        '方案含未支持的字段，不能忽略后保存。');
       requireArgument(isStorageId(draft.sessionId) && Array.isArray(draft.notices) && Array.isArray(draft.changes) &&
         draft.changes.length > 0 && draft.changes.length <= 50, '方案会话或变更数量无效。');
       revision(draft.expectedRevision);
       draft.changes.forEach((change: TaskChangeDraft) => {
         requireArgument(change !== null && typeof change === 'object' && ['create', 'update'].includes(change.action), '当前仅支持创建和编辑任务。');
+        requireArgument(Object.keys(change).every((key: string) => ['action', 'taskId', 'expectedVersion', 'draft', 'checklistCreates'].includes(key)),
+          '任务变更含未支持的字段。');
         validateDraft(change.draft);
+        requireArgument(Object.keys(change.draft).every((key: string) => Object.keys(new TaskDraft()).includes(key)), '任务草案含未支持的字段。');
+        // Omission keeps the old parameter DTO compatible. null is not an empty collection.
+        if (change.checklistCreates === undefined) change.checklistCreates = [];
+        requireArgument(Array.isArray(change.checklistCreates) && (change.action === 'create' || change.checklistCreates.length === 0),
+          '当前只支持随新建任务创建材料，编辑/删除/勾选材料请等待 T22。');
+        change.checklistCreates.forEach((item: ChecklistCreateDraft) => requireArgument(item !== null && typeof item === 'object' &&
+          !Array.isArray(item) && Object.keys(item).every((key: string) => ['label', 'sourceNoticeId'].includes(key)) &&
+          typeof item.label === 'string' && item.label.trim().length > 0 && (item.sourceNoticeId === null ||
+          (typeof item.sourceNoticeId === 'string' && item.sourceNoticeId.trim().length > 0)), '新材料只接受 label 与 sourceNoticeId。'));
       });
+      requireArgument(draft.changes.reduce((count: number, change: TaskChangeDraft) => count + change.checklistCreates.length, 0) <= 200,
+        '单个方案最多创建 200 项材料。');
       try { draft.notices.forEach((notice: Notice) => validatePreparedNotice(notice)); }
       catch (error) { throw new StorageFailure('INVALID_ARGUMENT', '待导入的通知字段无效。'); }
       const snapshot: BusinessSnapshot = await this.read();
@@ -125,12 +142,15 @@ class CommitEngine {
         draft.notices.every((notice: Notice) => !snapshot.notices.some((old: Notice) => old.id === notice.id)),
         '新通知 ID 重复或已存在。');
       const usedTasks: string[] = snapshot.tasks.map((task: Task) => task.id);
+      const usedItems: string[] = snapshot.checklistItems.map((item: ChecklistItem) => item.id);
       // Pending creates also reserve IDs, including supported records from older snapshots.
       snapshot.proposals.forEach((entry: Object) => {
         const previous: CommitProposal = entry as CommitProposal;
-        if (previous.recordType === PROPOSAL_RECORD) previous.changes.forEach((change: ProposedTaskChange) => usedTasks.push(change.taskId));
+        if (isProposalRecord(previous.recordType)) previous.changes.forEach((change: ProposedTaskChange) => usedTasks.push(change.taskId));
+        if (previous.recordType === PROPOSAL_RECORD) (previous.checklistItems as ChecklistItem[]).forEach((item: ChecklistItem) => usedItems.push(item.id));
       });
       const changes: ProposedTaskChange[] = [];
+      const items: ChecklistItem[] = [];
       draft.changes.forEach((change: TaskChangeDraft) => {
         let taskId: string;
         let before: Task | null = null;
@@ -152,6 +172,11 @@ class CommitEngine {
           draft.notices.some((notice: Notice) => notice.id === id)), '方案任务引用的通知不存在。');
         requireArgument(snapshot.checklistItems.filter((item: ChecklistItem) => item.taskId === taskId).every((item: ChecklistItem) =>
           item.sourceNoticeId === null || taskDraft.noticeIds.includes(item.sourceNoticeId)), '不能移除仍被清单引用的来源。');
+        change.checklistCreates.forEach((item: ChecklistCreateDraft) => {
+          requireArgument(item.sourceNoticeId === null || taskDraft.noticeIds.includes(item.sourceNoticeId), '材料来源必须属于所在任务的来源。');
+          const itemId: string = this.id('item-', usedItems); usedItems.push(itemId);
+          items.push({ id: itemId, taskId: taskId, label: item.label, sourceNoticeId: item.sourceNoticeId, state: 'pending', confirmedAt: null });
+        });
         changes.push({ action: change.action, taskId: taskId, expectedVersion: change.expectedVersion, before: before, draft: taskDraft });
       });
       const sources: string[] = [];
@@ -160,7 +185,7 @@ class CommitEngine {
       const id: string = this.id('proposal-', snapshot.proposals.map((entry: Object) => (entry as CommitProposal).id));
       const proposal: CommitProposal = { recordType: PROPOSAL_RECORD, id: id, sessionId: draft.sessionId, kind: 'task_changes',
         changes: changes, notices: draft.notices, sourceNoticeIds: sources, expectedRevision: snapshot.revision + 1,
-        state: 'pending', createdAt: this.now(), operationId: null };
+        state: 'pending', createdAt: this.now(), operationId: null, checklistItems: items };
       validateProposal(proposal);
       snapshot.proposals.push(proposal);
       value(await this.store.save(snapshot, draft.expectedRevision));
@@ -170,7 +195,7 @@ class CommitEngine {
   get(id: string): Promise<StorageResult<CommitProposal>> { return guard(async () => copy(this.proposal(await this.read(), id))); }
   list(): Promise<StorageResult<CommitProposal[]>> {
     return guard(async () => (await this.read()).proposals.filter((entry: Object) =>
-      (entry as CommitProposal).recordType === PROPOSAL_RECORD) as CommitProposal[]);
+      isProposalRecord((entry as CommitProposal).recordType)) as CommitProposal[]);
   }
   receipt(id: string): Promise<StorageResult<CommitReceipt>> {
     return guard(async () => {
@@ -253,10 +278,20 @@ class CommitEngine {
         }
         tasks.push(copy(task));
       });
-      const receipt: CommitReceipt = { recordType: OPERATION_RECORD, operationId: request.operationId, proposalId: proposal.id,
+      const receipt: CommitReceipt = { recordType: proposal.recordType === PROPOSAL_RECORD ? OPERATION_RECORD : LEGACY_OPERATION_RECORD,
+        operationId: request.operationId, proposalId: proposal.id,
         expectedRevision: request.expectedRevision, resultStatus: 'committed', affectedTaskIds: tasks.map((task: Task) => task.id),
         changedTaskIds: changed, tasks: tasks, committedRevision: snapshot.revision + 1,
         confirmedAt: authorization.confirmedAt, createdAt: now };
+      if (proposal.recordType === PROPOSAL_RECORD) {
+        const items: ChecklistItem[] = copy(proposal.checklistItems as ChecklistItem[]);
+        requireArgument(items.every((item: ChecklistItem) => !snapshot.checklistItems.some((old: ChecklistItem) => old.id === item.id)),
+          '预留材料 ID 已被使用。');
+        snapshot.checklistItems.push(...items);
+        receipt.notices = copy(proposal.notices);
+        receipt.createdChecklistItemIds = items.map((item: ChecklistItem) => item.id);
+        receipt.checklistItems = copy(items);
+      }
       proposal.state = 'applied'; proposal.operationId = request.operationId;
       snapshot.operations.push(receipt);
       const saved: StorageResult<BusinessSnapshot> = await this.store.save(snapshot, request.expectedRevision);

@@ -61,6 +61,16 @@ function edit(task, changes) {
   const fields = new TaskDraft(); for (const key of Object.keys(fields)) fields[key] = structuredClone(task[key]);
   change.draft = Object.assign(fields, changes); return change;
 }
+function materialDraft(revision = 0) {
+  const input = draft(revision), rawText = '请提交报告与附件';
+  input.notices = [{ id: 'notice-material', rawText, sourceLabel: '人工来源', publishedAt: null,
+    importedAt: '2026-11-11T10:00:00+08:00', timezone: 'Asia/Shanghai',
+    contentHash: createHash('sha256').update(rawText).digest('hex') }];
+  input.changes[0].draft.noticeIds = [input.notices[0].id];
+  input.changes[0].checklistCreates = [{ label: '报告 PDF', sourceNoticeId: input.notices[0].id },
+    { label: '附件 🧾', sourceNoticeId: null }];
+  return input;
+}
 async function harness(t) {
   await fs.mkdir(runtimeRoot, { recursive: true }); const root = await fs.mkdtemp(path.join(runtimeRoot, 'case-'));
   const files = new Files(root), clock = new Clock(), coordinator = new StorageCoordinator(files), store = new LocalStore(coordinator);
@@ -184,12 +194,16 @@ test('no-op edit records the operation once without bumping Task.version', async
 for (const operation of ['write:task-store.tmp.json', 'flush:task-store.tmp.json', 'read:task-store.tmp.json',
   'write:task-store.backup.tmp.json', 'flush:task-store.backup.tmp.json', 'replace:task-store.backup.json', 'replace:task-store.json']) {
   test('real file failure is atomic and same operation explicitly retries: ' + operation, async t => {
-    const h = await harness(t), p = await staged(h), request = await confirmed(h, p), before = await bytes(h);
+    const h = await harness(t), p = await staged(h, materialDraft()), request = await confirmed(h, p), before = await bytes(h);
     h.files.fail = operation; bad(await h.services.confirmation.apply(request), 'STORAGE_FAILED');
     assert.equal(await bytes(h), before); const snapshot = ok(await h.store.read());
     assert.equal(snapshot.tasks.length, 0); assert.equal(snapshot.operations.length, 0); assert.equal(snapshot.proposals[0].state, 'pending');
+    assert.equal(snapshot.notices.length, 0); assert.equal(snapshot.checklistItems.length, 0);
     const receipt = ok(await h.services.confirmation.apply(request)); assert.equal(receipt.operationId, request.operationId);
     assert.equal(receipt.committedRevision, 2); assert.equal(ok(await h.store.read()).tasks.length, 1);
+    assert.deepEqual(receipt.checklistItems, p.checklistItems);
+    const after = ok(await h.store.read()); assert.equal(after.notices.length, 1); assert.equal(after.checklistItems.length, 2);
+    assert.deepEqual(after.checklistItems, receipt.checklistItems);
   });
 }
 test('lost replace acknowledgement reads the durable receipt rather than committing again', async t => {
@@ -258,7 +272,7 @@ for (const [name, mutate] of [
   bad(await h.reopen().proposals.list(), 'CORRUPT_DATA'); assert.equal(await bytes(h), raw);
 });
 test('unknown tagged schema is refused without erasing records', async t => {
-  const h = await harness(t), p = await staged(h), data = JSON.parse(await bytes(h)); data.proposals[0].recordType = 't16.proposal.v2';
+  const h = await harness(t), p = await staged(h), data = JSON.parse(await bytes(h)); data.proposals[0].recordType = 't16.proposal.v99';
   const raw = JSON.stringify(data); await fs.writeFile(path.join(h.root, 'task-store.json'), raw);
   bad(await h.reopen().proposals.get(p.id), 'UNSUPPORTED_SCHEMA'); assert.equal(await bytes(h), raw);
 });
@@ -323,4 +337,171 @@ test('ID generation collisions cannot replace a saved operation or proposal', as
   const h = await harness(t), { receipt } = await applied(h); h.clock.nextId = () => receipt.operationId.slice('operation-'.length);
   const p = await staged(h, draft(2)); const before = await bytes(h);
   bad(await h.services.confirmation.confirm(p.id, 3), 'INVALID_ARGUMENT'); assert.equal(await bytes(h), before);
+});
+
+test('material stage reserves stable client IDs but creates no formal task/source/material', async t => {
+  const h = await harness(t), input = materialDraft(), p = await staged(h, input), s = ok(await h.store.read());
+  assert.equal(p.recordType, 't16.proposal.v2'); assert.equal(p.checklistItems.length, 2);
+  assert.equal(s.tasks.length + s.notices.length + s.checklistItems.length + s.operations.length, 0);
+  for (const item of p.checklistItems) {
+    assert.ok(item.id.startsWith('item-')); assert.equal(item.taskId, p.changes[0].taskId);
+    assert.equal(item.state, 'pending'); assert.equal(item.confirmedAt, null);
+  }
+  input.changes[0].checklistCreates[0].label = 'late edit'; p.checklistItems[0].label = 'changed return';
+  assert.equal(ok(await h.reopen().proposals.get(p.id)).checklistItems[0].label, '报告 PDF');
+});
+test('multi-task material bindings and same labels remain distinct within one atomic commit', async t => {
+  const h = await harness(t), input = materialDraft(), second = new TaskChangeDraft();
+  second.draft.title = '第二任务'; second.draft.noticeIds = ['notice-material'];
+  second.checklistCreates = [{ label: '报告 PDF', sourceNoticeId: 'notice-material' }]; input.changes.push(second);
+  const { proposal, receipt } = await applied(h, input), s = ok(await h.store.read());
+  assert.equal(s.tasks.length, 2); assert.equal(s.notices.length, 1); assert.equal(s.checklistItems.length, 3);
+  assert.equal(s.operations.length, 1); assert.equal(s.revision, 2);
+  assert.deepEqual(receipt.notices, input.notices); assert.deepEqual(receipt.checklistItems, proposal.checklistItems);
+  assert.deepEqual(receipt.createdChecklistItemIds, s.checklistItems.map(x => x.id));
+  assert.equal(new Set(receipt.createdChecklistItemIds).size, 3);
+  assert.deepEqual(s.checklistItems.map(x => x.taskId), [s.tasks[0].id, s.tasks[0].id, s.tasks[1].id]);
+  const backup = JSON.parse(await fs.readFile(path.join(h.root, 'task-store.backup.json'), 'utf8'));
+  assert.equal(backup.tasks.length + backup.notices.length + backup.checklistItems.length + backup.operations.length, 0);
+  assert.equal(backup.proposals[0].state, 'pending'); assert.equal(backup.proposals[0].checklistItems.length, 3);
+});
+test('material duplicate/concurrent confirmations, restart and later writes replay exact results with no new IDs', async t => {
+  const h = await harness(t), p = await staged(h, materialDraft());
+  const requests = await Promise.all(Array.from({ length: 5 }, () => confirmed(h, p)));
+  assert.ok(requests.every(r => r.operationId === requests[0].operationId));
+  const results = await Promise.all(requests.map(r => h.services.confirmation.apply(r))), receipt = ok(results[0]);
+  results.forEach(r => assert.deepEqual(ok(r), receipt));
+  const after = ok(await h.store.read()); assert.equal(after.checklistItems.length, 2); assert.equal(after.notices.length, 1);
+  // Later business state can change; the operation remains an immutable creation result.
+  after.checklistItems[0].state = 'prepared'; after.checklistItems[0].confirmedAt = h.clock.time;
+  ok(await h.store.save(after, 2)); const before = await bytes(h), traceLength = h.files.trace.length;
+  h.clock.nextId = () => { throw new Error('Replay must not allocate IDs'); };
+  const reopened = h.reopen(); assert.deepEqual(ok(await reopened.confirmation.apply(requests[0])), receipt);
+  assert.deepEqual(ok(await reopened.confirmation.receipt(receipt.operationId)), receipt);
+  assert.deepEqual(ok(await reopened.confirmation.confirm(p.id, p.expectedRevision)), requests[0]);
+  assert.equal(receipt.checklistItems[0].state, 'pending'); assert.equal(await bytes(h), before);
+  assert.ok(h.files.trace.slice(traceLength).every(x => !/^(write|replace):/.test(x)));
+});
+test('material authorization lost before commit requires confirmation again but reuses staged material IDs', async t => {
+  const h = await harness(t), p = await staged(h, materialDraft()), request = await confirmed(h, p), reopened = h.reopen();
+  h.files.fail = 'replace:task-store.json'; bad(await h.services.confirmation.apply(request), 'STORAGE_FAILED');
+  bad(await reopened.confirmation.apply(request), 'CONFIRMATION_REQUIRED'); const before = await bytes(h);
+  const next = ok(await reopened.confirmation.confirm(p.id, 1)); assert.notEqual(next.operationId, request.operationId);
+  const receipt = ok(await reopened.confirmation.apply(next)); assert.deepEqual(receipt.checklistItems, p.checklistItems);
+  assert.equal(JSON.parse(before).checklistItems.length, 0); assert.equal(ok(await h.store.read()).checklistItems.length, 2);
+});
+for (const failReadback of [false, true]) test('material uncertain replacement preserves original receipt: failed readback=' + failReadback, async t => {
+  const h = await harness(t), p = await staged(h, materialDraft()), request = await confirmed(h, p);
+  if (failReadback) {
+    const replace = h.files.replace.bind(h.files); h.files.replace = async (source, destination) => {
+      await replace(source, destination); if (destination === 'task-store.json') {
+        h.files.fail = 'read:task-store.json'; throw new Error('Lost artificial acknowledgement');
+      }
+    };
+  } else h.files.afterReplace = true;
+  const first = await h.services.confirmation.apply(request);
+  if (failReadback) bad(first, 'STORAGE_FAILED'); else assert.deepEqual(ok(first).checklistItems, p.checklistItems);
+  const before = await bytes(h), receipt = ok(await h.reopen().confirmation.apply(request));
+  assert.deepEqual(receipt.checklistItems, p.checklistItems); assert.equal(ok(await h.store.read()).checklistItems.length, 2);
+  assert.equal(await bytes(h), before);
+});
+test('cancelled and stale material proposals never create partial business data', async t => {
+  const h = await harness(t), p = await staged(h, materialDraft()), request = await confirmed(h, p);
+  ok(await h.tasks.create(Object.assign(new TaskDraft(), { title: 'independent' }), 1)); const before = await bytes(h);
+  bad(await h.services.confirmation.apply(request), 'VERSION_CONFLICT'); assert.equal(await bytes(h), before);
+  ok(await h.services.confirmation.cancel(p.id, 2)); bad(await h.services.confirmation.apply(request), 'PROPOSAL_CANCELLED');
+  const s = ok(await h.store.read()); assert.equal(s.tasks.length, 1);
+  assert.equal(s.notices.length + s.checklistItems.length + s.operations.length, 0);
+});
+const invalidMaterials = [
+  ['empty label', p => p.changes[0].checklistCreates[0].label = '  '],
+  ['missing source', p => delete p.changes[0].checklistCreates[0].sourceNoticeId],
+  ['unrelated source', p => p.changes[0].checklistCreates[0].sourceNoticeId = 'other'],
+  ['forced ID', p => p.changes[0].checklistCreates[0].id = 'item-forged'],
+  ['forced task', p => p.changes[0].checklistCreates[0].taskId = 'task-forged'],
+  ['prepared state', p => p.changes[0].checklistCreates[0].state = 'prepared'],
+  ['confirmed time', p => p.changes[0].checklistCreates[0].confirmedAt = '2026-11-11T10:00:00+08:00'],
+  ['null item', p => p.changes[0].checklistCreates[0] = null],
+  ['null collection', p => p.changes[0].checklistCreates = null],
+  ['unsupported materials alias', p => { p.changes[0].materials = p.changes[0].checklistCreates; delete p.changes[0].checklistCreates; }],
+  ['nested unsupported materials', p => p.changes[0].draft.checklistItems = []],
+  ['unsupported checklist edit', p => p.checklistUpdates = []],
+  ['too many items', p => p.changes[0].checklistCreates = Array.from({ length: 201 }, () => ({ label: 'item', sourceNoticeId: null }))],
+];
+for (const [name, mutate] of invalidMaterials) test('invalid material proposal writes nothing: ' + name, async t => {
+  const h = await harness(t), input = materialDraft(); mutate(input);
+  bad(await h.services.proposals.stage(input), 'INVALID_ARGUMENT'); assert.deepEqual(await fs.readdir(h.root), []);
+});
+test('material source must belong to its own parent task even if it exists in the batch', async t => {
+  const h = await harness(t), input = materialDraft(); input.changes[0].draft.noticeIds = [];
+  const second = new TaskChangeDraft(); second.draft.title = 'owns source'; second.draft.noticeIds = ['notice-material']; input.changes.push(second);
+  bad(await h.services.proposals.stage(input), 'INVALID_ARGUMENT'); assert.deepEqual(await fs.readdir(h.root), []);
+});
+test('manual source-free materials and existing Unicode source IDs are supported', async t => {
+  const h = await harness(t), input = materialDraft(); input.notices[0].id = '旧来源 ID';
+  input.changes[0].draft.noticeIds = ['旧来源 ID']; input.changes[0].checklistCreates[0].sourceNoticeId = '旧来源 ID';
+  const { receipt } = await applied(h, input); assert.equal(receipt.checklistItems[0].sourceNoticeId, '旧来源 ID');
+  const manual = draft(2); manual.changes[0].checklistCreates = [{ label: '手动材料', sourceNoticeId: null }];
+  const next = await applied(h, manual); assert.equal(next.receipt.checklistItems[0].sourceNoticeId, null);
+  const existing = draft(4); existing.changes[0].draft.noticeIds = ['旧来源 ID'];
+  existing.changes[0].checklistCreates = [{ label: '复用来源', sourceNoticeId: '旧来源 ID' }];
+  const result = await applied(h, existing); assert.deepEqual(result.receipt.notices, []);
+  assert.equal(ok(await h.store.read()).notices.length, 1);
+});
+test('existing task material changes are explicitly deferred to T22; normal task edits remain supported', async t => {
+  const h = await harness(t), task = (await applied(h, materialDraft())).receipt.tasks[0], change = edit(task, {});
+  change.checklistCreates = [{ label: 'new on existing', sourceNoticeId: null }]; const before = await bytes(h);
+  bad(await h.services.proposals.stage(draft(2, { changes: [change] })), 'INVALID_ARGUMENT'); assert.equal(await bytes(h), before);
+  change.checklistCreates = []; const { receipt } = await applied(h, draft(2, { changes: [change] }));
+  assert.deepEqual(receipt.checklistItems, []); assert.deepEqual(receipt.changedTaskIds, []);
+});
+function legacy(snapshot) {
+  for (const p of snapshot.proposals) { p.recordType = 't16.proposal.v1'; delete p.checklistItems; }
+  for (const r of snapshot.operations) {
+    r.recordType = 't16.operation.v1'; delete r.checklistItems; delete r.createdChecklistItemIds; delete r.notices;
+  }
+  return snapshot;
+}
+test('old v1 applied receipt is replayed byte-for-byte without migration or ID rewriting', async t => {
+  const h = await harness(t), { proposal, request } = await applied(h), snapshot = legacy(JSON.parse(await bytes(h)));
+  const raw = JSON.stringify(snapshot); await fs.writeFile(path.join(h.root, 'task-store.json'), raw);
+  const reopened = h.reopen(); assert.deepEqual(ok(await reopened.confirmation.apply(request)), snapshot.operations[0]);
+  assert.deepEqual(ok(await reopened.confirmation.confirm(proposal.id, 1)), request); assert.equal(await bytes(h), raw);
+  const input = draft(2); delete input.changes[0].checklistCreates;
+  assert.equal(ok(await reopened.proposals.stage(input)).recordType, 't16.proposal.v2');
+  assert.deepEqual(ok(await h.store.read()).operations[0], snapshot.operations[0]);
+});
+test('old v1 pending proposal can still be explicitly confirmed and yields an unchanged v1 receipt shape', async t => {
+  const h = await harness(t), p = await staged(h), snapshot = legacy(JSON.parse(await bytes(h)));
+  await fs.writeFile(path.join(h.root, 'task-store.json'), JSON.stringify(snapshot)); const reopened = h.reopen();
+  const request = ok(await reopened.confirmation.confirm(p.id, 1)), receipt = ok(await reopened.confirmation.apply(request));
+  assert.equal(receipt.recordType, 't16.operation.v1'); assert.equal(Object.hasOwn(receipt, 'checklistItems'), false);
+  assert.deepEqual(ok(await h.reopen().confirmation.apply(request)), receipt);
+});
+for (const [name, mutate] of [
+  ['receipt label', s => s.operations[0].checklistItems[0].label = 'tampered'],
+  ['receipt IDs', s => s.operations[0].createdChecklistItemIds.reverse()],
+  ['receipt source result', s => s.operations[0].notices[0].rawText = 'tampered'],
+  ['receipt wrong task', s => s.operations[0].checklistItems[0].taskId = 'other'],
+  ['formal material missing', s => s.checklistItems.pop()],
+  ['formal wrong source', s => s.checklistItems[0].sourceNoticeId = null],
+  ['material no longer pending at creation', s => { s.proposals[0].checklistItems[0].state = 'prepared'; s.proposals[0].checklistItems[0].confirmedAt = s.proposals[0].createdAt; }],
+  ['downgraded version with materials', s => s.proposals[0].recordType = 't16.proposal.v1'],
+  ['omitted v2 materials', s => delete s.proposals[0].checklistItems],
+]) test('corrupt material records preserve original files: ' + name, async t => {
+  const h = await harness(t); await applied(h, materialDraft()); const snapshot = JSON.parse(await bytes(h)); mutate(snapshot);
+  const raw = JSON.stringify(snapshot); await fs.writeFile(path.join(h.root, 'task-store.json'), raw);
+  bad(await h.reopen().proposals.list(), 'CORRUPT_DATA'); assert.equal(await bytes(h), raw);
+});
+test('default local runtime gives each new record exactly its own prefix; saved old IDs are opaque', async t => {
+  const h = await harness(t), services = new CommitServices(h.store), p = ok(await services.proposals.stage(materialDraft()));
+  assert.match(p.id, /^proposal-(?!task-)/); assert.match(p.changes[0].taskId, /^task-(?!task-)/);
+  p.checklistItems.forEach(item => assert.match(item.id, /^item-(?!task-)/));
+  const request = ok(await services.confirmation.confirm(p.id, 1)); assert.match(request.operationId, /^operation-(?!task-)/);
+  ok(await services.confirmation.apply(request));
+});
+test('material ID collision with another reserved proposal is refused without overwriting', async t => {
+  const h = await harness(t), p = await staged(h, materialDraft());
+  h.clock.nextId = () => p.checklistItems[0].id.slice('item-'.length); const before = await bytes(h);
+  bad(await h.services.proposals.stage(materialDraft(1)), 'INVALID_ARGUMENT'); assert.equal(await bytes(h), before);
 });
