@@ -1,0 +1,68 @@
+{
+  "date": "2026-11-02",
+  "baseline": "b6032c0b648261d2fa863dde0a13b937fbac5c40",
+  "scope": "HarmonyOS-only independent capability probe; production client and server unchanged",
+  "host": {
+    "checksPassed": 21,
+    "strictTypeScriptPassed": true,
+    "studioTypeScriptVersion": "4.9.5",
+    "hostNodeVersion": "v20.12.2",
+    "nativeBoundary": "simulated; no real microphone, playback or model call"
+  },
+  "toolchain": {
+    "studio": "26.0.0.865",
+    "harmonySdk": "26.0.0.105 Release / API 26",
+    "arkuixSdk": "26.0.0.28 Beta2",
+    "arkuixPlugin": "4.24.1",
+    "buildNode": "24.14.1",
+    "ohpm": "26.0.0.630",
+    "hdc": "3.2.0f"
+  },
+  "build": {
+    "mainClientPassed": true,
+    "probePassed": true,
+    "probeSigned": true,
+    "latestSignedBytes": 124546,
+    "latestSignedSha256": "9dad89b104d02ebe542d5a38f25f5cd3392d426f79c951280a4adf89be35ed38",
+    "warningsRetained": true,
+    "hypiumDeviceTestsExecuted": false
+  },
+  "device": {
+    "model": "ADY-AL10 / Pura 70",
+    "api": 26,
+    "system": "OpenHarmony-7.0.0.105",
+    "bundle": "com.campusddl.speechprobe",
+    "firstLaunchVerified": true,
+    "latestUpdateInstalled": true,
+    "latestLayoutVerified": false,
+    "asr": {
+      "nativeStreamingObserved": true,
+      "operatorReportedRecordingUsable": true,
+      "fixedSyntheticFinalTranscriptVerified": false
+    },
+    "ttsAudibleVerified": false,
+    "ttsStopAudibleVerified": false,
+    "offlineVerified": false,
+    "permissionDenialDeviceVerified": false,
+    "backgroundStopDeviceVerified": false,
+    "lateResultDeviceVerified": false
+  },
+  "evidence": {
+    "initialLaunchScreenshot": "../../images/t09/harmony-probe-launch.jpeg",
+    "screenshotScope": "initial idle page with synthetic example, before latest stop-button change"
+  },
+  "sourceSha256": {
+    "probes/harmony-speech/SpeechProbe.ets": "3936223b745b796f5f8a16c57fa7892dd4fdcbaf7b9b889f62eb3527c9ae9aaa",
+    "probes/harmony-speech/SpeechProbeController.ts": "9f2949c21334edc6bbb85db287fd3eeec740929f2d8f2a0d72c71d87e955cc68",
+    "probes/harmony-speech/HarmonySpeechPort.ets": "828a0bfdf4f9d6a8cb078dac4f436069c645ca3506e9d7394110adf7641cba83",
+    "probes/harmony-speech/SpeechProbeOwner.ets": "31b02ebd46f4f3942c440fde4c4ce389d140d80c21b2e57c3797b7cacd4d8431",
+    "probes/harmony-speech/EntryAbility.ets": "a5733246197b3102bbddc9d04b876b4adbca8791197193bc1772635e84774ba7"
+  },
+  "excludedFromCommit": [
+    "personal signing profiles and keys",
+    "signed HAP",
+    "raw audio",
+    "non-synthetic transcripts/screenshots",
+    "local build paths and private logs"
+  ]
+}
