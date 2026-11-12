@@ -38,6 +38,18 @@ T06 已于 2026-10-27 通过 [PR #4](https://github.com/jfZhang1226/campus-ddl-a
 | [文本页面与网关接入](setup/T10-文本对话与网关接入.md) | 同一套 ArkTS 页面、HTTP 适配、运行时配置、加载/超时/错误及人工重试 | 已由PR #9合入main@f34865a；既有双端真实模型与人工失败恢复证据按原提交保留 |
 | [共享逻辑检查](../scripts/test-chat.cjs) | 协议、防重复、草稿保护、取消/迟到结果、模拟原生边界 | 主机检查不能替代手机真实模型结果；本次不自动对接T08持久化 |
 
+## A 的 T13 通知输入与创建确认卡
+
+| 交付 | 内容 | 状态 |
+|---|---|---|
+| [实现与协议](setup/T13-通知输入与创建确认卡.md) | 主页面入口、T12 草案解析、可编辑确认卡、取消/错误状态、Notice+Task+Checklist 单快照保存 | 双端构建、真机契约流程及真实模型保存通过；已集成 T11 后最新 main，等待新 head 最终复查 |
+| [专项检查](../scripts/test-notice-import.cjs) | 30 个共享 TS 严格检查；19 项草案、时区、冲突恢复、原子保存与原生 HTTP 边界检查 | 2026-11-12 合并 main 后再次通过 |
+| [共享页面](../client/entry/src/main/ets/pages/NoticeImport.ets) | 原文、来源/发布时间、任务字段、截止精度、工时、材料及确认结果 | 鸿蒙签名安装、Android 验证安装及两端真实模型保存通过 |
+
+T13 的成功页只证明本次本地导入结果，不替代 T18 任务列表/详情、T16/T17 持久确认协议或 T21/T24 后续界面。
+
+C 对 T13 提出的两项 P2 已修正，见 [复查修正证据](setup/evidence/t13-review-fixes-20261105.json)。B 未发现阻塞项；当前人工编辑与 T12 模型多轮 answers 的边界已明确，见 [2026-11-12 集成证据](setup/evidence/t13-main-integration-20261112.json)。
+
 ## C 的 T03 资料
 
 | 交付 | 内容 | 状态 |
@@ -97,9 +109,9 @@ T12 只产出草案，不写业务快照、不生成保存期字段；正式保�
 
 ## C 的 T11 会话历史（任务分支）
 
-[接入与验证说明](setup/T11-会话历史与恢复接入.md)记录 C 完成的实际聊天保存/恢复、正式列表/详情、切换/新建及失败重试；[主机检查](../scripts/test-history.cjs)含50项T11，[正式页面构建证据](setup/evidence/t11-pages-host-build-20261105.json)和[同源双端真机/对照证据](setup/evidence/t11-device-validation-20261105.json)均已补齐。没有真实模型调用；独立评审及最终验收待完成，暂不合并。
+[接入与验证说明](setup/T11-会话历史与恢复接入.md)记录 C 完成的实际聊天保存/恢复、正式列表/详情、切换/新建及失败重试；[主机检查](../scripts/test-history.cjs)含50项T11，[正式页面构建证据](setup/evidence/t11-pages-host-build-20261105.json)和[同源双端真机/对照证据](setup/evidence/t11-device-validation-20261105.json)均已补齐。A/B 正式评审通过后，PR #14 已于 2026-11-11 合入 main。
 
-2026-11-06 最新：B提出的保存失败无法退出已补只读回看/保留内存和明确确认放弃路径；[P2主机与双端构建证据](setup/evidence/t11-p2-host-build-20261106.json)记录25TS严格、66T11及29/106/85回归通过，绑定d3e4fd9。协议说明区分T11新写状态与旧状态兼容、消息status与工具success、单条恢复重试与T17上下文、人工clarification与生产网关。[本轮双端真机/对照](setup/evidence/t11-p2-device-comparison-20261106.json)已补齐：Android原生写失败、鸿蒙持续版本冲突，新交互/冷启动/离线通过，102/106份旧campus文件不变，原网络与测试端口已清理。无真实模型、独立复查/CI或最终验收结论；本轮按授权更新原PR #14并以普通评论请B复查，暂不合并。
+2026-11-06 最新：B提出的保存失败无法退出已补只读回看/保留内存和明确确认放弃路径；[P2主机与双端构建证据](setup/evidence/t11-p2-host-build-20261106.json)记录25TS严格、66T11及29/106/85回归通过，绑定d3e4fd9。协议说明区分T11新写状态与旧状态兼容、消息status与工具success、单条恢复重试与T17上下文、人工clarification与生产网关。[本轮双端真机/对照](setup/evidence/t11-p2-device-comparison-20261106.json)已补齐：Android原生写失败、鸿蒙持续版本冲突，新交互/冷启动/离线通过，102/106份旧campus文件不变，原网络与测试端口已清理。A/B 正式评审通过后，PR #14 已合入 main。
 
 ## 维护约定
 
