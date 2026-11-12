@@ -1,0 +1,68 @@
+{
+  "task": "T13",
+  "date": "2026-11-05",
+  "scope": "HarmonyOS signed installation, UI flow and local persistence verification",
+  "device": {
+    "model": "ADY-AL10",
+    "productName": "HUAWEI Pura 70",
+    "system": "ADY-AL10 7.0.0.109(SP6C00E105R5P2)",
+    "api": 26,
+    "abi": "arm64-v8a"
+  },
+  "signedHap": {
+    "artifact": "client/entry/build/default/outputs/default/entry-default-signed.hap",
+    "bytes": 671647,
+    "sha256": "d93b8add3d91e505c8b64df4ce759b09bbf9f9cc69cc95f1d3b836c12489ca38",
+    "installResult": "install bundle successfully",
+    "provisionType": "debug"
+  },
+  "extraction": {
+    "mode": "real DeepSeek cloud model through project gateway",
+    "realModelCalled": true,
+    "sample": "数据库课程通知：请于2026年11月12日23:59前在学习通提交数据库实验报告PDF和源代码。",
+    "result": {
+      "title": "数据库实验报告提交",
+      "course": "数据库",
+      "deadlinePrecision": "exact",
+      "dueAt": "2026-11-12T23:59:00+08:00",
+      "submissionChannel": "学习通",
+      "materials": ["PDF报告", "源代码"],
+      "degraded": false
+    }
+  },
+  "passed": [
+    "Signed debug HAP built and installed on HarmonyOS API 26 device",
+    "Application cold-started and rendered the shared ArkUI-X page",
+    "Gateway settings were entered through the native UI",
+    "Notice extraction draft displayed source, title, course, channel, date and time",
+    "Cancel retained raw text and created no task",
+    "Confirmation saved Notice, Task and ChecklistItem and displayed revision 1",
+    "Force-stop and cold start produced a new application process",
+    "Second confirmed save after restart displayed revision 2, proving prior snapshot recovery",
+    "With the mock gateway stopped, the network error was shown and no new draft was created",
+    "A new valid API key produced a real DeepSeek draft with title, course, exact deadline, submission channel and materials",
+    "The real-model draft was confirmed and saved as revision 3"
+  ],
+  "savedSnapshotChecks": {
+    "finalRevision": 3,
+    "notices": 3,
+    "tasks": 3,
+    "checklistItems": 6,
+    "taskStatus": "todo",
+    "deadlinePrecision": "exact",
+    "realModelTaskTitle": "数据库实验报告提交",
+    "realModelSubmissionChannel": "学习通",
+    "networkFailureRevisionUnchanged": true
+  },
+  "screenshots": [
+    "docs/images/t13/harmony-draft.jpeg",
+    "docs/images/t13/harmony-saved.jpeg",
+    "docs/images/t13/harmony-network-error.jpeg",
+    "docs/images/t13/harmony-real-draft.jpeg",
+    "docs/images/t13/harmony-real-saved.jpeg"
+  ],
+  "notClaimed": [
+    "T13 final acceptance pending PR review",
+    "Android production applicationId install on a matching signing certificate"
+  ]
+}
