@@ -2,6 +2,8 @@
 
 日期：2026-11-12。源码依据：T13@5cf6d0d、T16@d38bfe7。本项是跨模块接口缺口，不据此否定T16已明确限定的任务create/update范围，也不直接修改C的数据契约。
 
+2026-11-14更新：C已在T16@bf8ec3a补齐创建型材料，D复查批准；D现已在独立导出接入确认保存、原方案重试、恢复及实际回读，232项主机/导出检查通过。当前电脑构建进程找不到既有ArkUI-X SDK，本增量没有成功HAP或手机验证。详见[最新确认保存记录](T19-confirmed-save-validation.md)。以下保留当时交接基线。
+
 ## 当前接口的区别
 
 - T13的NoticeImportRepository.create会在一个快照创建Notice、Task与ChecklistItem；但没有T16的持久方案、受信确认和operation回执。
