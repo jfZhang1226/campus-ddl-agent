@@ -27,7 +27,7 @@ function prepare(output) {
   const constructor="      const controller = new NoticeSaveController(new ArkNoticeExtractionTransport(),\n"+
     "        new NoticeConfirmedWriter(storage.local, storage.commits));\n"+
     "      try { noticeImportOwner.claim(controller); }\n"+
-    "      catch (error) { controller.dispose(); throw error; }";
+    "      catch (error) { controller.dispose(); throw error as Error; }";
   page=replaceOnce(page,constructor,'      const controller: NoticeSaveController = noticeSpeechOwner.get(context);');
   page=page.replaceAll('chatOwner.get().configuration()','voiceChatOwner.get(context).configuration()');
   page=replaceOnce(page,"return this.save.busy || ['extracting', 'saving', 'refreshing'].includes(this.view.phase);",

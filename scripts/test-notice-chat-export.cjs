@@ -59,7 +59,7 @@ check('production pages and client files are preserved except explicit export co
     assert.equal(hash(path.join(root,file)),hash(path.join(output,file.slice(7))),file);
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
-check('manifest matches six actual source outputs and existing export is refused without overwrite',()=>{
+check('manifest matches eight actual source outputs and existing export is refused without overwrite',()=>{
   assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,300);assert.equal(Object.keys(manifest.hashes).length,8);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));

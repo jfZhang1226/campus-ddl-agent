@@ -21,7 +21,7 @@ class NoticeSpeechOwner {
       const controller = new NoticeSaveController(new ArkNoticeExtractionTransport(),
         new NoticeConfirmedWriter(storage.local, storage.commits), speech);
       try { noticeImportOwner.claim(controller); }
-      catch (error) { controller.dispose(); throw error; }
+      catch (error) { controller.dispose(); throw error as Error; }
       this.controller = controller;
     }
     return this.controller;
