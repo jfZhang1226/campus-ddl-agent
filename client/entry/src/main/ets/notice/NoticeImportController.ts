@@ -160,6 +160,7 @@ export class NoticeImportController {
     if (this.busy()) return;
     this.state.publishedAt = value;
     this.publishedEdited = true;
+    this.refreshClarification();
     this.publish();
   }
 
@@ -189,6 +190,7 @@ export class NoticeImportController {
     if (!this.edited.includes(field)) this.edited.push(field);
     this.state.errorCode = '';
     this.state.notice = '';
+    this.refreshClarification();
     this.publish();
   }
 
@@ -423,24 +425,46 @@ export class NoticeImportController {
       this.state.materials = previous.materials.slice();
       this.state.materialFromNotice = previous.materialFromNotice.slice();
     }
-    // Recompute only the two established clarification fields after applying local edits.
-    this.state.missingFields = [];
-    this.state.questions = [];
-    if (this.state.title.trim().length === 0) {
-      this.state.missingFields.push('title');
-      this.state.questions.push('这份通知对应什么任务？请补充标题。');
-    }
-    if (this.state.deadlinePrecision === 'unknown') {
-      this.state.missingFields.push('deadline');
-      const question = result.draft.clarification.find((item) => item.field === 'deadline');
-      this.state.questions.push(question === undefined ? '截止日期暂不确定，可先保留为待补充。' : question.question);
-    }
+    this.refreshClarification();
     this.state.phase = 'idle';
     this.state.errorCode = '';
     this.state.notice = result.degraded ?
       '模型输出无法解析，已转人工录入草案；确认前不会保存。' :
       '已生成可编辑草案；确认前不会新增任务。';
     this.publish();
+  }
+
+  /** Screen feedback follows current edits, without a model call or a persistence operation. */
+  private refreshClarification(): void {
+    this.state.missingFields = [];
+    this.state.questions = [];
+    if (this.state.draft === null) return;
+    if (this.state.title.trim().length === 0) {
+      this.state.missingFields.push('title');
+      this.state.questions.push('这份通知对应什么任务？请补充标题。');
+    }
+    if (this.state.deadlinePrecision === 'unknown') {
+      this.state.missingFields.push('deadline');
+      const originalPublishedAt: string = this.state.draft.notice.publishedAt === null ? '' :
+        this.state.draft.notice.publishedAt;
+      if (this.state.publishedAt !== originalPublishedAt && isOffsetTimestamp(this.state.publishedAt)) {
+        this.state.questions.push('发布时间已补充，请点“继续整理”核对截止日期，或直接选择截止日期。');
+      } else {
+        const question = this.state.draft.clarification.find((item) => item.field === 'deadline');
+        this.state.questions.push(question === undefined ? '截止日期暂不确定，可先保留为待补充。' : question.question);
+      }
+    } else if (this.state.deadlinePrecision === 'date_only') {
+      if (!isCalendarDate(this.state.deadlineDate)) {
+        this.state.missingFields.push('deadline');
+        this.state.questions.push('请填写有效的截止日期（YYYY-MM-DD），也可以选择“待补充”。');
+      }
+    } else if (this.state.deadlinePrecision === 'exact') {
+      const dueAt: string | null = this.dueAt();
+      if (dueAt === null || !isOffsetTimestamp(dueAt)) {
+        this.state.missingFields.push('deadline');
+        this.state.questions.push('请填写有效的截止日期和时刻（YYYY-MM-DD / HH:mm），也可以选择“待补充”。');
+      }
+    }
   }
 
   private editableDraft(): NoticeDraft {

@@ -98,6 +98,47 @@ test('date-only user choice remains date-only without a fabricated clock', async
   assert.equal(view.deadlinePrecision,'date_only');assert.equal(view.deadlineDate,'2026-11-25');
   await s.c.speakDraft();assert.match(s.port.tts[0].text,/具体时刻未提供/);s.c.dispose();
 });
+
+test('title clarification immediately follows card edits without another request or save', async () => {
+  const s=setup();s.c.setRawText(fixtures.samples[2].draft.notice.rawText);s.c.extract();await extracted(s,fixtures.samples[2].draft);
+  s.c.edit('title','  ');assert.deepEqual(s.c.snapshot().missingFields,['title','deadline']);
+  s.c.edit('title','合成：已核对标题');assert.deepEqual(s.c.snapshot().missingFields,['deadline']);
+  assert.equal(s.calls.length,1);assert.equal(s.store.writes,0);s.c.dispose();
+});
+
+test('date and clock clarification only clears for valid current input, without another model round', async () => {
+  const s=setup();s.c.setRawText(fixtures.samples[2].draft.notice.rawText);s.c.extract();await extracted(s,fixtures.samples[2].draft);
+  s.c.edit('precision','date_only');assert.deepEqual(s.c.snapshot().missingFields,['deadline']);
+  for(const invalid of ['2026-11','2026-02-30','2026-11-25 ']) {
+    s.c.edit('date',invalid);assert.deepEqual(s.c.snapshot().missingFields,['deadline']);
+  }
+  s.c.edit('date','2026-11-25');assert.deepEqual(s.c.snapshot().missingFields,[]);assert.deepEqual(s.c.snapshot().questions,[]);
+  s.c.edit('precision','exact');assert.deepEqual(s.c.snapshot().missingFields,['deadline']);
+  s.c.edit('time','24:00');assert.deepEqual(s.c.snapshot().missingFields,['deadline']);
+  s.c.edit('time','18:00');assert.deepEqual(s.c.snapshot().missingFields,[]);
+  s.c.edit('date','');assert.deepEqual(s.c.snapshot().missingFields,['deadline']);
+  s.c.edit('precision','unknown');assert.deepEqual(s.c.snapshot().missingFields,['deadline']);
+  assert.equal(s.calls.length,1);assert.equal(s.store.writes,0);s.c.dispose();
+});
+
+test('unrelated title edits retain an exact original instant, while clearing its clock asks again', async () => {
+  const s=setup();await draftReady(s);const dueAt=s.c.snapshot().originalDueAt;
+  s.c.edit('title','合成：新标题');assert.deepEqual(s.c.snapshot().missingFields,[]);assert.equal(s.c.snapshot().originalDueAt,dueAt);
+  s.c.edit('time','');assert.deepEqual(s.c.snapshot().missingFields,['deadline']);
+  s.c.edit('time','19:30');assert.deepEqual(s.c.snapshot().missingFields,[]);assert.equal(s.c.snapshot().originalDueAt,'');
+  assert.equal(s.calls.length,1);assert.equal(s.store.writes,0);s.c.dispose();
+});
+
+test('entering a publication anchor updates the prompt without resolving or re-requesting the deadline', async () => {
+  const s=setup();s.c.setRawText(fixtures.samples[2].draft.notice.rawText);s.c.extract();await extracted(s,fixtures.samples[2].draft);
+  assert.match(s.c.snapshot().questions.join(' '),/发布时间未知/);
+  s.c.setPublishedAt('2026-11-15T09:00:00+08:00');
+  assert.doesNotMatch(s.c.snapshot().questions.join(' '),/发布时间未知/);
+  assert.match(s.c.snapshot().questions.join(' '),/继续整理/);
+  assert.equal(s.c.snapshot().deadlinePrecision,'unknown');assert.equal(s.c.snapshot().deadlineDate,'');
+  s.c.setPublishedAt('');assert.match(s.c.snapshot().questions.join(' '),/发布时间未知/);
+  assert.equal(s.calls.length,1);assert.equal(s.store.writes,0);s.c.dispose();
+});
 test('failed extraction retains original, edits, materials and cumulative answers for a manual retry', async () => {
   const s=setup();await draftReady(s);s.c.edit('title','保留标题');s.c.setMaterial(0,'保留材料');
   s.c.extract();s.calls.at(-1).reject(Error('network private detail'));await flush();
