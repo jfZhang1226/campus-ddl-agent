@@ -29,6 +29,8 @@ check('actual page assembly wires trusted confirmation, recovery and readback wi
   assert.match(page,/NoticeSaveController/);assert.doesNotMatch(page,/new NoticeImportRepository|NoticeCommitGate/);
   assert.match(page,/noticeSpeechOwner\.get/);assert.match(page,/voiceChatOwner\.get\(context\)\.configuration/);
   assert.match(page,/controller.restore\(\)/);assert.match(page,/notice-readback/);assert.match(page,/notice-discard-pending/);
+  assert.match(page,/setExpectedRevision\(revision.data.revision\)/);
+  assert.doesNotMatch(page,/const revision = \{/);
   const writer=read('entry/src/main/ets/pages/NoticeConfirmedWriter.ts');
   assert.match(writer,/commits.confirmation.apply/);assert.doesNotMatch(writer,/\.store.save\(/);
 });

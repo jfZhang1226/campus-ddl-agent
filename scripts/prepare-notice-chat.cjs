@@ -34,7 +34,9 @@ function prepare(output) {
   page = replaceOnce(page, 'new NoticeImportRepository(getClientStorage(context.filesDir).local)',
     'getClientStorage(context.filesDir).local');
   page = replaceOnce(page, '      const revision = await repository.revision();',
-    '      const local = await repository.read();\n      const revision = { success: local.success, data: local.data === null ? null : local.data.revision };\n      if (!this.pageAlive) return;');
+    '      const revision = await repository.read();\n      if (!this.pageAlive) return;');
+  page = replaceOnce(page, 'this.controller.setExpectedRevision(revision.data);',
+    'this.controller.setExpectedRevision(revision.data.revision);');
   page = replaceOnce(page, 'new NoticeImportController(new ArkNoticeExtractionTransport(), repository)',
     'noticeSpeechOwner.get(context)');
   page = replaceOnce(page, 'chatOwner.get().configuration()', 'voiceChatOwner.get(context).configuration()');
