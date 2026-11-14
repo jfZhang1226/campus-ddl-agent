@@ -37,7 +37,7 @@ async function setup(t,existing){
  controller.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));
  return {root,files,runtime,store,commits,writer,controller,calls};
 }
-async function ready(h){h.controller.setRawText(fixture.notice.rawText);h.controller.extract();h.calls.at(-1).resolve(new GatewayResponse(200,JSON.stringify({type:'draft',draft:clone(fixture)})));await tick();}
+async function ready(h,draft=fixture){h.controller.setRawText(draft.notice.rawText);h.controller.extract();h.calls.at(-1).resolve(new GatewayResponse(200,JSON.stringify({type:'draft',draft:clone(draft)})));await tick();}
 const bytes=h=>fs.readFile(path.join(h.root,'task-store.json'),'utf8');
 function input(){const x=new NoticeImportInput();x.draft=clone(fixture);x.materialFromNotice=x.draft.checklistItems.map(()=>true);return x;}
 
@@ -142,4 +142,47 @@ test('pending recovery cannot guess among multiple existing import proposals',as
 test('date-only confirmation and cold readback preserve unknown clock precision',async t=>{
  const h=await setup(t);await ready(h);h.controller.edit('precision','date_only');h.controller.edit('date','2026-11-20');await h.controller.confirm();
  const task=ok(await h.store.read()).tasks[0];assert.equal(task.dueAt,null);assert.equal(task.deadlineDate,'2026-11-20');assert.equal(h.controller.saveSnapshot().saved.task.dueAt,null);
+});
+
+test('an explicitly confirmed unknown deadline stays unknown through storage and cold readback',async t=>{
+ const draft=clone(require('../../fixtures/extraction/notice-draft-samples.json').samples[2].draft);
+ const h=await setup(t);await ready(h,draft);
+ assert.deepEqual(h.controller.snapshot().missingFields,['deadline']);
+ assert.equal(ok(await h.store.read()).tasks.length,0);
+ await h.controller.confirm();assert.equal(h.controller.snapshot().phase,'saved');
+ const saved=ok(await h.store.read());assert.equal(saved.tasks.length,1);
+ assert.equal(saved.tasks[0].deadlinePrecision,'unknown');assert.equal(saved.tasks[0].deadlineDate,null);assert.equal(saved.tasks[0].dueAt,null);
+ assert.equal(saved.notices[0].rawText,draft.notice.rawText);assert.equal(saved.notices[0].publishedAt,null);
+ const before=await bytes(h);h.controller.dispose();const cold=await setup(t,h.root);await cold.controller.restore();
+ assert.equal(cold.controller.saveSnapshot().saved.task.deadlinePrecision,'unknown');
+ assert.equal(cold.controller.saveSnapshot().saved.task.dueAt,null);assert.equal(await bytes(cold),before);
+});
+
+test('a date-only model draft needs no manual task fields and never gains a clock on commit',async t=>{
+ const draft=clone(require('../../fixtures/extraction/notice-draft-samples.json').samples[1].draft);
+ const h=await setup(t);await ready(h,draft);
+ assert.deepEqual(h.calls[0].request.answers,[]);assert.equal(h.calls[0].request.draft,null);
+ assert.equal(h.controller.snapshot().deadlineTime,'');await h.controller.confirm();
+ const saved=ok(await h.store.read());assert.equal(saved.tasks.length,1);
+ assert.equal(saved.tasks[0].deadlinePrecision,'date_only');assert.equal(saved.tasks[0].deadlineDate,draft.task.deadlineDate);
+ assert.equal(saved.tasks[0].dueAt,null);assert.equal(saved.notices[0].rawText,draft.notice.rawText);
+ assert.deepEqual(saved.checklistItems.map(item=>item.label),draft.checklistItems.map(item=>item.label));
+});
+
+test('a date clarification preserves the original notice and explicit answer through another round and cold commit',async t=>{
+ const draft=clone(require('../../fixtures/extraction/notice-draft-samples.json').samples[2].draft);
+ const h=await setup(t);await ready(h,draft);
+ h.controller.edit('precision','date_only');h.controller.edit('date','2026-11-24');h.controller.extract();
+ const call=h.calls.at(-1);assert.equal(call.request.rawText,draft.notice.rawText);
+ assert.equal(call.request.draft.task.deadlinePrecision,'unknown');
+ assert.deepEqual(call.request.answers.find(answer=>answer.field==='deadline'),{field:'deadline',value:'2026-11-24'});
+ // Even if a subsequent response omits the explicit answer, the confirmed screen must retain it.
+ call.resolve(new GatewayResponse(200,JSON.stringify({type:'draft',draft:clone(draft)})));await tick();
+ assert.deepEqual(h.controller.snapshot().missingFields,[]);assert.deepEqual(h.controller.snapshot().questions,[]);
+ assert.equal(ok(await h.store.read()).tasks.length,0);await h.controller.confirm();
+ const saved=ok(await h.store.read());assert.equal(saved.tasks[0].deadlineDate,'2026-11-24');assert.equal(saved.tasks[0].dueAt,null);
+ assert.equal(saved.notices[0].rawText,draft.notice.rawText);assert.equal(saved.notices[0].publishedAt,null);
+ const before=await bytes(h);h.controller.dispose();const cold=await setup(t,h.root);await cold.controller.restore();
+ assert.equal(cold.controller.saveSnapshot().saved.task.deadlineDate,'2026-11-24');
+ assert.equal(cold.controller.saveSnapshot().saved.task.dueAt,null);assert.equal(await bytes(cold),before);
 });

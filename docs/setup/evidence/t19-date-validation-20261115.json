@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-15",
+  "syntheticOnly": true,
+  "startingCommit": "a27f8e6c58ef9650a65c54078cbbd841021c1144",
+  "installedRuntimeCommit": "3fb5677b680d9112b17709a7f23096508e355f39",
+  "bundle": "com.campusddl.noticeprobe",
+  "versionCode": 200,
+  "device": { "model": "ADY-AL10", "api": 26, "uniqueIdentifiersRecorded": false },
+  "nativeSourceChanged": false,
+  "rebuiltOrReinstalled": false,
+  "mainObserved": "fa9c7ef",
+  "t17HeadObserved": "017da8a4e41d2724f7f82117a14452f42327f903",
+  "t17Integrated": false,
+  "realPhoneExtractions": 4,
+  "scenarios": 3,
+  "firstRoundTaskFieldsPrefilled": false,
+  "missingDateQuestionObserved": true,
+  "explicitDateFollowup": {
+    "inputMethod": "editable card fields, not natural-language chat",
+    "savedTitle": "软件测试课程实验报告",
+    "savedDateDisplay": "截止：2026-11-24（具体时刻未知）",
+    "displayedRevision": 4,
+    "originalTextPreserved": true
+  },
+  "rawDateOnly": {
+    "savedTitle": "操作系统课程报告",
+    "savedDateDisplay": "截止：2026-11-25（具体时刻未知）",
+    "materialDisplay": "PDF 报告 · 原通知 · 待准备",
+    "manualTaskFieldEdits": false,
+    "clockInputAbsent": true
+  },
+  "relativeDateWithoutAnchorQuestionObserved": true,
+  "relativeDraftCancelled": true,
+  "doubleClick": {
+    "injectedOnConfirm": true,
+    "displayedRevisionBefore": 4,
+    "displayedRevisionAfter": 6,
+    "directDeviceStorageCountsInspected": false,
+    "fullDeviceIdempotencyAcceptance": false
+  },
+  "coldStart": {
+    "gatewayStopped": true,
+    "oldProcessStopped": true,
+    "newProcessVerified": true,
+    "gatewayReconfigured": false,
+    "modelRequestedAgain": false,
+    "readbackMatched": true,
+    "physicalNetworkDisconnected": false
+  },
+  "hostRegression": { "strictTypeScript": true, "executed": 21, "passed": 21, "added": 3, "modelTransportMocked": true, "realHostFiles": true },
+  "createdUsb8000MappingRemoved": true,
+  "audioPerformed": false,
+  "rawModelJsonInspected": false,
+  "tokenUsageMeasured": false,
+  "failurePendingConflictDeviceMatrix": false,
+  "naturalLanguageFollowupImplemented": false,
+  "reminderValidation": false,
+  "remotePullRequestsMerged": false
+}
