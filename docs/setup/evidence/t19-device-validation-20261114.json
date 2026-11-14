@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-14",
+  "syntheticOnly": true,
+  "sourceCommit": "3fb5677b680d9112b17709a7f23096508e355f39",
+  "bundle": "com.campusddl.noticeprobe",
+  "versionCode": 200,
+  "device": { "model": "ADY-AL10", "api": 26, "uniqueIdentifiersRecorded": false },
+  "signedPackage": {
+    "bytes": 862341,
+    "sha256": "232ba98a6fc0cfacec575bca01a02fa794717b37b0b3ed7fc70d69bee8ef81a3",
+    "abcSha256": "9e2a54cedb61075f7f3f7e5bc973a02022542159db7675b3b58a62fdc8c863fb",
+    "abcMatchesCurrentUnsigned": true,
+    "unchangedSourceHashes": 6,
+    "buildTasks": { "total": 66, "executed": 52, "upToDate": 14 },
+    "installedAndLaunched": true,
+    "permissions": ["ohos.permission.MICROPHONE", "ohos.permission.INTERNET"]
+  },
+  "phoneRealExtractions": 2,
+  "taskFieldsPrefilled": false,
+  "observedDraft": {
+    "title": "数据库实验报告",
+    "courseText": "",
+    "dateText": "2026-11-20",
+    "timeText": "18:00",
+    "channel": "课程平台",
+    "materials": ["PDF报告", "源代码压缩包"]
+  },
+  "cancel": { "rawRetained": true, "readbackHadNoSavedTask": true, "directStorageCountsInspected": false },
+  "confirmedReadback": {
+    "title": "数据库实验报告（合成保存验证）",
+    "dueAt": "2026-11-20T18:00:00+08:00",
+    "displayedSavedRevision": 2,
+    "materials": [
+      { "label": "PDF报告", "sourceDisplay": "原通知", "stateDisplay": "待准备" },
+      { "label": "源代码压缩包", "sourceDisplay": "原通知", "stateDisplay": "待准备" },
+      { "label": "人工补充合成自查表", "sourceDisplay": "人工补充", "stateDisplay": "待准备" }
+    ],
+    "directStorageRecordsInspected": false,
+    "savedPageHasNoRepeatConfirm": true
+  },
+  "coldStart": { "stopVerified": true, "newProcessVerified": true, "gatewayReconfigured": false, "modelRequestedAgain": false, "readbackMatched": true, "repeatedReadbackMatched": true },
+  "audioPerformed": false,
+  "rapidDoubleConfirmDeviceTest": false,
+  "failureRetryPendingDeviceMatrix": false,
+  "reminderValidation": false,
+  "t17Integrated": false,
+  "physicalOfflineValidation": false,
+  "tokenUsageMeasured": false,
+  "remotePullRequestsMerged": false
+}
