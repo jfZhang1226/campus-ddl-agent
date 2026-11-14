@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs/promises'),path=require('node:path');
 const {NoticeConfirmedWriter,NOTICE_IMPORT_SESSION}=require('../../probes/harmony-noticechat/NoticeConfirmedWriter.ts');
 const {NoticeSaveController}=require('../../probes/harmony-noticechat/NoticeSaveController.ts');
+const {NoticeImportOwner}=require('../../client/entry/src/main/ets/notice/NoticeImportOwner.ts');
 const {CommitServices}=require('../../client/entry/src/main/ets/data/CommitServices.ts');
 const {LocalStore}=require('../../client/entry/src/main/ets/data/LocalStore.ts');
 const {StorageCoordinator}=require('../../client/entry/src/main/ets/data/storage/StorageCoordinator.ts');
@@ -10,6 +11,7 @@ const {TaskRepository}=require('../../client/entry/src/main/ets/data/TaskReposit
 const {TaskDraft}=require('../../client/entry/src/main/ets/domain/TaskContracts.ts');
 const {GatewayConfig,GatewayResponse}=require('../../client/entry/src/main/ets/chat/ChatModels.ts');
 const {NoticeImportInput}=require('../../client/entry/src/main/ets/data/NoticeImportRepository.ts');
+const {NoticeImportRepository}=require('../../client/entry/src/main/ets/data/NoticeImportRepository.ts');
 const {ProposalDraft,TaskChangeDraft}=require('../../client/entry/src/main/ets/domain/CommitModels.ts');
 const fixture=require('../../fixtures/extraction/notice-draft-samples.json').samples[0].draft;
 const runtimeRoot=path.resolve(__dirname,'../../runtime/t19-save-tests');
@@ -28,12 +30,12 @@ class Files {
 }
 class Runtime {n=0;now(){return '2026-11-14T14:00:00+08:00';}nextId(prefix='task'){return prefix+'-synthetic-'+ ++this.n;}}
 class Speech {view={phase:'idle',busy:false,text:'',partial:'',errorCode:''};subscribe(f){this.f=f;f(this.view);}edit(){}async record(){}finishRecording(){}cancel(){}async speak(){}dispose(){}}
-async function setup(t,existing){
+async function setup(t,existing,withSpeech=true){
  await fs.mkdir(runtimeRoot,{recursive:true});const root=existing||await fs.mkdtemp(path.join(runtimeRoot,'case-'));
  if(!existing)t.after(async()=>{assert.ok(root.startsWith(runtimeRoot+path.sep));await fs.rm(root,{recursive:true,force:true});});
  const files=new Files(root),runtime=new Runtime(),store=new LocalStore(new StorageCoordinator(files));
  const commits=new CommitServices(store,runtime),writer=new NoticeConfirmedWriter(store,commits,runtime),calls=[];
- const controller=new NoticeSaveController({start(_config,request){const c={request,cancel(){}};c.result=new Promise(resolve=>c.resolve=resolve);calls.push(c);return c;}},writer,new Speech());
+ const controller=new NoticeSaveController({start(_config,request){const c={request,cancel(){this.cancelled=true;}};c.result=new Promise(resolve=>c.resolve=resolve);calls.push(c);return c;}},writer,withSpeech?new Speech():undefined);
  controller.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));
  return {root,files,runtime,store,commits,writer,controller,calls};
 }
@@ -185,4 +187,62 @@ test('a date clarification preserves the original notice and explicit answer thr
  const before=await bytes(h);h.controller.dispose();const cold=await setup(t,h.root);await cold.controller.restore();
  assert.equal(cold.controller.saveSnapshot().saved.task.deadlineDate,'2026-11-24');
  assert.equal(cold.controller.saveSnapshot().saved.task.dueAt,null);assert.equal(await bytes(cold),before);
+});
+
+test('probe compatibility imports use exactly the shared production confirmation classes',()=>{
+ assert.equal(NoticeSaveController,require('../../client/entry/src/main/ets/notice/NoticeSaveController.ts').NoticeSaveController);
+ assert.equal(NoticeConfirmedWriter,require('../../client/entry/src/main/ets/notice/NoticeConfirmedWriter.ts').NoticeConfirmedWriter);
+ assert.equal(require('../../probes/harmony-noticechat/NoticeVoiceController.ts').NoticeVoiceController,
+  require('../../client/entry/src/main/ets/notice/NoticeVoiceController.ts').NoticeVoiceController);
+});
+
+test('text-only production controller uses trusted confirmation and reads it after reopening',async t=>{
+ const h=await setup(t,undefined,false);await h.controller.restore();await ready(h);
+ assert.equal(ok(await h.store.read()).tasks.length,0);await h.controller.confirm();
+ assert.equal(h.controller.snapshot().phase,'saved');const saved=ok(await h.store.read());
+ assert.equal(saved.tasks.length,1);assert.equal(saved.proposals[0].state,'applied');assert.equal(saved.operations.length,1);
+ const before=await bytes(h);h.controller.dispose();const cold=await setup(t,h.root,false);await cold.controller.restore();
+ assert.equal(cold.controller.saveSnapshot().saved.task.id,saved.tasks[0].id);assert.equal(await bytes(cold),before);
+});
+
+test('upgrading the entry preserves legacy T13 tasks and materials while new imports use T16',async t=>{
+ const h=await setup(t,undefined,false),legacy=new NoticeImportRepository(h.store,h.runtime),prior=input();
+ prior.draft.task.title='合成：旧入口保存的任务';const old=ok(await legacy.create(prior,0)),before=ok(await h.store.read());
+ await h.controller.restore();await ready(h);await h.controller.confirm();const saved=ok(await h.store.read());
+ assert.equal(saved.tasks.length,2);assert.equal(saved.proposals.length,1);assert.equal(saved.operations.length,1);
+ assert.deepEqual(saved.tasks.find(task=>task.id===old.task.id),before.tasks[0]);
+ assert.deepEqual(saved.notices.find(notice=>notice.id===old.notice.id),before.notices[0]);
+ assert.deepEqual(saved.checklistItems.filter(item=>item.taskId===old.task.id),before.checklistItems);
+ assert.equal(h.controller.saveSnapshot().saved.task.id,saved.operations[0].affectedTaskIds[0]);
+});
+
+test('unavailable speech cannot fabricate a transcription or block the production text path',async t=>{
+ const h=await setup(t,undefined,false);h.controller.setRawText(fixture.notice.rawText);await h.controller.record();
+ assert.equal(h.controller.speechSnapshot().errorCode,'UNSUPPORTED_PLATFORM');
+ assert.equal(h.controller.snapshot().rawText,fixture.notice.rawText);assert.equal(h.calls.length,0);
+ await ready(h);await h.controller.confirm();assert.equal(h.controller.snapshot().phase,'saved');
+});
+
+test('application background invalidates a production extraction without committing or resuming it',async t=>{
+ const h=await setup(t,undefined,false),owner=new NoticeImportOwner();owner.claim(h.controller);
+ h.controller.setRawText(fixture.notice.rawText);h.controller.extract();owner.pause();
+ const call=h.calls[0];assert.equal(call.cancelled,true);call.resolve(new GatewayResponse(200,JSON.stringify({type:'draft',draft:clone(fixture)})));await tick();
+ assert.equal(h.controller.snapshot().draft,null);assert.equal(ok(await h.store.read()).tasks.length,0);assert.equal(h.calls.length,1);
+ owner.destroy();
+});
+
+test('a stale page release cannot clear or pause the newer import owner',async t=>{
+ const first=await setup(t,undefined,false),second=await setup(t,undefined,false),owner=new NoticeImportOwner();
+ owner.claim(first.controller);assert.throws(()=>owner.claim(second.controller),error=>error.code==='BUSY');
+ owner.release(first.controller);owner.claim(second.controller);owner.release(first.controller);
+ second.controller.setRawText(fixture.notice.rawText);second.controller.extract();owner.pause();
+ assert.equal(second.calls[0].cancelled,true);assert.equal(first.calls.length,0);owner.destroy();
+});
+
+test('disposing a page during restore suppresses late publications and permits a fresh owner',async t=>{
+ const h=await setup(t,undefined,false),owner=new NoticeImportOwner();owner.claim(h.controller);
+ let release;const original=h.writer.recover.bind(h.writer);h.writer.recover=()=>new Promise(resolve=>{release=()=>original().then(resolve);});
+ let published=0;h.controller.subscribeSave(()=>published++);const restoring=h.controller.restore();owner.release(h.controller);const count=published;
+ await release();await restoring;assert.equal(published,count);assert.equal(ok(await h.store.read()).tasks.length,0);
+ const next=await setup(t,undefined,false);owner.claim(next.controller);await next.controller.restore();owner.destroy();
 });

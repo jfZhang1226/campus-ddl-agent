@@ -1,26 +1,12 @@
 // Export a separate HarmonyOS-only capability probe. Never modify client/ or copy local signing material.
 const fs = require('node:fs');
 const path = require('node:path');
-const cp = require('node:child_process');
+const {copyTrackedClient} = require('./export-tracked-client.cjs');
 const root = path.resolve(__dirname, '..');
 const source = path.join(root, 'probes/harmony-speech');
 function prepare(output) {
-  output = path.resolve(output);
-  if (fs.existsSync(output)) throw new Error('Choose a new output directory; existing probes may contain private signing settings.');
-  if (output === root || output.startsWith(path.join(root, 'client') + path.sep) || output === path.join(root, 'client')) {
-    throw new Error('Probe output cannot replace client/.');
-  }
-  const files = cp.execFileSync('git', ['ls-files', '-z', 'client/'], { cwd: root, encoding: 'utf8' }).split('\0').filter(Boolean);
-  if (!files.length) throw new Error('Run inside a clone containing the shared client.');
-  cp.execFileSync('git', ['diff', '--quiet', 'HEAD', '--', 'client/'], { cwd: root });
-  // Only Git-tracked source files; no node_modules, HAPs, caches, recording or private signing paths.
-  for (const file of files) {
-    if (!file.startsWith('client/') || path.isAbsolute(file) || file.split('/').includes('..')) throw new Error('Invalid source path.');
-    const input = path.join(root, file);
-    if (!fs.lstatSync(input).isFile()) throw new Error('Only regular source files can be exported.');
-    const target = path.join(output, file.slice('client/'.length));
-    fs.mkdirSync(path.dirname(target), { recursive: true }); fs.copyFileSync(input, target);
-  }
+  const copied = copyTrackedClient(output);
+  output = copied.output;
   const profilePath = path.join(output, 'build-profile.json5');
   const profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
   profile.app.signingConfigs = [];
@@ -59,8 +45,7 @@ function prepare(output) {
   fs.writeFileSync(path.join(output, 'T09-PROBE-ONLY.txt'),
     'HarmonyOS-only capability probe; no model/task/storage integration. Do not build Android from this export.\n' +
     'Personal signing settings belong only in this ignored export. Build/install/voice remain unverified until recorded.\n');
-  return { output, baseRevision: cp.execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
-    copiedFiles: files.length, bundleName: app.app.bundleName, productionClientModified: false };
+  return { ...copied, bundleName: app.app.bundleName, productionClientModified: false };
 }
 if (require.main === module) {
   const output = process.argv[2] || path.join(source, '.generated', String(Date.now()));

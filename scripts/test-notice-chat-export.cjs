@@ -31,7 +31,7 @@ check('actual page assembly wires trusted confirmation, recovery and readback wi
   assert.match(page,/controller.restore\(\)/);assert.match(page,/notice-readback/);assert.match(page,/notice-discard-pending/);
   assert.match(page,/setExpectedRevision\(revision.data.revision\)/);
   assert.doesNotMatch(page,/const revision = \{/);
-  const writer=read('entry/src/main/ets/pages/NoticeConfirmedWriter.ts');
+  const writer=read('entry/src/main/ets/notice/NoticeConfirmedWriter.ts');
   assert.match(writer,/commits.confirmation.apply/);assert.doesNotMatch(writer,/\.store.save\(/);
 });
 check('record, end, cancel, manual draft playback and immediate stop are reachable',()=>{
@@ -46,7 +46,7 @@ check('native owner and lifecycle release are confined to the exported assembly'
   const ability=read('entry/src/main/ets/entryability/EntryAbility.ets');
   assert.match(ability,/onBackground.*noticeSpeechOwner\.pause/);
   assert.match(ability,/onDestroy.*noticeSpeechOwner\.destroy/);
-  const port=read('entry/src/main/ets/pages/NoticeVoiceController.ts');
+  const port=read('entry/src/main/ets/notice/NoticeVoiceController.ts');
   assert.doesNotMatch(port,/\.\.\/\.\.\/client\//);
   assert.equal(json('.arkui-x/arkui-x-config.json5').buildOption.ignoreCrossPlatform,true);
 });
@@ -60,7 +60,7 @@ check('production pages and client files are preserved except explicit export co
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
 check('manifest matches six actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,200);assert.equal(Object.keys(manifest.hashes).length,6);
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,300);assert.equal(Object.keys(manifest.hashes).length,8);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
