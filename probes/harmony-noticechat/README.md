@@ -1,3 +1,13 @@
+# 2026-11-15：共享入口与原生装配
+
+确认保存和语音组合纯逻辑现在由client/entry/src/main/ets/notice维护，旧probe的三个TS文件只re-export兼容，不再复制第二份实现。正式NoticeImport用同一T16确认/恢复/回读核心，默认文字端口；本目录只保留原生SpeechOwner装配和兼容入口。
+
+新命令：`node scripts/prepare-shared-notice.cjs <全新英文目录>`生成共享Index/路由验证包com.campusddl.noticeentry/100，仅INTERNET；`node scripts/prepare-notice-chat.cjs <全新英文目录>`生成原生noticeprobe/300。两包已从d63931e完成未签名构建；152项相关电脑检查通过，没有安装或设备/模型/声音验证。个人签名和HAP不提交，原200包结果不代替300验收。
+
+详见[共享入口验证](../../docs/setup/T19-shared-entry-validation-20261115.md)和[下一次设备清单](../../docs/setup/T19-next-device-session.md)。完整聊天owner/自然语言补充、T17、多任务与系统提醒仍未完成。
+
+以下保留早期阶段。
+
 # 2026-11-14：确认保存增量
 
 2026-11-15最新：[即时追问修复](../../docs/setup/T19-live-feedback-20261115.md)已在共享控制器实现，65项相关检查与新签名构建通过，并更新独立包完成真机日期/时刻提示刷新和非法日期确认拦截。无需再次请求模型即可更新字段提示；自然语言续轮尚未实现，交接建议单独记录。当前分支已合入main的T16，仍包含T13/T15候选，不直接合并。
