@@ -21,14 +21,16 @@ check('independent bundle, empty signing, and only microphone/internet permissio
   assert.deepEqual(json('entry/src/main/module.json5').module.requestPermissions.map(x=>x.name).sort(),
     ['ohos.permission.INTERNET','ohos.permission.MICROPHONE']);
 });
-check('actual page assembly keeps raw input, optional collapsed metadata, editing and cancelled-save notice',()=>{
+check('actual page assembly wires trusted confirmation, recovery and readback without base CRUD',()=>{
   const page=read('entry/src/main/ets/pages/NoticeChat.ets');
   assert.match(page,/metadataOpen: boolean = false/);
   assert.match(page,/发送通知原文/);assert.match(page,/保留修改并继续整理/);
-  assert.match(page,/notice-confirm'\)\.enabled\(false\)/);
-  assert.match(page,/new NoticeCommitGate/);assert.doesNotMatch(page,/new NoticeImportRepository/);
+  assert.match(page,/notice-confirm'\)\.enabled\(!this.busy\(\) && this.view.phase !== 'saved'\)/);
+  assert.match(page,/NoticeSaveController/);assert.doesNotMatch(page,/new NoticeImportRepository|NoticeCommitGate/);
   assert.match(page,/noticeSpeechOwner\.get/);assert.match(page,/voiceChatOwner\.get\(context\)\.configuration/);
-  assert.match(page,/尚未接通/);
+  assert.match(page,/controller.restore\(\)/);assert.match(page,/notice-readback/);assert.match(page,/notice-discard-pending/);
+  const writer=read('entry/src/main/ets/pages/NoticeConfirmedWriter.ts');
+  assert.match(writer,/commits.confirmation.apply/);assert.doesNotMatch(writer,/\.store.save\(/);
 });
 check('record, end, cancel, manual draft playback and immediate stop are reachable',()=>{
   const page=read('entry/src/main/ets/pages/NoticeChat.ets');
@@ -55,13 +57,13 @@ check('production pages and client files are preserved except explicit export co
     assert.equal(hash(path.join(root,file)),hash(path.join(output,file.slice(7))),file);
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
-check('manifest matches five actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,false);assert.equal(Object.keys(manifest.hashes).length,5);
+check('manifest matches six actual source outputs and existing export is refused without overwrite',()=>{
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,200);assert.equal(Object.keys(manifest.hashes).length,6);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
   assert.equal(hash(path.join(output,'T19-source-manifest.json')),prior);
   assert.equal(fs.existsSync(path.join(output,'T15-source-manifest.json')),false);
-  assert.match(read('T19-NOTICE-INTERACTION-ONLY.txt'),/No formal task save/);
+  assert.match(read('T19-NOTICE-INTERACTION-ONLY.txt'),/Explicit client confirmation uses T16 v2/);
 });
 console.log(`${count} T19 source-export checks passed. No signing, network, microphone or device calls.`);

@@ -3,8 +3,8 @@ import { ArkNoticeExtractionTransport } from '../adapters/ArkNoticeExtractionTra
 import { getClientStorage } from '../data/ClientStorage';
 import { HarmonySpeechPort } from './HarmonySpeechPort';
 import { ProbeClock, SpeechProbeController } from './SpeechProbeController';
-import { NoticeCommitGate } from './NoticeCommitGate';
-import { NoticeVoiceController } from './NoticeVoiceController';
+import { NoticeConfirmedWriter } from './NoticeConfirmedWriter';
+import { NoticeSaveController } from './NoticeSaveController';
 
 class DeviceClock implements ProbeClock {
   schedule(action: () => void, ms: number): number { return setTimeout(action, ms); }
@@ -12,12 +12,13 @@ class DeviceClock implements ProbeClock {
 }
 
 class NoticeSpeechOwner {
-  private controller: NoticeVoiceController | undefined;
-  get(context: common.UIAbilityContext): NoticeVoiceController {
+  private controller: NoticeSaveController | undefined;
+  get(context: common.UIAbilityContext): NoticeSaveController {
     if (this.controller === undefined) {
       const speech = new SpeechProbeController(new HarmonySpeechPort(context), new DeviceClock());
-      this.controller = new NoticeVoiceController(new ArkNoticeExtractionTransport(),
-        new NoticeCommitGate(getClientStorage(context.filesDir).local), speech);
+      const storage = getClientStorage(context.filesDir);
+      this.controller = new NoticeSaveController(new ArkNoticeExtractionTransport(),
+        new NoticeConfirmedWriter(storage.local, storage.commits), speech);
     }
     return this.controller;
   }

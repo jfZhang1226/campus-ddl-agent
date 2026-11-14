@@ -6,6 +6,7 @@ const ts = require(process.env.T08_TYPESCRIPT_PATH || path.join(process.env.DEVE
 const options = {strict:true, noEmit:true, target:ts.ScriptTarget.ES2020,
   module:ts.ModuleKind.CommonJS, lib:['lib.es2020.d.ts','lib.dom.d.ts'], types:[], skipLibCheck:true};
 const files = ['probes/harmony-noticechat/NoticeVoiceController.ts', 'probes/harmony-noticechat/NoticeCommitGate.ts',
+  'probes/harmony-noticechat/NoticeConfirmedWriter.ts', 'probes/harmony-noticechat/NoticeSaveController.ts',
   'probes/harmony-speech/SpeechProbeController.ts'].map(file => path.join(root, file));
 const errors = ts.getPreEmitDiagnostics(ts.createProgram(files, options));
 if (errors.length) {

@@ -34,6 +34,7 @@ export class NoticeImportState {
   remainingMinutes: string = '';
   submissionChannel: string = '';
   materials: string[] = [];
+  materialFromNotice: boolean[] = [];
   missingFields: string[] = [];
   questions: string[] = [];
   expectedRevision: number = 0;
@@ -82,6 +83,7 @@ export class NoticeImportController {
     copy.remainingMinutes = this.state.remainingMinutes;
     copy.submissionChannel = this.state.submissionChannel;
     copy.materials = this.state.materials.slice();
+    copy.materialFromNotice = this.state.materialFromNotice.slice();
     copy.missingFields = this.state.missingFields.slice();
     copy.questions = this.state.questions.slice();
     copy.expectedRevision = this.state.expectedRevision;
@@ -101,6 +103,21 @@ export class NoticeImportController {
 
   unsubscribe(): void {
     this.listener = undefined;
+  }
+
+  /** Trusted local pending proposal recovery; never called from a model response. */
+  restorePending(draft: NoticeDraft, fromNotice: boolean[], revision: number): void {
+    if (this.busy() || fromNotice.length !== draft.checklistItems.length) return;
+    this.clearDraft(false);
+    this.state.rawText = draft.notice.rawText;
+    this.state.timezone = draft.notice.timezone;
+    this.state.expectedRevision = revision;
+    const result = new NoticeExtractionResult();
+    result.draft = cloneNoticeDraft(draft);
+    this.finishExtraction(result);
+    this.state.materialFromNotice = fromNotice.slice();
+    this.state.notice = '已恢复暂存方案，请核对后重新确认；尚未保存正式任务。';
+    this.publish();
   }
 
   configure(config: GatewayConfig): boolean {
@@ -185,6 +202,7 @@ export class NoticeImportController {
   addMaterial(): void {
     if (this.busy() || this.state.draft === null || this.state.phase === 'saved') return;
     this.state.materials.push('');
+    this.state.materialFromNotice.push(false);
     this.materialsEdited = true;
     this.publish();
   }
@@ -192,6 +210,7 @@ export class NoticeImportController {
   removeMaterial(index: number): void {
     if (this.busy() || index < 0 || index >= this.state.materials.length) return;
     this.state.materials.splice(index, 1);
+    this.state.materialFromNotice.splice(index, 1);
     this.materialsEdited = true;
     this.publish();
   }
@@ -258,6 +277,8 @@ export class NoticeImportController {
     this.publish();
     const input = new NoticeImportInput();
     input.draft = draft;
+    input.materialFromNotice = this.state.materialFromNotice.filter((_value: boolean, index: number) =>
+      this.state.materials[index].trim().length > 0);
     input.expectedRevision = this.state.expectedRevision;
     let result: StorageResult<NoticeImportWrite>;
     try {
@@ -373,6 +394,7 @@ export class NoticeImportController {
     this.state.submissionChannel = result.draft.task.submissionChannel === null ?
       '' : result.draft.task.submissionChannel;
     this.state.materials = result.draft.checklistItems.map((item: NoticeDraftChecklistItem) => item.label);
+    this.state.materialFromNotice = result.draft.checklistItems.map(() => true);
     this.state.missingFields = result.draft.missingFields.slice();
     this.state.questions = result.draft.clarification.map((item) => item.question);
     this.state.sourceLabel = result.draft.notice.sourceLabel === null ? '' : result.draft.notice.sourceLabel;
@@ -397,7 +419,10 @@ export class NoticeImportController {
     }
     if (this.sourceEdited) this.state.sourceLabel = previous.sourceLabel;
     if (this.publishedEdited) this.state.publishedAt = previous.publishedAt;
-    if (this.materialsEdited) this.state.materials = previous.materials.slice();
+    if (this.materialsEdited) {
+      this.state.materials = previous.materials.slice();
+      this.state.materialFromNotice = previous.materialFromNotice.slice();
+    }
     // Recompute only the two established clarification fields after applying local edits.
     this.state.missingFields = [];
     this.state.questions = [];
@@ -536,6 +561,7 @@ export class NoticeImportController {
     this.state.remainingMinutes = '';
     this.state.submissionChannel = '';
     this.state.materials = [];
+    this.state.materialFromNotice = [];
     this.state.missingFields = [];
     this.state.questions = [];
     this.state.savedTaskId = '';
