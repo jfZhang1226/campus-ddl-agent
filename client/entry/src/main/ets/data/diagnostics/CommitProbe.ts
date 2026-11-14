@@ -1,6 +1,6 @@
 import { FilePort } from '../../adapters/storage/FilePort';
 import { CommitProposal, CommitReceipt, ConfirmedCommitRequest, ProposalDraft, TaskChangeDraft } from '../../domain/CommitModels';
-import { BusinessSnapshot } from '../../domain/StorageModels';
+import { BusinessSnapshot, ChecklistItem } from '../../domain/StorageModels';
 import { TaskDraft } from '../../domain/TaskContracts';
 import { CommitServices } from '../CommitServices';
 import { LocalStore } from '../LocalStore';
@@ -32,14 +32,22 @@ export async function stageCommitProbe(files: FilePort): Promise<CommitProbeRepo
   const commits: CommitServices = new CommitServices(store);
   check(result(await store.read()).revision === 0, '验证目录必须为空。');
   const draft: ProposalDraft = new ProposalDraft(); draft.sessionId = 't16-artificial-session';
+  draft.notices.push({ id: 't16-artificial-notice', rawText: 'T16 artificial source: report and attachment',
+    sourceLabel: 'T16 人工来源', publishedAt: null, importedAt: '2026-11-12T00:00:00Z', timezone: 'Asia/Shanghai',
+    contentHash: '7eaad3e949d271952c459cf1a454ad2e4bbe8eea67d3bfb9820ba73fd7b9e66f' });
   const change: TaskChangeDraft = new TaskChangeDraft(); change.draft.title = 'T16 人工确认任务 🗓️';
+  change.draft.noticeIds = ['t16-artificial-notice'];
+  change.checklistCreates = [{ label: '人工报告 PDF', sourceNoticeId: 't16-artificial-notice' },
+    { label: '人工补充附件', sourceNoticeId: null }];
   change.draft.deadlinePrecision = 'date_only'; change.draft.deadlineDate = '2028-02-29'; draft.changes.push(change);
   const proposal: CommitProposal = result(await commits.proposals.stage(draft));
   const snapshot: BusinessSnapshot = result(await store.read());
-  check(snapshot.revision === 1 && snapshot.tasks.length === 0 && snapshot.operations.length === 0, '草案提前改变正式任务。');
+  check(snapshot.revision === 1 && snapshot.tasks.length === 0 && snapshot.notices.length === 0 &&
+    snapshot.checklistItems.length === 0 && snapshot.operations.length === 0 && (proposal.checklistItems as ChecklistItem[]).length === 2,
+    '草案提前改变正式任务、来源或材料。');
   const report: CommitProbeReport = new CommitProbeReport();
   report.proposalId = proposal.id; report.expectedRevision = proposal.expectedRevision; report.revision = snapshot.revision;
-  report.primary = await files.readText('task-store.json'); report.checks.push('待确认方案已保存；正式任务0、操作0');
+  report.primary = await files.readText('task-store.json'); report.checks.push('待确认方案已保存；正式任务0、来源0、材料0、操作0；预留材料2');
   await files.writeText('commit-probe.json', JSON.stringify(report)); return report;
 }
 
@@ -64,7 +72,12 @@ export async function confirmCommitProbe(files: FilePort): Promise<CommitProbeRe
     await files.readText('task-store.json') === before, '重复操作产生额外写入。');
   const snapshot: BusinessSnapshot = result(await store.read());
   check(snapshot.tasks.length === 1 && snapshot.operations.length === 1 && snapshot.proposals.length === 1 &&
-    (snapshot.proposals[0] as CommitProposal).state === 'applied', '业务与回执未一致提交。');
+    snapshot.notices.length === 1 && snapshot.checklistItems.length === 2 &&
+    JSON.stringify(snapshot.checklistItems) === JSON.stringify(receipt.checklistItems) &&
+    JSON.stringify(snapshot.notices) === JSON.stringify(receipt.notices) &&
+    snapshot.checklistItems.every((item: ChecklistItem) => item.taskId === snapshot.tasks[0].id && item.state === 'pending' && item.confirmedAt === null) &&
+    (snapshot.proposals[0] as CommitProposal).state === 'applied', '任务、来源、材料、方案与回执未一致提交。');
+  report.checks.push('同一快照：任务1、来源1、材料2；材料pending且绑定正确');
   report.checks.push('同一操作重试/重复：一次正式提交，committedRevision=2');
   const unrelated: TaskDraft = new TaskDraft(); unrelated.title = 'T16 之后的人工任务';
   result(await new TaskRepository(store).create(unrelated, 2));
@@ -78,9 +91,11 @@ export async function cancelCommitProbe(files: FilePort): Promise<CommitProbeRep
   const store: LocalStore = new LocalStore(new StorageCoordinator(files)); const commits: CommitServices = new CommitServices(store);
   const snapshot: BusinessSnapshot = result(await store.read());
   const cancelled: CommitProposal = result(await commits.confirmation.cancel(report.proposalId, snapshot.revision));
-  check(cancelled.state === 'cancelled' && result(await store.read()).tasks.length === 0, '取消改变正式任务。');
+  const after: BusinessSnapshot = result(await store.read());
+  check(cancelled.state === 'cancelled' && after.tasks.length === 0 && after.notices.length === 0 && after.checklistItems.length === 0,
+    '取消改变正式任务、来源或材料。');
   report.phase = 'cancelled'; report.revision = result(await store.read()).revision;
-  report.primary = await files.readText('task-store.json'); report.checks.push('明确取消，正式任务0、操作0');
+  report.primary = await files.readText('task-store.json'); report.checks.push('明确取消，正式任务0、来源0、材料0、操作0');
   await files.writeText('commit-probe.json', JSON.stringify(report)); return report;
 }
 
@@ -96,11 +111,14 @@ export async function readCommitProbe(files: FilePort): Promise<CommitProbeRepor
     const receipt: CommitReceipt = report.receipt as CommitReceipt;
     const replay: CommitReceipt = result(await commits.confirmation.apply(new ConfirmedCommitRequest(proposal.id,
       receipt.operationId, proposal.expectedRevision)));
-    check(JSON.stringify(replay) === JSON.stringify(receipt) && snapshot.tasks.length === 2 && snapshot.operations.length === 1,
+    check(JSON.stringify(replay) === JSON.stringify(receipt) && snapshot.tasks.length === 2 && snapshot.operations.length === 1 &&
+      snapshot.notices.length === 1 && snapshot.checklistItems.length === 2 &&
+      JSON.stringify(snapshot.checklistItems) === JSON.stringify(receipt.checklistItems),
       '重启后重复创建或回执改变。');
     report.checks.push('新实例读取并重试旧操作：回执相同，当前revision=3，未写入');
   } else {
-    check(snapshot.tasks.length === 0 && snapshot.operations.length === 0 && proposal.state === report.phase,
+    check(snapshot.tasks.length === 0 && snapshot.notices.length === 0 && snapshot.checklistItems.length === 0 &&
+      snapshot.operations.length === 0 && proposal.state === report.phase,
       '未确认或已取消方案被自动执行。');
     report.checks.push('新实例只读待确认/取消方案；未自动提交');
   }

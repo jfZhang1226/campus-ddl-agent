@@ -34,7 +34,7 @@ struct CommitCheck {
       Column({ space: 14 }) {
         Text('T16 幂等提交验证').fontSize(24).fontWeight(FontWeight.Bold)
         Text('开发验证页 · 独立人工目录').fontSize(14)
-        Text('创建方案后可先停止应用再读取；任务尚未正式保存。确认按钮只提交本页人工任务，含一次受控写失败和明确重试验证。').fontSize(14)
+        Text('创建方案后可先停止应用再读取；任务、来源与2项材料尚未正式保存。确认按钮只提交本页人工数据，含一次受控写失败和明确重试验证。').fontSize(14)
         Button('1. 创建人工待确认方案').id('t16-stage').enabled(!this.busy).onClick(() => { this.run('stage'); })
         Button('2. 确认并提交人工方案').id('t16-confirm').enabled(!this.busy).onClick(() => { this.run('confirm'); })
         Button('取消人工方案').id('t16-cancel').enabled(!this.busy).onClick(() => { this.run('cancel'); })

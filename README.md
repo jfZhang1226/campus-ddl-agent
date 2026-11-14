@@ -57,9 +57,11 @@ T06 的模板验收不代表 T08 存储或后续业务通过。签名和设备�
 
 ## C 的 T16 幂等提交（当前任务分支）
 
-T11 已于2026-11-11经PR #14合入main/3a22a02，以上为交付阶段历史记录。当前从该main推进T16：[接口与验证说明](docs/setup/T16-幂等提交与业务快照.md)。任务创建/编辑方案由客户端明确确认后，将业务变化、方案状态与操作回执一次快照提交；相同operationId重试返回原回执，版本冲突需重新生成并确认。T16不替代T17正式Agent串联或T30关联删除。现按授权发布原任务分支供A/B独立评审，测试/构建与设备结果分别记录，暂不合并。
+T11 已于2026-11-11经PR #14合入main/3a22a02，以上为交付阶段历史记录。当前从该main推进T16：[接口与验证说明](docs/setup/T16-幂等提交与业务快照.md)。任务创建/编辑方案由客户端明确确认后，将业务变化、方案状态与操作回执一次快照提交；相同operationId重试返回原回执，版本冲突需重新生成并确认。T16不替代T17正式Agent串联或T30关联删除。本次材料修正按授权更新原PR #15，请A/B/D独立复查；测试/构建与设备结果分别记录，暂不合并。
 
-T16本轮已完成29TS严格、56项幂等/确认检查及既有回归，固定3f02e4a新目录双端构建和包核验通过；[主机/构建摘要](docs/setup/evidence/t16-host-build-20261111.json)绑定同源106个客户端文件。[本轮Android](docs/setup/evidence/t16-android-device-20261111.json)与[鸿蒙真机](docs/setup/evidence/t16-harmony-device-20261111.json)均已完成隔离人工确认/取消、受控替换失败/同操作重试、版本不一致阻断和真实冷启动/离线回执；106/110份旧文件保持，网络恢复/保持。[双端实际文件对照](docs/setup/evidence/t16-device-comparison-20261111.json)的9个对象排除生成ID与审计时间后业务字段一致。正式页面/Agent联调、A/B接口评审、CI与最终验收仍另行推进；当前发布状态以GitHub PR为准，暂不合并。
+T16原v1源码3f02e4a已完成29TS严格、56项幂等/确认检查及既有回归，新目录双端构建和包核验通过；[原主机/构建摘要](docs/setup/evidence/t16-host-build-20261111.json)绑定同源106个客户端文件。[原Android](docs/setup/evidence/t16-android-device-20261111.json)与[鸿蒙真机](docs/setup/evidence/t16-harmony-device-20261111.json)均已完成隔离人工确认/取消、受控替换失败/同操作重试、版本不一致阻断和真实冷启动/离线回执；106/110份旧文件保持，网络恢复/保持。[原双端实际文件对照](docs/setup/evidence/t16-device-comparison-20261111.json)的9个对象排除生成ID与审计时间后业务字段一致。这些空材料案例不覆盖后续材料增量。正式页面/Agent联调、独立评审、CI与最终验收仍另行推进；当前发布状态以GitHub PR为准，暂不合并。
+
+2026-11-12按B/D意见在同一T16分支补创建型材料：新建任务的checklistCreates由客户端预留ID，默认pending，与任务/来源/方案/回执一次保存；重复或重启重放原材料结果。新记录使用v2 tag，旧v1继续读取，旧客户端拒绝v2；新生成ID去掉多余task-，旧ID不改。29TS严格、92项T16和既有回归、同源双端构建与包核验通过，见[材料增量摘要](docs/setup/evidence/t16-materials-host-build-20261112.json)。新增路径[鸿蒙](docs/setup/evidence/t16-materials-harmony-device-20261112.json)与[Android真机](docs/setup/evidence/t16-materials-android-device-20261112.json)各29项断言/3次真实冷启动通过，[两端9个实际对象](docs/setup/evidence/t16-materials-device-comparison-20261112.json)替换生成ID/排除审计时间后业务一致；除明确更新的诊断索引外旧campus文件保持，网络恢复/保持。完整协议与限制见[T16说明第11—13节](docs/setup/T16-幂等提交与业务快照.md#11-创建型材料及-bd-意见修正2026-11-12)。材料勾选及已有清单编辑仍按T22推进；本次修正按授权推送原分支并更新PR #15，请A/B/D复查；暂不合并，正式T13/T17/T19整链路另验。
 
 ## C 的 T03 交付
 

@@ -1,0 +1,91 @@
+{
+  "recordedAt": "2026-11-12",
+  "task": "T16 creation materials / B-D comments",
+  "sourceCommit": "3e244dd0cadf36d746d605c5e166f1f00189ea46",
+  "publishedBaseline": "d38bfe7317a2992ed1913826f921fe2edda9d882",
+  "baseMain": "3a22a025bbb51a2c6ebe119a26f35044e484f31d",
+  "branch": "feat/c-t16-confirmed-commit",
+  "pr": "https://github.com/jfZhang1226/campus-ddl-agent/pull/15",
+  "sourceArchiveSha256": "cb0b16b2dd9f7d876b9bc9cf9675eac12a7ec8bac98718b8f95571feb6a2dfe1",
+  "clientSourceFiles": 106,
+  "allClientSourcesUnmodifiedDuringBuild": true,
+  "trackedSigningConfigsEmpty": true,
+  "tests": {
+    "strictTsFiles": 29,
+    "t16": 92,
+    "history": 66,
+    "storage": 106,
+    "tasks": 85,
+    "chat": 29
+  },
+  "compatibilityProbe": {
+    "originalSource": "3f02e4ae868e8d219c40f429d9ac7910cbfd1b36",
+    "actualOriginalV1ReplayUnchanged": true,
+    "originalDoublePrefixedIdsPreserved": true,
+    "mixedV1V2ReadableByNewClient": true,
+    "originalV1ClientRejectsV2": "UNSUPPORTED_SCHEMA",
+    "filesPreserved": true
+  },
+  "harmonyBuild": {
+    "command": "devecocli build",
+    "success": true,
+    "tasksExecuted": 66,
+    "tasksUpToDate": 0,
+    "signed": false
+  },
+  "androidBuild": {
+    "command": "ace build apk --debug --target-platform arm64",
+    "success": true,
+    "gradleTasksExecuted": 32,
+    "hvigorTaskPasses": [
+      {
+        "executed": 3,
+        "upToDate": 10
+      },
+      {
+        "executed": 3,
+        "upToDate": 10
+      }
+    ],
+    "nativeAdapterLibraries": 9,
+    "httpPluginDex": true,
+    "apkSignatureV2Verified": true,
+    "packageName": "com.campusddl.agent",
+    "minSdk": 26,
+    "targetSdk": 33,
+    "abi": "arm64-v8a"
+  },
+  "v1V2MaterialSymbolsInBothPackages": true,
+  "artifacts": [
+    {
+      "file": "T16-materials-Harmony-unsigned-20261112.hap",
+      "bytes": 782272,
+      "sha256": "73ebd638e882f41f412f78f04160409559ee4fe1fa53dd06597d0b8ce0c91281",
+      "v1V2MaterialAndConfirmationSymbolsPresent": true
+    },
+    {
+      "file": "T16-materials-Android-20261112.apk",
+      "bytes": 51065919,
+      "sha256": "76f0daa70143e7050b00901771b35700581165748f35f8ddab7a22ee59c6ba07",
+      "v1V2MaterialAndConfirmationSymbolsPresent": true,
+      "nativeLibraries": 9,
+      "httpPluginDex": true
+    }
+  ],
+  "changedSourceTextScanned": 9,
+  "noNewSecretPattern": true,
+  "newMaterialDeviceValidationPerformed": false,
+  "realModelCalls": 0,
+  "repairPushed": false,
+  "prExists": true,
+  "merged": false,
+  "limits": [
+    "New material path requires new same-source phone validation; old empty-material v1 device evidence is not reused",
+    "Harmony HAP unsigned; reuse of existing authorized signing only outside the repository during later device work",
+    "Diagnostic UI uses artificial isolated files, not formal T13/T17/T19 full-chain acceptance",
+    "Materials may only be created with new tasks; existing-list edits/deletes/prepared states remain T22",
+    "Prepared Notice hashing remains trusted importer responsibility; IDs are opaque and old IDs are preserved",
+    "In-memory uncommitted confirmation is not restored on restart; explicit reconfirmation retains staged material IDs",
+    "No physical hardware failure, real model, cross-file transaction, CI pass, formal A/B/D approval or final acceptance claimed"
+  ]
+}
