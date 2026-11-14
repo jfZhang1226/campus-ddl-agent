@@ -160,4 +160,8 @@ T03 资料交付：三类字段表、两条关联样例、本地保存方案均�
 
 当前 T14 分支已实现任务 CRUD、日期/来源校验及版本保护，接口与限制见 [T14 说明](setup/T14-任务Repository与日期校验.md)。Repository 管理 ID、version 和审计时间；update 完整替换可编辑字段，Task/Checklist 状态枚举保持本文约定。共享 codec 也使用严格公历日期和显式偏移校验：历史非法日期保留文件并返回 CORRUPT_DATA，不自动归一化。代码、85项新增主机检查、106项存储/29项对话回归及双端构建通过；本轮设备验证和 A/B 接口评审未完成，尚未合并。T16 的 operationId/确认记录、T22 的状态转换与通知来源更新仍为后续任务。
 
+## 13. T16 方案与操作回执（2026-11-11，当前任务分支）
+
+T08/T14/T11已合入main。T16在业务schemaVersion=1的保留集合中继续读取`t16.proposal.v1`/`t16.operation.v1`；2026-11-12创建型材料增量的新方案/操作使用对应v2 tag，防止旧客户端静默忽略材料。旧/未知JSON保留，已知记录须通过结构、关联和回执内容校验，未知T16版本拒绝执行。方案保存与取消也增加全局revision；正式提交将任务/新来源/新材料、applied状态和operationId回执一次保存。create的checklistCreates仅接受label/sourceNoticeId，客户端预留ID并绑定任务，默认pending/confirmedAt=null；v2回执包含本次notices、createdChecklistItemIds及checklistItems，重复/重启返回原结果。当前仅任务create/update，材料只随新任务创建，不扩展已有清单编辑、删除、勾选/完整状态转换或计划。客户端确认能力与草案/读取分开，不能将其注册为模型确认工具；重启不恢复未提交授权。完整参数、重试/不确定失败、版本、工具适配与保留边界见[T16说明](setup/T16-幂等提交与业务快照.md)。
+
 2026-11-02 T14接续：同源鸿蒙真机任务流程、停止进程后冷启动、离线读回及人工文件比较通过，与Android排除ID/审计时间后的业务字段一致，详见 [鸿蒙与双端比较证据](setup/evidence/t14-harmony-device-20261102.json)。运行源码仍8f964ff，本轮未改字段/接口或模型工具。技术证据已齐，仍待A/B独立接口评审和最终验收；暂不合并。

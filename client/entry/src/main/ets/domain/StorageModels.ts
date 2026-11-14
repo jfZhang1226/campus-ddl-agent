@@ -45,6 +45,7 @@ export class BusinessSnapshot {
   checklistItems: ChecklistItem[] = [];
   // Reserved collections are preserved as JSON objects. Their full business codecs
   // and invariants are implemented with T16/T22/T25, before those features integrate.
+  // T16 recognizes v1/v2 proposal and operation tags; v2 includes checklist creation results.
   availabilityBlocks: Object[] = [];
   planBlocks: Object[] = [];
   proposals: Object[] = [];

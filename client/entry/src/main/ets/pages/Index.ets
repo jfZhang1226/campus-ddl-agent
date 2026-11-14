@@ -106,6 +106,13 @@ struct Index {
     });
   }
 
+  private openCommitCheck(): void {
+    this.storageNavigationError = '';
+    router.pushUrl({ url: 'pages/CommitCheck' }).catch(() => {
+      this.storageNavigationError = '无法打开提交验证页，请稍后重试。';
+    });
+  }
+
   @Builder
   header() {
     Column({ space: 12 }) {
@@ -208,6 +215,9 @@ struct Index {
         Button('T11 历史验证（开发用）').id('t11-history-entry')
           .enabled(!this.view.busy)
           .onClick(() => this.openHistoryCheck())
+        Button('T16 提交验证（开发用）').id('t16-commit-entry')
+          .enabled(!this.view.busy)
+          .onClick(() => this.openCommitCheck())
         if (this.storageNavigationError.length > 0) {
           Text(this.storageNavigationError).fontSize(12).fontColor('#A43B32')
         }
