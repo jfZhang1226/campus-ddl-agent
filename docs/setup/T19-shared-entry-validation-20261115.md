@@ -2,6 +2,8 @@
 
 2026-11-15。按用户要求，设备、真实模型和音频联调留到下一次；本轮没有查询/操作手机、启动真实网关、调用真实模型或处理签名授权。
 
+后续同日用户解锁手机后的执行结果单列为[300包设备记录](T19-native300-device-20261115.md)。下文保留此前离线阶段事实；不要将两阶段范围混为一谈。共享新入口仍待本人保存签名配置。
+
 ## 这次实际完成
 
 此前独立noticeprobe已验证的NoticeConfirmedWriter、NoticeSaveController、NoticeVoiceController移入共享客户端notice目录，原probe路径只转出同一构造器。正式NoticeImport页面现在用应用唯一ClientStorage.local/commits，经T16 v2明确确认保存、保留原request重试、恢复/取消pending并回读真实任务材料，不再走基础NoticeImportRepository保存。没有修改T12网关、业务schema或T17。
