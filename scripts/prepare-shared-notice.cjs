@@ -8,7 +8,7 @@ function prepare(output) {
   const profile=read('build-profile.json5');profile.app.signingConfigs=[];
   for(const product of profile.app.products)delete product.signingConfig;
   write('build-profile.json5',profile);
-  const app=read('AppScope/app.json5');app.app.bundleName='com.campusddl.noticeentry';app.app.versionName='0.1.0';app.app.versionCode=100;
+  const app=read('AppScope/app.json5');app.app.bundleName='com.campusddl.noticeentry';app.app.versionName='0.2.0';app.app.versionCode=200;
   write('AppScope/app.json5',app);
   const strings=read('entry/src/main/resources/base/element/string.json');
   for(const row of strings.string)if(row.name==='EntryAbility_label')row.value='课事清通知入口验证';
@@ -16,10 +16,10 @@ function prepare(output) {
   const hashes={};
   for(const f of ['pages/NoticeImport.ets','notice/NoticeImportController.ts','notice/NoticeConfirmedWriter.ts',
     'notice/NoticeSaveController.ts','notice/NoticeVoiceController.ts','notice/NoticeImportOwner.ts','speech/UnavailableSpeechSession.ts',
-    'entryability/EntryAbility.ets']) {
+    'entryability/EntryAbility.ets','pages/CommitCheck.ets','data/diagnostics/NoticeRecoveryProbe.ts']) {
     const file='entry/src/main/ets/'+f;hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
   }
-  const manifest={...result,scope:'T19-shared-notice-entry',bundleName:app.app.bundleName,versionCode:100,hashes,
+  const manifest={...result,scope:'T19-shared-notice-entry',bundleName:app.app.bundleName,versionCode:200,hashes,
     formalSaveEnabled:true,signed:false,deviceValidated:false};
   write('T19-shared-entry-manifest.json',manifest);
   return manifest;

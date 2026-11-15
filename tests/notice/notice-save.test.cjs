@@ -16,6 +16,7 @@ const {ProposalDraft,TaskChangeDraft}=require('../../client/entry/src/main/ets/d
 const fixture=require('../../fixtures/extraction/notice-draft-samples.json').samples[0].draft;
 const runtimeRoot=path.resolve(__dirname,'../../runtime/t19-save-tests');
 const clone=x=>structuredClone(x),tick=()=>new Promise(r=>setImmediate(r));
+const recovery=require('../../client/entry/src/main/ets/data/diagnostics/NoticeRecoveryProbe.ts');
 const ok=r=>{assert.equal(r.success,true,r.message);return r.data;};
 class Files {
  constructor(root){this.root=root;this.fail='';this.lose=false;this.badRead=false;}
@@ -42,6 +43,65 @@ async function setup(t,existing,withSpeech=true){
 async function ready(h,draft=fixture){h.controller.setRawText(draft.notice.rawText);h.controller.extract();h.calls.at(-1).resolve(new GatewayResponse(200,JSON.stringify({type:'draft',draft:clone(draft)})));await tick();}
 const bytes=h=>fs.readFile(path.join(h.root,'task-store.json'),'utf8');
 function input(){const x=new NoticeImportInput();x.draft=clone(fixture);x.materialFromNotice=x.draft.checklistItems.map(()=>true);return x;}
+
+for(const scenario of ['apply-failure','stage-ack-loss'])test('isolated recovery probe preserves pending IDs through a cold explicit confirm: '+scenario,async t=>{
+ const h=await setup(t,undefined,false),report=await recovery.beginNoticeRecoveryProbe(h.files,scenario);
+ assert.equal(report.phase,'pending');let snapshot=ok(await h.store.read());assert.equal(snapshot.tasks.length,0);
+ const before=await bytes(h),reportBytes=await fs.readFile(h.files.file('t19-recovery-report.json'),'utf8');
+ const coldFiles=new Files(h.root);assert.equal((await recovery.inspectNoticeRecoveryProbe(coldFiles)).phase,'pending');
+ assert.equal(await bytes(h),before);assert.equal(await fs.readFile(h.files.file('t19-recovery-report.json'),'utf8'),reportBytes);
+ const saved=await recovery.confirmNoticeRecoveryProbe(coldFiles);assert.equal(saved.phase,'applied');snapshot=ok(await h.store.read());
+ assert.equal(snapshot.tasks.length,1);assert.equal(snapshot.operations.length,1);assert.equal(snapshot.tasks[0].id,report.reservedTaskId);
+ assert.deepEqual(snapshot.checklistItems.map(i=>i.id),report.materialIds);assert.equal(snapshot.checklistItems[1].sourceNoticeId,null);
+ const after=await bytes(h);assert.equal((await recovery.inspectNoticeRecoveryProbe(new Files(h.root))).phase,'applied');assert.equal(await bytes(h),after);
+});
+test('isolated recovery probe recognizes committed replace acknowledgement loss without a second task',async t=>{
+ const h=await setup(t,undefined,false),report=await recovery.beginNoticeRecoveryProbe(h.files,'apply-ack-loss');
+ assert.equal(report.phase,'applied');const before=await bytes(h);assert.equal(ok(await h.store.read()).tasks.length,1);
+ await recovery.inspectNoticeRecoveryProbe(new Files(h.root));await recovery.inspectNoticeRecoveryProbe(new Files(h.root));
+ await assert.rejects(()=>recovery.confirmNoticeRecoveryProbe(h.files));await assert.rejects(()=>recovery.cancelNoticeRecoveryProbe(h.files));
+ assert.equal(await bytes(h),before);assert.equal(ok(await h.store.read()).operations.length,1);
+});
+test('isolated same-instance retry retains the operation ID present in the failed candidate file',async t=>{
+ const h=await setup(t,undefined,false),report=await recovery.beginNoticeRecoveryProbe(h.files,'same-instance-retry');
+ assert.equal(report.phase,'applied');const snapshot=ok(await h.store.read());assert.equal(snapshot.operations.length,1);
+ assert.equal(snapshot.operations[0].operationId,report.retriedOperationId);assert.equal(snapshot.proposals.length,1);
+ assert.deepEqual(snapshot.checklistItems.map(i=>i.id),report.materialIds);const before=await bytes(h);
+ await recovery.inspectNoticeRecoveryProbe(new Files(h.root));assert.equal(await bytes(h),before);
+});
+test('isolated conflict probe refuses stale confirmation and cancellation preserves the independent task',async t=>{
+ const h=await setup(t,undefined,false),report=await recovery.beginNoticeRecoveryProbe(h.files,'conflict');
+ assert.equal(report.phase,'conflict');const snapshot=ok(await h.store.read()),before=await bytes(h);
+ await recovery.inspectNoticeRecoveryProbe(new Files(h.root));assert.equal((await recovery.confirmNoticeRecoveryProbe(new Files(h.root))).phase,'conflict');
+ assert.equal(await bytes(h),before);const cancelled=await recovery.cancelNoticeRecoveryProbe(new Files(h.root));assert.equal(cancelled.phase,'cancelled');
+ const after=ok(await h.store.read());assert.deepEqual(after.tasks,snapshot.tasks);assert.equal(after.tasks[0].id,report.independentTaskId);
+ assert.equal(after.operations.length,0);assert.equal(after.checklistItems.length,0);assert.equal(after.proposals[0].state,'cancelled');
+ const final=await bytes(h);await recovery.inspectNoticeRecoveryProbe(new Files(h.root));assert.equal(await bytes(h),final);
+});
+test('isolated recovery probe explicitly cancels pending without creating business entities or reviving a terminal',async t=>{
+ const h=await setup(t,undefined,false);await recovery.beginNoticeRecoveryProbe(h.files,'apply-failure');
+ await recovery.cancelNoticeRecoveryProbe(new Files(h.root));const before=await bytes(h),snapshot=ok(await h.store.read());
+ assert.equal(snapshot.tasks.length,0);assert.equal(snapshot.notices.length,0);assert.equal(snapshot.operations.length,0);
+ await recovery.inspectNoticeRecoveryProbe(new Files(h.root));await assert.rejects(()=>recovery.confirmNoticeRecoveryProbe(h.files));
+ await assert.rejects(()=>recovery.cancelNoticeRecoveryProbe(h.files));assert.equal(await bytes(h),before);
+});
+test('recovery probe refuses existing data and invalid scenarios before creating a report',async t=>{
+ const h=await setup(t,undefined,false);await assert.rejects(()=>recovery.beginNoticeRecoveryProbe(h.files,'unknown'));
+ assert.deepEqual(await fs.readdir(h.root),[]);const draft=new TaskDraft();draft.title='已有合成控制任务';ok(await new TaskRepository(h.store,h.runtime).create(draft,0));
+ const before=await bytes(h);await assert.rejects(()=>recovery.beginNoticeRecoveryProbe(h.files,'apply-failure'));
+ assert.equal(await bytes(h),before);assert.equal(await h.files.exists('t19-recovery-report.json'),false);
+});
+test('starting a new recovery case cannot overwrite an existing synthetic case',async t=>{
+ const h=await setup(t,undefined,false);await recovery.beginNoticeRecoveryProbe(h.files,'stage-ack-loss');const before=await bytes(h);
+ const report=await fs.readFile(h.files.file('t19-recovery-report.json'),'utf8');await assert.rejects(()=>recovery.beginNoticeRecoveryProbe(h.files,'apply-failure'));
+ assert.equal(await bytes(h),before);assert.equal(await fs.readFile(h.files.file('t19-recovery-report.json'),'utf8'),report);
+});
+test('recovery report mismatches block actions without rewriting the business snapshot',async t=>{
+ const h=await setup(t,undefined,false);await recovery.beginNoticeRecoveryProbe(h.files,'apply-failure');const before=await bytes(h);
+ const name=h.files.file('t19-recovery-report.json'),report=JSON.parse(await fs.readFile(name,'utf8'));report.primary+='synthetic corruption';await fs.writeFile(name,JSON.stringify(report));
+ for(const action of [recovery.inspectNoticeRecoveryProbe,recovery.confirmNoticeRecoveryProbe,recovery.cancelNoticeRecoveryProbe])await assert.rejects(()=>action(h.files));
+ assert.equal(await bytes(h),before);
+});
 
 test('actual controller keeps raw/model draft non-formal until explicit confirm',async t=>{
  const h=await setup(t);await h.controller.restore();await ready(h);
