@@ -1,0 +1,231 @@
+{
+  "runtimeCommit": "03c8686add6554a283eeecaac20d5d3ad7ef179a",
+  "implementation": "isolated developer diagnostics; production confirmation core and schemas unchanged",
+  "hostChecks": {
+    "confirmedSaveAndRecovery": 37,
+    "newRecoveryCases": 9,
+    "interaction": 19,
+    "noticeImport": 19,
+    "commits": 92,
+    "sharedExport": 8,
+    "nativeExport": 6,
+    "voiceExport": 7,
+    "total": 188,
+    "strictTypeScript": true,
+    "repeatedRunsNotAdded": true
+  },
+  "build": {
+    "bundle": "com.campusddl.noticeentry",
+    "versionName": "0.2.0",
+    "versionCode": 200,
+    "copiedClientFiles": 120,
+    "sourceHashesUnchanged": 10,
+    "permissions": [
+      "ohos.permission.INTERNET"
+    ],
+    "unsignedSuccess": true,
+    "unsignedTime": "17s763ms",
+    "unsignedBytes": 1190298,
+    "unsignedSha256": "153cfbaf75711c56d25aa35d73cf71fdae409824201127583b4c2c8fcaba3cf4",
+    "signedSuccess": true,
+    "signedTime": "16s248ms",
+    "signedBytes": 1241074,
+    "signedSha256": "208e84efcf4d4869022cbc7425d5e5276168c2524ce0e0a39b6604355cb04a6c",
+    "abcSha256": "4f67eb6a529223708f15456a940b488a5ee935cd1835ae56df5c08d5730d712c",
+    "signedAbcMatchesVerifiedUnsigned": true,
+    "reusedPreviouslyAuthorizedSameBundleSigning": true,
+    "installedVersionVerified": true
+  },
+  "device": {
+    "faultScenarios": 5,
+    "alternatePendingCancellationBranch": true,
+    "interfaceCheckpoints": 19,
+    "realProcessRestarts": 4,
+    "allPassed": true,
+    "actualIsolatedSnapshotsCheckedInsideApp": true,
+    "productionTaskBaselineComparedBeforeUpdateAfterUpdateAndAfterDiagnostics": true,
+    "productionFullSnapshotBytesRead": false,
+    "checkpointResults": [
+      {
+        "name": "01-failed-apply-pending",
+        "scenario": "apply-failure",
+        "phase": "pending",
+        "revision": 1,
+        "passed": true
+      },
+      {
+        "name": "02-cold-pending-read",
+        "scenario": "apply-failure",
+        "phase": "pending",
+        "revision": 1,
+        "passed": true
+      },
+      {
+        "name": "03-explicit-confirm",
+        "scenario": "apply-failure",
+        "phase": "applied",
+        "revision": 2,
+        "passed": true
+      },
+      {
+        "name": "04-applied-read",
+        "scenario": "apply-failure",
+        "phase": "applied",
+        "revision": 2,
+        "passed": true
+      },
+      {
+        "name": "05-same-instance-retry",
+        "scenario": "same-instance-retry",
+        "phase": "applied",
+        "revision": 2,
+        "passed": true
+      },
+      {
+        "name": "06-same-instance-read",
+        "scenario": "same-instance-retry",
+        "phase": "applied",
+        "revision": 2,
+        "passed": true
+      },
+      {
+        "name": "07-stage-ack-loss",
+        "scenario": "stage-ack-loss",
+        "phase": "pending",
+        "revision": 1,
+        "passed": true
+      },
+      {
+        "name": "08-stage-ack-cold-read",
+        "scenario": "stage-ack-loss",
+        "phase": "pending",
+        "revision": 1,
+        "passed": true
+      },
+      {
+        "name": "09-stage-ack-confirm",
+        "scenario": "stage-ack-loss",
+        "phase": "applied",
+        "revision": 2,
+        "passed": true
+      },
+      {
+        "name": "10-apply-ack-loss",
+        "scenario": "apply-ack-loss",
+        "phase": "applied",
+        "revision": 2,
+        "passed": true
+      },
+      {
+        "name": "11-apply-ack-cold-read",
+        "scenario": "apply-ack-loss",
+        "phase": "applied",
+        "revision": 2,
+        "passed": true
+      },
+      {
+        "name": "12-version-conflict",
+        "scenario": "conflict",
+        "phase": "conflict",
+        "revision": 2,
+        "passed": true
+      },
+      {
+        "name": "13-conflict-cold-read",
+        "scenario": "conflict",
+        "phase": "conflict",
+        "revision": 2,
+        "passed": true
+      },
+      {
+        "name": "14-stale-confirm-refused",
+        "scenario": "conflict",
+        "phase": "conflict",
+        "revision": 2,
+        "passed": true
+      },
+      {
+        "name": "15-conflict-cancel",
+        "scenario": "conflict",
+        "phase": "cancelled",
+        "revision": 3,
+        "passed": true
+      },
+      {
+        "name": "16-cancelled-cold-owner-read",
+        "scenario": "conflict",
+        "phase": "cancelled",
+        "revision": 3,
+        "passed": true
+      },
+      {
+        "name": "17-failure-cancel-branch",
+        "scenario": "apply-failure",
+        "phase": "pending",
+        "revision": 1,
+        "passed": true
+      },
+      {
+        "name": "18-pending-cancel",
+        "scenario": "apply-failure",
+        "phase": "cancelled",
+        "revision": 2,
+        "passed": true
+      },
+      {
+        "name": "19-cancelled-read",
+        "scenario": "apply-failure",
+        "phase": "cancelled",
+        "revision": 2,
+        "passed": true
+      }
+    ],
+    "restarts": [
+      {
+        "name": "failed-apply",
+        "oldProcessStopped": true,
+        "differentNewProcess": true
+      },
+      {
+        "name": "stage-ack-loss",
+        "oldProcessStopped": true,
+        "differentNewProcess": true
+      },
+      {
+        "name": "apply-ack-loss",
+        "oldProcessStopped": true,
+        "differentNewProcess": true
+      },
+      {
+        "name": "version-conflict",
+        "oldProcessStopped": true,
+        "differentNewProcess": true
+      }
+    ]
+  },
+  "faultInjection": {
+    "missingSourceUsesActualFilePortApi": true,
+    "acknowledgementLossIsControlledThrowAfterSuccessfulReplace": true,
+    "physicalPowerLossTest": false,
+    "interruptedArbitraryWriteTest": false
+  },
+  "operationIdScope": {
+    "sameInstanceRetryPreservedFailedCandidateOperationId": true,
+    "pendingColdReconfirmationPreservedProposalTaskAndMaterialIds": true,
+    "pendingConfirmationAuthorizationPersisted": false,
+    "allPendingOperationIdsByteStableAcrossRestartClaimed": false
+  },
+  "cleanup": {
+    "gatewayNeverStartedThisStep": true,
+    "port8000NotListening": true,
+    "usb8000MappingAbsent": true,
+    "appGatewayNotConfigured": true,
+    "newCredentialsEntered": false,
+    "syntheticEvidenceDirectoriesPreserved": true
+  },
+  "realModelRequests": 0,
+  "audioPerformed": false,
+  "businessRecoveryAutoRepairAdded": false,
+  "fullFailureMatrixCompleted": false,
+  "fullProductCompleted": false
+}
