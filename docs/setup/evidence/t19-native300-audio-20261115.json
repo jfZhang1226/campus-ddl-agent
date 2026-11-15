@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-15",
+  "bundle": "com.campusddl.noticeprobe",
+  "versionName": "0.3.0",
+  "versionCode": 300,
+  "runtimeCommit": "d63931e709001a2ca2ad48b05630e1fa93501547",
+  "runtimeChangedThisStep": false,
+  "syntheticDevelopmentCase": true,
+  "asr": {
+    "userStartedAndEndedRecording": true,
+    "userReportedCompleteDateAndMaterials": true,
+    "actualTranscript": "这是合成通知网络实验报告在2026年11月27日18点前交到课程平台需要pdf报告和源代码。",
+    "deviceReadyStateObserved": true,
+    "audioFileCollected": false,
+    "systemOnlineParameter": 1,
+    "systemSpeechNetworkPolicyVerified": false,
+    "backgroundMicrophoneReleaseVerified": false
+  },
+  "realModel": {
+    "sendActions": 2,
+    "taskFieldsPrefilled": false,
+    "sourceMetadataPrefilled": false,
+    "title": "合成通知网络实验报告",
+    "titleIncludesSyntheticPrefix": true,
+    "courseUnknown": true,
+    "submissionChannel": "课程平台",
+    "deadlineDate": "2026-11-27",
+    "deadlineTime": "18:00",
+    "timezone": "Asia/Shanghai",
+    "materials": ["pdf报告", "源代码"],
+    "rawTranscriptRetained": true,
+    "tokenUsageMeasured": false
+  },
+  "confirmation": {"draftStillUnsavedAtCheckpoint": true, "confirmClickedByAgent": false, "oldLatestReadbackPreserved": true},
+  "accidentalExitRecovery": {"userRequestedReopen": true, "unsavedDraftWasClearedOnLeaving": true, "originalTranscriptRestoredExactlyFromSyntheticTestRecord": true, "recordingRepeated": false, "secondDraftFieldsAndMaterialsObserved": true, "applicationAutoDraftRecoveryImplemented": false},
+  "tts": {"buttonReadyObserved": true, "playbackStartedByAgent": false, "awaitingUserReport": true, "userHeardUnsavedWarning": null, "userHeardImmediateStop": null, "playbackStopValidated": false},
+  "cleanup": {"gatewayStopped": true, "port8000NotListening": true, "thisSessionUsb8000MappingRemovedAndReadbackVerified": true, "appRetainedForManualPlayback": true, "runtimeCredentialCleared": false},
+  "holdoutOrAccuracyClaim": false,
+  "fullProductCompleted": false
+}
