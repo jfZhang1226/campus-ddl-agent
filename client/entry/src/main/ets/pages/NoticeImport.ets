@@ -353,10 +353,16 @@ struct NoticeImportPage {
             if (this.controller !== null) this.controller.addMaterial();
           })
       }.width('100%')
+      Text('通知提取项仍需对照原文；实质修改或新增后标为人工，保存时保留这个区别。')
+        .fontSize(11).fontColor('#617589').lineHeight(17)
       if (this.view.materials.length === 0) {
-        Text('原通知未列出材料，可在确认前自行补充。').fontSize(12).fontColor('#617589')
+        Text('当前没有材料项，可按通知核对后补充。').fontSize(12).fontColor('#617589')
       }
       ForEach(this.view.materials, (material: string, index: number) => {
+        Column({ space: 5 }) {
+        Text(this.view.materialFromNotice[index] ? '通知提取 · 待核对' : '人工补充或修改')
+          .id('notice-material-origin-' + String(index))
+          .fontSize(11).fontColor(this.view.materialFromNotice[index] ? '#176766' : '#8A5A12')
         Row({ space: 7 }) {
           TextInput({ text: material, placeholder: '材料名称' })
             .fontSize(14).fontColor('#142C43').backgroundColor('#FFFFFF').layoutWeight(1)
@@ -368,6 +374,7 @@ struct NoticeImportPage {
               if (this.controller !== null) this.controller.removeMaterial(index);
             })
         }.width('100%')
+        }.alignItems(HorizontalAlign.Start).width('100%')
       }, (material: string, index: number) => String(index) + ':' + material)
 
       Column({ space: 7 }) {
@@ -417,7 +424,7 @@ struct NoticeImportPage {
           (this.save.saved.task.deadlineDate === null ? '待补充' : this.save.saved.task.deadlineDate + '（具体时刻未知）') :
           this.save.saved.task.dueAt)).fontSize(12).fontColor('#617589')
         ForEach(this.save.saved.checklistItems, (item: ChecklistItem) => {
-          Text(item.label + ' · ' + (item.sourceNoticeId === null ? '人工补充' : '原通知') +
+          Text(item.label + ' · ' + (item.sourceNoticeId === null ? '人工补充或修改' : '通知提取') +
             ' · ' + (item.state === 'pending' ? '待准备' : '已准备')).fontSize(12).fontColor('#617589')
         }, (item: ChecklistItem) => item.id)
       }

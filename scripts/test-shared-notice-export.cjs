@@ -61,6 +61,15 @@ check('header and system back share a content-preserving guard with explicit kee
  assert.match(page,/this.leaveGuard.confirmLeave/);assert.match(page,/this.controller\?\.cancelVoice\(\)/);
  assert.doesNotMatch(guard,/from .*CommitServices|from .*LocalStore|from .*router|\.cancelPending\(/);
 });
+check('shared and native confirmation cards show material origin before saving without claiming proof',()=>{
+ for(const outputDir of [output,nativeOutput]) {
+  const file=path.join(outputDir,'entry/src/main/ets/pages',outputDir===output?'NoticeImport.ets':'NoticeChat.ets');
+  const page=fs.readFileSync(file,'utf8');
+  assert.match(page,/this.view.materialFromNotice\[index\] \? '通知提取 · 待核对' : '人工补充或修改'/);
+  assert.ok(page.includes(".id('notice-material-origin-' + String(index))"));
+  assert.match(page,/sourceNoticeId === null \? '人工补充或修改' : '通知提取'/);
+ }
+});
 check('manifest matches sources and existing output cannot be overwritten',()=>{
  assert.equal(manifest.signed,false);assert.equal(manifest.deviceValidated,false);assert.equal(Object.keys(manifest.hashes).length,11);
  for(const [f,value]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,f)),value);

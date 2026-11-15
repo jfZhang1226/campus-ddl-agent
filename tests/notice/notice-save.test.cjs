@@ -176,6 +176,49 @@ test('manual material provenance survives deletion, blank filtering and another 
  assert.deepEqual(h.controller.snapshot().materialFromNotice,[true,false,false]);
  await h.controller.confirm();const s=ok(await h.store.read());assert.equal(s.checklistItems.length,2);assert.equal(s.checklistItems[1].sourceNoticeId,null);
 });
+test('rewriting an extracted material cannot attribute the replacement to the original notice',async t=>{
+ const h=await setup(t);await ready(h);const raw=h.controller.snapshot().rawText;
+ h.controller.setMaterial(0,'人工新增：合成缴费凭证');
+ assert.deepEqual(h.controller.snapshot().materialFromNotice,[false,true]);
+ assert.equal(h.controller.snapshot().rawText,raw);assert.equal(ok(await h.store.read()).tasks.length,0);
+ await h.controller.confirm();const s=ok(await h.store.read());
+ assert.equal(s.checklistItems[0].sourceNoticeId,null);assert.equal(s.checklistItems[1].sourceNoticeId,s.notices[0].id);
+ assert.equal(s.notices[0].rawText,raw);assert.deepEqual(s.operations[0].checklistItems,s.checklistItems);
+ assert.equal(h.controller.saveSnapshot().saved.checklistItems[0].sourceNoticeId,null);
+});
+
+test('identical text or surrounding whitespace preserves an untouched extraction origin',async t=>{
+ const h=await setup(t);await ready(h);const label=h.controller.snapshot().materials[0];
+ h.controller.setMaterial(0,label);h.controller.setMaterial(0,'  '+label+'  ');
+ assert.deepEqual(h.controller.snapshot().materialFromNotice,[true,true]);
+ await h.controller.confirm();const s=ok(await h.store.read());
+ assert.equal(s.checklistItems[0].label,label);assert.equal(s.checklistItems[0].sourceNoticeId,s.notices[0].id);
+});
+
+test('manual origin stays conservative across edit-back, delete, empty filtering and model retry',async t=>{
+ const h=await setup(t);await ready(h);const label=h.controller.snapshot().materials[0];
+ h.controller.setMaterial(0,'人工合成替换');h.controller.setMaterial(0,label);
+ h.controller.removeMaterial(1);h.controller.addMaterial();h.controller.setMaterial(1,'   ');
+ h.controller.extract();h.calls.at(-1).resolve(new GatewayResponse(200,JSON.stringify({type:'draft',draft:clone(fixture)})));await tick();
+ assert.deepEqual(h.controller.snapshot().materialFromNotice,[false,false]);
+ await h.controller.confirm();const s=ok(await h.store.read());assert.equal(s.checklistItems.length,1);
+ assert.equal(s.checklistItems[0].label,label);assert.equal(s.checklistItems[0].sourceNoticeId,null);
+});
+
+test('edited material origin survives failed save, cold recovery, explicit confirm and cold readback',async t=>{
+ const h=await setup(t);await ready(h);h.controller.setMaterial(0,'合成：人工核对附件');
+ const apply=h.commits.confirmation.apply.bind(h.commits.confirmation);
+ h.commits.confirmation.apply=async req=>{h.files.fail='replace:task-store.json';return apply(req);};
+ await h.controller.confirm();const before=await bytes(h);assert.equal(ok(await h.store.read()).tasks.length,0);h.controller.dispose();
+ const cold=await setup(t,h.root);await cold.controller.restore();assert.equal(await bytes(cold),before);
+ assert.deepEqual(cold.controller.snapshot().materialFromNotice,[false,true]);
+ cold.controller.setMaterial(0,'不得修改锁定结果');assert.equal(cold.controller.snapshot().materials[0],'合成：人工核对附件');
+ await cold.controller.confirm();const s=ok(await cold.store.read());assert.equal(s.checklistItems[0].sourceNoticeId,null);
+ cold.controller.dispose();const read=await setup(t,h.root);await read.controller.restore();
+ assert.equal(read.controller.saveSnapshot().saved.checklistItems[0].sourceNoticeId,null);
+ assert.equal(read.controller.saveSnapshot().saved.checklistItems[1].sourceNoticeId,s.notices[0].id);
+});
+
 test('clearing every material commits an empty collection without resurrecting model items',async t=>{
  const h=await setup(t);await ready(h);while(h.controller.snapshot().materials.length)h.controller.removeMaterial(0);
  await h.controller.confirm();const s=ok(await h.store.read());assert.deepEqual(s.checklistItems,[]);assert.deepEqual(s.operations[0].createdChecklistItemIds,[]);

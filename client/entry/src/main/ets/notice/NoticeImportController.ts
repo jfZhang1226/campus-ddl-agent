@@ -196,6 +196,9 @@ export class NoticeImportController {
 
   setMaterial(index: number, value: string): void {
     if (this.busy() || index < 0 || index >= this.state.materials.length) return;
+    // A rewritten label is no longer evidence supplied by the notice. Whitespace
+    // is normalized at commit; editing back never silently restores attribution.
+    if (value.trim() !== this.state.materials[index].trim()) this.state.materialFromNotice[index] = false;
     this.state.materials[index] = value;
     this.materialsEdited = true;
     this.publish();
