@@ -31,7 +31,8 @@ check('pending editing is disabled while confirm, explicit discard and real read
  const page=read('entry/src/main/ets/pages/NoticeImport.ets');
  assert.ok((page.match(/\.enabled\(this.editable\(\)\)/g)||[]).length>=2);
  for(const id of ['notice-confirm','notice-discard-pending','notice-recover-pending','notice-readback'])assert.ok(page.includes(".id('"+id+"')"));
- assert.match(page,/this.save.busy \|\| this.view.phase === 'saving'/);
+ assert.match(page,/this.leaveGuard.request\(this.view, this.save.busy, this.save.locked/);
+ assert.match(read('entry/src/main/ets/notice/NoticeLeaveGuard.ts'),/commitBusy \|\| view.phase === 'saving'/);
  assert.match(page,/save.saved.task.title/);assert.match(page,/save.saved.checklistItems/);
 });
 check('all tracked production sources and cross-platform settings remain byte identical in this export',()=>{
