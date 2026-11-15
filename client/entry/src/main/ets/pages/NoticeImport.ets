@@ -8,6 +8,7 @@ import { NoticeConfirmedWriter } from '../notice/NoticeConfirmedWriter';
 import { NoticeSaveController, NoticeSaveView } from '../notice/NoticeSaveController';
 import { noticeImportOwner } from '../notice/NoticeImportOwner';
 import { ChecklistItem } from '../domain/StorageModels';
+import { NoticeLeaveGuard, NoticeLeavePrompt } from '../notice/NoticeLeaveGuard';
 
 @Entry
 @Component
@@ -17,6 +18,8 @@ struct NoticeImportPage {
   @State initializationError: string = '';
   @State save: NoticeSaveView = new NoticeSaveView();
   @State metadataOpen: boolean = false;
+  @State leave: NoticeLeavePrompt = new NoticeLeavePrompt();
+  private leaveGuard: NoticeLeaveGuard = new NoticeLeaveGuard();
   private controller: NoticeSaveController | null = null;
   private pageAlive: boolean = false;
   private initializationVersion: number = 0;
@@ -41,8 +44,32 @@ struct NoticeImportPage {
   }
 
   onBackPress(): boolean {
-    // A local snapshot commit is short but must not be presented as cancelled after it starts.
-    return this.save.busy || this.view.phase === 'saving';
+    return this.interceptBack();
+  }
+
+  private speechNeedsAttention(): boolean {
+    if (this.controller === null) return false;
+    const speech = this.controller.speechSnapshot();
+    return speech.busy || speech.partial.trim().length > 0;
+  }
+
+  private interceptBack(): boolean {
+    const decision: string = this.leaveGuard.request(this.view, this.save.busy, this.save.locked, this.speechNeedsAttention());
+    if (decision === 'prompt') {
+      this.controller?.cancelVoice();
+      this.leave = this.leaveGuard.snapshot();
+    }
+    return decision !== 'leave';
+  }
+
+  private goBack(): void {
+    if (!this.interceptBack()) { this.controller?.pause(); router.back(); }
+  }
+
+  private confirmLeave(): void {
+    const decision: string = this.leaveGuard.confirmLeave(this.view, this.save.busy, this.save.locked, this.speechNeedsAttention());
+    this.leave = this.leaveGuard.snapshot();
+    if (decision === 'leave') { this.controller?.pause(); router.back(); }
   }
 
   private async initialize(): Promise<void> {
@@ -98,9 +125,10 @@ struct NoticeImportPage {
     Column({ space: 12 }) {
       Row({ space: 12 }) {
         Button('返回')
+          .id('notice-back')
           .fontSize(13).fontColor('#176766').backgroundColor('#E1F0EC')
-          .enabled(!this.busy())
-          .onClick(() => router.back())
+          .enabled(!this.save.busy && this.view.phase !== 'saving')
+          .onClick(() => this.goBack())
         Column({ space: 3 }) {
           Text('导入校园通知').fontSize(22).fontWeight(FontWeight.Bold).fontColor('#142C43')
           Text('先整理为草案，确认后才写入任务').fontSize(12).fontColor('#617589')
@@ -113,6 +141,21 @@ struct NoticeImportPage {
       Text('通知原文会原样保留；模型提取出的标题、日期和材料均可修改。')
         .fontSize(12).fontColor('#617589').lineHeight(18)
     }.width('100%').padding({ left: 18, right: 18, top: 16, bottom: 12 })
+  }
+
+  @Builder
+  leaveConfirmation() {
+    Column({ space: 14 }) {
+      Text(this.leave.title).id('notice-leave-title').fontSize(20).fontWeight(FontWeight.Bold).fontColor('#142C43')
+      Text(this.leave.detail).fontSize(14).fontColor('#617589').lineHeight(23)
+      Button('继续编辑').id('notice-leave-keep').width('100%').height(44).backgroundColor('#176766')
+        .onClick(() => { this.leaveGuard.keepEditing(); this.leave = this.leaveGuard.snapshot(); })
+      Button(this.leave.action).id('notice-leave-confirm').width('100%').height(44)
+        .fontColor('#617589').backgroundColor('#EDF1F2')
+        .enabled(!this.save.busy && this.view.phase !== 'saving')
+        .onClick(() => this.confirmLeave())
+    }.width('100%').padding(22).alignItems(HorizontalAlign.Start).backgroundColor('#F8FBFA')
+      .layoutWeight(1)
   }
 
   @Builder
@@ -416,7 +459,7 @@ struct NoticeImportPage {
       Text('保存后数据版本：' + String(this.view.savedRevision)).fontSize(11).fontColor('#617589')
       Text('材料目前均为“待准备”，没有标记为已提交。').fontSize(11).fontColor('#617589')
       Button('返回对话页').width('100%').height(42).backgroundColor('#176766')
-        .onClick(() => router.back())
+        .onClick(() => this.goBack())
     }.alignItems(HorizontalAlign.Start).width('100%').padding(16).backgroundColor('#EAF4F0')
     .border({ width: 1, color: '#CDE4DB' }).borderRadius(14)
   }
@@ -424,7 +467,9 @@ struct NoticeImportPage {
   build() {
     Column() {
       this.header()
-      if (this.initializing) {
+      if (this.leave.kind !== 'closed') {
+        this.leaveConfirmation()
+      } else if (this.initializing) {
         Column({ space: 10 }) {
           LoadingProgress().width(28).height(28).color('#176766')
           Text('正在读取本地数据…').fontSize(13).fontColor('#617589')

@@ -50,6 +50,12 @@ check('native owner and lifecycle release are confined to the exported assembly'
   assert.doesNotMatch(port,/\.\.\/\.\.\/client\//);
   assert.equal(json('.arkui-x/arkui-x-config.json5').buildOption.ignoreCrossPlatform,true);
 });
+check('native assembly keeps the same leave guard and does not bypass explicit keep/discard',()=>{
+  const page=read('entry/src/main/ets/pages/NoticeChat.ets');
+  assert.match(page,/NoticeLeaveGuard/);assert.match(page,/onBackPress\(\): boolean \{\s*return this.interceptBack\(\)/);
+  for(const id of ['notice-back','notice-leave-title','notice-leave-keep','notice-leave-confirm'])assert.ok(page.includes(".id('"+id+"')"));
+  assert.equal(read('entry/src/main/ets/notice/NoticeLeaveGuard.ts'),fs.readFileSync(path.join(root,'client/entry/src/main/ets/notice/NoticeLeaveGuard.ts'),'utf8'));
+});
 check('production pages and client files are preserved except explicit export configuration',()=>{
   const changed=new Set(['build-profile.json5','.arkui-x/arkui-x-config.json5','AppScope/app.json5',
     'entry/src/main/module.json5','entry/src/main/resources/base/element/string.json',
@@ -59,8 +65,8 @@ check('production pages and client files are preserved except explicit export co
     assert.equal(hash(path.join(root,file)),hash(path.join(output,file.slice(7))),file);
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
-check('manifest matches eight actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,300);assert.equal(Object.keys(manifest.hashes).length,8);
+check('manifest matches nine actual source outputs and existing export is refused without overwrite',()=>{
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,9);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);

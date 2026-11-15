@@ -4,6 +4,7 @@ const ts=require(process.env.T08_TYPESCRIPT_PATH||path.join(process.env.DEVECO_C
 const options={strict:true,noEmit:true,target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS,types:[],skipLibCheck:true};
 const sources=['NoticeConfirmedWriter.ts','NoticeSaveController.ts'].map(f=>path.join(root,'probes/harmony-noticechat',f));
 sources.push(path.join(root,'client/entry/src/main/ets/data/diagnostics/NoticeRecoveryProbe.ts'));
+sources.push(path.join(root,'client/entry/src/main/ets/notice/NoticeLeaveGuard.ts'));
 const errors=ts.getPreEmitDiagnostics(ts.createProgram(sources,options));
 if(errors.length){console.error(ts.formatDiagnosticsWithColorAndContext(errors,{getCanonicalFileName:x=>x,getCurrentDirectory:()=>root,getNewLine:()=>'\n'}));process.exit(1);}
 console.log('T19 confirmed-save strict TypeScript passed; native UI requires SDK build.');

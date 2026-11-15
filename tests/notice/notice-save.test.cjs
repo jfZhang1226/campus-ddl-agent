@@ -17,6 +17,8 @@ const fixture=require('../../fixtures/extraction/notice-draft-samples.json').sam
 const runtimeRoot=path.resolve(__dirname,'../../runtime/t19-save-tests');
 const clone=x=>structuredClone(x),tick=()=>new Promise(r=>setImmediate(r));
 const recovery=require('../../client/entry/src/main/ets/data/diagnostics/NoticeRecoveryProbe.ts');
+const {NoticeLeaveGuard}=require('../../client/entry/src/main/ets/notice/NoticeLeaveGuard.ts');
+const {NoticeImportState}=require('../../client/entry/src/main/ets/notice/NoticeImportController.ts');
 const ok=r=>{assert.equal(r.success,true,r.message);return r.data;};
 class Files {
  constructor(root){this.root=root;this.fail='';this.lose=false;this.badRead=false;}
@@ -43,6 +45,57 @@ async function setup(t,existing,withSpeech=true){
 async function ready(h,draft=fixture){h.controller.setRawText(draft.notice.rawText);h.controller.extract();h.calls.at(-1).resolve(new GatewayResponse(200,JSON.stringify({type:'draft',draft:clone(draft)})));await tick();}
 const bytes=h=>fs.readFile(path.join(h.root,'task-store.json'),'utf8');
 function input(){const x=new NoticeImportInput();x.draft=clone(fixture);x.materialFromNotice=x.draft.checklistItems.map(()=>true);return x;}
+
+test('empty and already saved notice pages can leave without inventing an unsaved draft',()=>{
+ const g=new NoticeLeaveGuard(),v=new NoticeImportState();assert.equal(g.request(v,false,false,false),'leave');
+ v.phase='saved';v.rawText=fixture.notice.rawText;v.draft=clone(fixture);assert.equal(g.request(v,false,false,false),'leave');
+ assert.equal(g.snapshot().kind,'closed');assert.equal(g.confirmLeave(v,false,false,false),'blocked');
+});
+test('repeated back never bypasses the existing prompt, including a stopped empty capture',()=>{
+ const g=new NoticeLeaveGuard(),v=new NoticeImportState();assert.equal(g.request(v,false,false,true),'prompt');
+ assert.equal(g.request(v,false,false,false),'prompt');assert.equal(g.snapshot().kind,'discard');
+ g.keepEditing();v.sourceLabel='合成来源';assert.equal(g.request(v,false,false,false),'prompt');
+ g.keepEditing();v.sourceLabel='';v.publishedAt='2026-11-16T08:00:00+08:00';assert.equal(g.request(v,false,false,false),'prompt');
+});
+test('keeping an edited model draft preserves raw text, edits, provenance and business bytes without another model call',async t=>{
+ const h=await setup(t,undefined,false);await h.controller.restore();await ready(h);h.controller.edit('title','合成：保留修改');
+ h.controller.addMaterial();h.controller.setMaterial(2,'合成手工附件');const before=h.controller.snapshot(),saved=await bytes(h).catch(()=>null),calls=h.calls.length,g=new NoticeLeaveGuard();
+ assert.equal(g.request(before,false,false,false),'prompt');g.keepEditing();assert.deepEqual(h.controller.snapshot(),before);
+ assert.equal(h.calls.length,calls);assert.equal(await bytes(h).catch(()=>null),saved);assert.equal(ok(await h.store.read()).tasks.length,0);
+});
+test('a response arriving during the navigation prompt can still be kept without resending',async t=>{
+ const h=await setup(t,undefined,false),g=new NoticeLeaveGuard();h.controller.setRawText(fixture.notice.rawText);h.controller.extract();
+ assert.equal(g.request(h.controller.snapshot(),false,false,false),'prompt');
+ h.calls[0].resolve(new GatewayResponse(200,JSON.stringify({type:'draft',draft:clone(fixture)})));await tick();
+ g.keepEditing();assert.equal(h.controller.snapshot().title,fixture.task.title);assert.equal(h.calls.length,1);
+ assert.equal(ok(await h.store.read()).tasks.length,0);
+});
+test('explicitly leaving invalidates a pending extraction and never commits the late response',async t=>{
+ const h=await setup(t,undefined,false),g=new NoticeLeaveGuard();h.controller.setRawText(fixture.notice.rawText);h.controller.extract();
+ assert.equal(g.request(h.controller.snapshot(),false,false,false),'prompt');assert.equal(g.confirmLeave(h.controller.snapshot(),false,false,false),'leave');
+ h.controller.pause();h.controller.dispose();h.calls[0].resolve(new GatewayResponse(200,JSON.stringify({type:'draft',draft:clone(fixture)})));await tick();
+ assert.equal(h.calls[0].cancelled,true);assert.equal(h.controller.snapshot().draft,null);assert.equal(ok(await h.store.read()).tasks.length,0);
+});
+test('leaving a locked pending proposal never cancels it and a cold owner still requires confirmation',async t=>{
+ const h=await setup(t,undefined,false);await recovery.beginNoticeRecoveryProbe(h.files,'apply-failure');await h.controller.restore();
+ const before=await bytes(h),g=new NoticeLeaveGuard();assert.equal(g.request(h.controller.snapshot(),false,true,false),'prompt');
+ assert.equal(g.snapshot().kind,'records');assert.equal(g.confirmLeave(h.controller.snapshot(),false,true,false),'leave');
+ h.controller.pause();h.controller.dispose();const cold=await setup(t,h.root,false);await cold.controller.restore();
+ assert.equal(cold.controller.saveSnapshot().locked,true);assert.equal(await bytes(cold),before);assert.equal(ok(await cold.store.read()).tasks.length,0);
+});
+test('a late recovered lock needs fresh navigation consent and committing blocks every leave path',()=>{
+ const g=new NoticeLeaveGuard(),v=new NoticeImportState();v.rawText='合成原文';assert.equal(g.request(v,false,false,false),'prompt');
+ assert.equal(g.confirmLeave(v,false,true,false),'prompt');assert.equal(g.snapshot().kind,'records');
+ assert.equal(g.confirmLeave(v,true,true,false),'blocked');v.phase='saving';assert.equal(g.request(v,false,true,false),'blocked');
+ assert.equal(g.confirmLeave(v,false,true,false),'blocked');v.phase='idle';assert.equal(g.confirmLeave(v,false,true,false),'leave');
+});
+test('uncertain pending recovery uses a records warning and leaving does not erase recovery traces',async t=>{
+ const h=await setup(t,undefined,false);await ready(h);h.files.fail='replace:task-store.json';await h.controller.confirm();
+ const temp=await fs.readFile(h.files.file('task-store.tmp.json'),'utf8'),g=new NoticeLeaveGuard();assert.equal(h.controller.saveSnapshot().locked,true);
+ assert.equal(g.request(h.controller.snapshot(),false,true,false),'prompt');assert.equal(g.snapshot().kind,'records');
+ assert.equal(g.confirmLeave(h.controller.snapshot(),false,true,false),'leave');h.controller.dispose();
+ assert.equal(await fs.readFile(h.files.file('task-store.tmp.json'),'utf8'),temp);assert.equal((await h.store.read()).errorCode,'RECOVERY_REQUIRED');
+});
 
 for(const scenario of ['apply-failure','stage-ack-loss'])test('isolated recovery probe preserves pending IDs through a cold explicit confirm: '+scenario,async t=>{
  const h=await setup(t,undefined,false),report=await recovery.beginNoticeRecoveryProbe(h.files,scenario);

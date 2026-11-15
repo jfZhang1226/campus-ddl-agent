@@ -84,7 +84,7 @@ function prepare(output) {
   write('entry/src/main/ets/entryability/EntryAbility.ets',ability);
   const appFile=path.join(result.output,'AppScope/app.json5');
   const app=JSON.parse(fs.readFileSync(appFile,'utf8'));
-  app.app.bundleName='com.campusddl.noticeprobe';app.app.versionName='0.3.0';app.app.versionCode=300;
+  app.app.bundleName='com.campusddl.noticeprobe';app.app.versionName='0.4.0';app.app.versionCode=400;
   fs.writeFileSync(appFile,JSON.stringify(app,null,2)+'\n');
   const stringsFile=path.join(result.output,'entry/src/main/resources/base/element/string.json');
   const strings=JSON.parse(fs.readFileSync(stringsFile,'utf8'));
@@ -101,9 +101,10 @@ function prepare(output) {
   for(const file of [pages+'NoticeChat.ets',pages+'NoticeSpeechOwner.ets',
     'entry/src/main/ets/notice/NoticeImportController.ts','entry/src/main/ets/notice/NoticeVoiceController.ts',
     'entry/src/main/ets/notice/NoticeConfirmedWriter.ts','entry/src/main/ets/notice/NoticeSaveController.ts',
-    'entry/src/main/ets/notice/NoticeImportOwner.ts','entry/src/main/ets/speech/UnavailableSpeechSession.ts'])
+    'entry/src/main/ets/notice/NoticeImportOwner.ts','entry/src/main/ets/speech/UnavailableSpeechSession.ts',
+    'entry/src/main/ets/notice/NoticeLeaveGuard.ts'])
     hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
-  const manifest={...result,scope:'T19-local-integration',bundleName:app.app.bundleName,versionCode:300,formalSaveEnabled:true,hashes};
+  const manifest={...result,scope:'T19-local-integration',bundleName:app.app.bundleName,versionCode:400,formalSaveEnabled:true,hashes};
   write('T19-source-manifest.json',JSON.stringify(manifest,null,2)+'\n');
   return manifest;
 }

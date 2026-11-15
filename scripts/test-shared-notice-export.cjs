@@ -9,7 +9,7 @@ const hash=f=>crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex
 let count=0;function check(name,f){f();count++;console.log('PASS '+name);}
 check('separate shared-entry identity, original routes, internet only and no signing',()=>{
  assert.equal(json('AppScope/app.json5').app.bundleName,'com.campusddl.noticeentry');
- assert.equal(json('AppScope/app.json5').app.versionCode,200);
+ assert.equal(json('AppScope/app.json5').app.versionCode,300);
  assert.deepEqual(json('build-profile.json5').app.signingConfigs,[]);
  assert.deepEqual(json('entry/src/main/module.json5').module.requestPermissions.map(p=>p.name),['ohos.permission.INTERNET']);
  assert.equal(read('entry/src/main/resources/base/profile/main_pages.json'),fs.readFileSync(path.join(root,'client/entry/src/main/resources/base/profile/main_pages.json'),'utf8'));
@@ -45,7 +45,7 @@ check('shared and native entry exports contain the exact same confirmation imple
   const f='entry/src/main/ets/'+file;assert.equal(hash(path.join(output,f)),hash(path.join(nativeOutput,f)),file);
  }
  assert.equal(fs.existsSync(path.join(nativeOutput,'entry/src/main/ets/pages/NoticeConfirmedWriter.ts')),false);
- assert.equal(native.versionCode,300);
+ assert.equal(native.versionCode,400);
 });
 check('recovery diagnostics remain isolated and do not import production application storage',()=>{
  const page=read('entry/src/main/ets/pages/CommitCheck.ets'),probe=read('entry/src/main/ets/data/diagnostics/NoticeRecoveryProbe.ts');
@@ -53,8 +53,15 @@ check('recovery diagnostics remain isolated and do not import production applica
  assert.doesNotMatch(probe,/getClientStorage|ArkNoticeExtractionTransport|@kit.CoreSpeechKit/);
  for(const name of ['beginNoticeRecoveryProbe','inspectNoticeRecoveryProbe','confirmNoticeRecoveryProbe','cancelNoticeRecoveryProbe'])assert.ok(page.includes(name));
 });
+check('header and system back share a content-preserving guard with explicit keep/leave controls',()=>{
+ const page=read('entry/src/main/ets/pages/NoticeImport.ets'),guard=read('entry/src/main/ets/notice/NoticeLeaveGuard.ts');
+ assert.match(page,/onBackPress\(\): boolean \{\s*return this.interceptBack\(\)/);
+ for(const id of ['notice-back','notice-leave-title','notice-leave-keep','notice-leave-confirm'])assert.ok(page.includes(".id('"+id+"')"));
+ assert.match(page,/this.leaveGuard.confirmLeave/);assert.match(page,/this.controller\?\.cancelVoice\(\)/);
+ assert.doesNotMatch(guard,/from .*CommitServices|from .*LocalStore|from .*router|\.cancelPending\(/);
+});
 check('manifest matches sources and existing output cannot be overwritten',()=>{
- assert.equal(manifest.signed,false);assert.equal(manifest.deviceValidated,false);assert.equal(Object.keys(manifest.hashes).length,10);
+ assert.equal(manifest.signed,false);assert.equal(manifest.deviceValidated,false);assert.equal(Object.keys(manifest.hashes).length,11);
  for(const [f,value]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,f)),value);
  assert.throws(()=>prepare(output),/new output directory/);
 });
