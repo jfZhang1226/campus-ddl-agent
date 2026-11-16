@@ -186,7 +186,7 @@ struct TaskAssistantPage {
             .enabled(this.idle() && this.view.proposal !== null && !this.view.recoveryRequired)
             .onClick(() => { this.controller?.speakProposal(); })
           Text(this.view.speech.errorCode.length > 0 ? this.view.speech.errorCode :
-            this.view.speech.busy ? this.view.speech.message : '核对转写后再发送').fontSize(11).fontColor('#617589').layoutWeight(1)
+            this.view.speech.busy ? this.view.speech.message : '停顿后可能自动结束，核对后再发送').fontSize(11).fontColor('#617589').layoutWeight(1)
         }
         if (this.view.speech.partial.length > 0 && this.view.speech.busy) {
           Text(this.view.speech.partial).fontSize(11).fontColor('#617589').maxLines(2)

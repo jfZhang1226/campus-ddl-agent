@@ -51,9 +51,10 @@ export class HarmonySpeechPort implements ProbePort {
     const start: speechRecognizer.StartParams = {
       sessionId: id,
       audioInfo: { audioType: 'pcm', sampleRate: 16000, soundChannel: 1, sampleBit: 16 },
-      extraParams: { recognitionMode: 0, maxAudioDuration: 30000 }
+      extraParams: { recognitionMode: 0, vadEnd: 3000, maxAudioDuration: 30000 }
     };
-    // recognitionMode 0 captures the microphone inside Core Speech; no audio file or upload.
+    // Core Speech captures the microphone; the app creates/sends no audio file.
+    // Short-mode VAD ends after 3s silence; users can still finish earlier.
     engine.startListening(start);
   }
   finish(id: string): void { if (id === this.asrId) this.asr?.finish(id); }

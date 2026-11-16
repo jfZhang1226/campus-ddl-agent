@@ -226,6 +226,14 @@ test('native task dialogue fresh conversation keeps speech port and empty compos
  assert.equal(s.c.snapshot().speechEnabled,true);assert.equal(s.c.snapshot().input,'');assert.equal(s.port.microphones,0);
  await s.c.record();recognize(s,'新对话合成通知');assert.equal(s.c.snapshot().input,'新对话合成通知');s.c.dispose();
 });
+test('silence-driven native completion preserves Arabic date text and never sends or finishes a new capture',async()=>{
+ const s=voiceSetup();await s.c.initialize();await s.c.record();
+ const text='合成通知：软件工程报告在2026年12月10日前提交，没有具体截止时刻';
+ recognize(s,text);assert.equal(s.port.finishes,0);assert.equal(s.c.snapshot().input,text);
+ assert.equal(s.c.snapshot().speech.busy,false);s.c.finishRecording();
+ assert.equal(s.port.finishes,0);assert.equal(s.calls.length,0);assert.equal(s.port.tts.length,0);
+ assert.equal(ok(await s.h.store.read()).tasks.length,0);s.c.dispose();
+});
 test('material detail read failure cannot turn a successful actual commit into failure or replay it',async()=>{
  const h=setup(),s=controller(h,req=>({type:'tool_calls',calls:[{id:'p',action:'propose_task_changes',params:proposal(req.context)}]}));
  await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));await send(s.c,'合成通知：报告');
