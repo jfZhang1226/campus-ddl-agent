@@ -32,6 +32,47 @@ function proposal(ctx,date='2026-12-04'){
 }
 function controller(h,respond,speech){const calls=[];const transport={start(config,body){const req=JSON.parse(body),call={req,cancelled:0,cancel(){this.cancelled++;}};call.result=new Promise((resolve,reject)=>{call.resolve=resolve;call.reject=reject;});calls.push(call);if(respond)Promise.resolve().then(()=>respond(req,calls.length,call)).then(reply=>{if(reply)call.resolve(new GatewayResponse(200,JSON.stringify(reply)));},call.reject);return call;}};const clock=new Clock();const c=new TaskAgentController(h.session,transport,h.tasks,h.store,clock,speech);return {c,calls,clock};}
 const send=async(c,text)=>{c.edit(text);await c.send();};
+function updateFor(ctx,task,date='2026-12-10') {
+ const p=proposal(ctx,date),draft=p.changes[0].draft;
+ for(const key of Object.keys(new TaskDraft()))draft[key]=clone(task[key]);
+ draft.deadlinePrecision='date_only';draft.deadlineDate=date;draft.dueAt=null;
+ draft.noticeIds=[...task.noticeIds,...ctx.preparedSources.map(n=>n.id)].filter((id,i,a)=>a.indexOf(id)===i);
+ p.changes[0]={action:'update',taskId:task.id,expectedVersion:task.version,draft,checklistCreates:[]};return p;
+}
+async function matching(h){const result=[];for(const course of ['合成A班','合成B班']){const d=new TaskDraft();d.title='合成数据库报告';d.course=course;d.deadlinePrecision='date_only';d.deadlineDate='2026-12-04';result.push(ok(await h.tasks.create(d,ok(await h.store.read()).revision)).task);}return result;}
+
+test('one notification can stage two different tasks and materials atomically; no early formal writes',async()=>{
+ const h=setup(),s=controller(h,req=>{const p=proposal(req.context);const second=clone(p.changes[0]);second.draft.title='合成预约演示';second.draft.deadlineDate='2026-12-02';second.checklistCreates=[{label:'合成预约登记',sourceNoticeId:second.draft.noticeIds[0]}];p.changes.push(second);return {type:'tool_calls',calls:[{id:'batch',action:'propose_task_changes',params:p}]};});
+ await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));await send(s.c,'合成通知：报告12月4日交PDF，演示12月2日预约');
+ const pending=s.c.snapshot().proposal;assert.equal(pending.changes.length,2);assert.equal(ok(await h.store.read()).tasks.length,0);assert.equal(new Set(pending.checklistItems.map(i=>i.taskId)).size,2);
+ await s.c.confirm();const actual=ok(await h.store.read());assert.equal(actual.tasks.length,2);assert.equal(actual.operations.length,1);assert.equal(actual.checklistItems.length,3);assert.equal(actual.notices.length,1);s.c.dispose();
+});
+test('ambiguous same-name query exposes real candidates and refuses guessed update until screen choice',async()=>{
+ const h=setup(),items=await matching(h);const s=controller(h,(req,n)=>n===1?{type:'tool_calls',calls:[{id:'query',action:'get_tasks',params:{keyword:'合成数据库报告'}}]}:n===2?{type:'tool_calls',calls:[{id:'wrong',action:'propose_task_changes',params:updateFor(req.context,items[0])}]}:{type:'clarification',question:'请选择具体班级的任务。'});
+ await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));await send(s.c,'合成：报告延期到2026年12月10日');
+ assert.deepEqual(s.c.snapshot().candidates.map(t=>t.id),items.map(t=>t.id));assert.equal(s.calls[2].req.results.at(-1).success,false);assert.match(s.calls[2].req.results.at(-1).message,/多个候选/);
+ assert.equal(s.c.snapshot().proposal,null);assert.equal(ok(await h.store.read()).proposals.length,0);assert.equal(ok(await h.tasks.get(items[0].id)).task.version,1);s.c.dispose();
+});
+test('screen candidate choice reads detail without network or writes and binds only selected ID/version',async()=>{
+ const h=setup(),items=await matching(h);let selected=false;
+ const s=controller(h,(req,n)=>{
+  if(n===1)return {type:'tool_calls',calls:[{id:'query',action:'get_tasks',params:{keyword:'合成数据库报告'}}]};
+  if(n===2)return {type:'clarification',question:'请选择实际任务。'};
+  if(n===3){assert.equal(req.context.userSelectedTask.taskId,items[1].id);return {type:'tool_calls',calls:[{id:'wrong',action:'propose_task_changes',params:updateFor(req.context,items[0])}]};}
+  if(!selected){assert.equal(req.results.at(-1).success,false);selected=true;return {type:'tool_calls',calls:[{id:'right',action:'propose_task_changes',params:updateFor(req.context,items[1])}]};}
+ });
+ await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));await send(s.c,'合成：报告延期到2026年12月10日');
+ const writes=h.files.writes;await s.c.chooseTask(items[1].id);assert.equal(s.calls.length,2);assert.equal(h.files.writes,writes);assert.equal(s.c.snapshot().selectedTask.task.id,items[1].id);assert.match(s.c.snapshot().input,/合成B班/);
+ await s.c.send();assert.equal(s.c.snapshot().proposal.changes[0].taskId,items[1].id);assert.equal(ok(await h.tasks.get(items[1].id)).task.deadlineDate,'2026-12-04');
+ await s.c.confirm();assert.equal(ok(await h.tasks.get(items[1].id)).task.deadlineDate,'2026-12-10');assert.equal(ok(await h.tasks.get(items[0].id)).task.deadlineDate,'2026-12-04');assert.equal(s.c.snapshot().selectedTask,null);s.c.dispose();
+});
+test('candidate tampering, stale selected task and fresh conversation cannot silently retarget a write',async()=>{
+ const h=setup(),items=await matching(h);const s=controller(h,(req,n)=>n===1?{type:'tool_calls',calls:[{id:'q',action:'get_tasks',params:{keyword:'合成数据库报告'}}]}:n===2?{type:'clarification',question:'请选择任务。'}:n===3?{type:'tool_calls',calls:[{id:'stale',action:'propose_task_changes',params:updateFor(req.context,items[0])}]}:{type:'clarification',question:'任务已变化，请刷新后重新选择。'});
+ await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));await send(s.c,'合成改期');await s.c.chooseTask('forged-id');assert.equal(s.c.snapshot().selectedTask,null);
+ await s.c.chooseTask(items[0].id);const detail=ok(await h.tasks.get(items[0].id));const d=new TaskDraft();for(const key of Object.keys(d))d[key]=clone(detail.task[key]);d.title='合成并发新标题';ok(await h.tasks.update(items[0].id,d,detail.revision,1));
+ await s.c.send();assert.equal(s.c.snapshot().proposal,null);assert.equal(ok(await h.tasks.get(items[0].id)).task.title,'合成并发新标题');assert.equal(ok(await h.store.read()).proposals.length,0);
+ await s.c.fresh();assert.deepEqual(s.c.snapshot().candidates,[]);assert.equal(s.c.snapshot().selectedTask,null);s.c.dispose();
+});
 
 test('integrated B schema admits actual null and malformed executor calls touch no ports',async()=>{
  const schema=tools.AGENT_TOOL_SCHEMAS.find(s=>s.function.name==='propose_task_changes').function.parameters.properties.changes.items.properties.draft;
@@ -39,6 +80,15 @@ test('integrated B schema admits actual null and malformed executor calls touch 
  let touched=0;const ex=new AgentExecutor({list:async()=>{touched++;},get:async()=>{touched++;}},{read:async()=>{touched++;}},{stage:async()=>{touched++;}});
  for(const call of [null,undefined,{id:'x',action:'get_notice',params:{noticeId:''}},{id:'x',action:'get_tasks',params:{extra:true}}])assert.equal((await ex.execute(call)).errorCode,'INVALID_ARGUMENT');
  assert.equal(touched,0);
+});
+test('follow-up requirement appends only new material with its source; prior draft corrections retain addition and old prepared state',async()=>{
+ const h=setup(),ctx=await prepared(h,'合成原通知：报告需要PDF'),created=await h.session.stage(proposal(ctx));ok(created);await h.session.confirm();
+ const task=ok(await h.store.read()).tasks[0],oldItems=clone(ok(await h.tasks.get(task.id)).checklistItems);
+ await h.session.append('user','合成补充：新增运行截图，截止保持不变');const next=await h.session.context();const p=updateFor(next,task,'2026-12-04');p.changes[0].checklistCreates=[{label:'运行截图',sourceNoticeId:next.preparedSources.at(-1).id}];
+ const staged=ok(await h.session.stage(p));assert.equal(staged.recordType,'t16.proposal.v3');assert.deepEqual(ok(await h.tasks.get(task.id)).checklistItems,oldItems);
+ const prior=(await h.session.context(staged)).priorProposal;assert.deepEqual(prior.changes[0].checklistCreates,p.changes[0].checklistCreates);assert.equal(tools.validateCall({id:'retry-add',action:'propose_task_changes',params:prior}),'');
+ const receipt=await h.session.confirm(),actual=ok(await h.tasks.get(task.id));assert.equal(receipt.checklistItems.length,1);assert.equal(actual.checklistItems.length,3);assert.deepEqual(actual.checklistItems.slice(0,2),oldItems);assert.equal(actual.checklistItems[2].sourceNoticeId,next.preparedSources.at(-1).id);
+ await h.session.append('user','合成重复要求：运行截图');const repeat=updateFor(await h.session.context(),actual.task);repeat.changes[0].checklistCreates=p.changes[0].checklistCreates;assert.equal((await h.session.stage(repeat)).errorCode,'INVALID_ARGUMENT');assert.equal(ok(await h.tasks.get(task.id)).checklistItems.length,3);
 });
 test('gateway decodes only bounded normalized replies and cannot expose confirm as a tool',()=>{
  assert.equal(decodeAgentTurn(new GatewayResponse(200,'<html>')).errorCode,'INVALID_RESPONSE');

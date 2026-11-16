@@ -184,6 +184,35 @@ struct TaskAssistantPage {
     }
   }
   @Builder
+  candidatesCard() {
+    if (this.view.candidates.length > 1 && this.view.proposal === null) {
+      Column({ space: 8 }) {
+        Text('候选任务 · 需要修改时可选择').fontSize(17).fontWeight(FontWeight.Medium)
+        Text('下列来自本机查询。选择后仍需点发送，模型只生成待确认方案。').fontSize(12).fontColor('#617589')
+        if (this.view.candidatesTruncated) { Text('候选较多，仅显示前30项，请补充课程或标题缩小范围。').fontSize(12).fontColor('#8A5A12') }
+        ForEach(this.view.candidates, (task: Task) => {
+          Column({ space: 5 }) {
+            Text(task.title + ' · ' + (task.course || '课程未知')).fontSize(14)
+            Text(this.deadline(task) + ' · ' + this.statusLabel(task.status)).fontSize(12).fontColor('#617589')
+            Text('编号：' + task.id).fontSize(10).fontColor('#617589')
+            Button('选择此任务').id('task-agent-choose-' + task.id).fontSize(12).enabled(this.idle() && !this.view.historyPending && !this.view.recoveryRequired)
+              .onClick(() => { this.controller?.chooseTask(task.id); })
+          }.width('100%').alignItems(HorizontalAlign.Start).padding(10).backgroundColor('#FFFFFF').borderRadius(9)
+        }, (task: Task) => task.id + ':' + String(task.version))
+      }.width('100%').alignItems(HorizontalAlign.Start)
+    }
+    if (this.view.selectedTask !== null) {
+      Column({ space: 7 }) {
+        Text('本轮已选择：' + this.view.selectedTask.task.title + ' · ' + (this.view.selectedTask.task.course || '课程未知')).fontSize(14).fontColor('#176766')
+        Text(this.deadline(this.view.selectedTask.task) + ' · 当前版本' + String(this.view.selectedTask.task.version)).fontSize(12)
+        ForEach(this.view.selectedTask.notices, (notice: Notice) => {
+          Text((notice.sourceLabel || '来源未知') + '\n' + notice.rawText).fontSize(12).copyOption(CopyOptions.InApp)
+        }, (notice: Notice) => notice.id)
+        Button('解除本轮选择').id('task-agent-clear-choice').fontSize(12).enabled(this.idle()).onClick(() => { this.controller?.clearTaskChoice(); })
+      }.width('100%').alignItems(HorizontalAlign.Start).padding(12).backgroundColor('#E6F1EC').borderRadius(9)
+    }
+  }
+  @Builder
   voiceControls() {
     if (this.view.speechEnabled) {
       Column({ space: 5 }) {
@@ -239,6 +268,7 @@ struct TaskAssistantPage {
                 .backgroundColor(row.role === 'user' ? '#E6F1EC' : '#FFFFFF').borderRadius(11)
             }, (row: ChatMessage) => row.id + ':' + row.phase)
             if (this.view.toolActions.length > 0) { Text(this.view.toolActions.map((action: string) => this.actionLabel(action)).join(' → ')).fontSize(11).fontColor('#617589') }
+            this.candidatesCard()
             this.proposalCard()
             this.receiptCard()
             if (this.view.historyPending) {

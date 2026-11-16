@@ -2,11 +2,11 @@ import { ChatClock, ChatMessage, GatewayCall, GatewayConfig, SystemChatClock } f
 import { errorText, validateConfig } from '../chat/GatewayProtocol';
 import { TaskRepository } from '../data/TaskRepository';
 import { LocalStore } from '../data/LocalStore';
-import { CommitProposal, CommitReceipt } from '../domain/CommitModels';
+import { CommitProposal, CommitReceipt, ProposalDraft } from '../domain/CommitModels';
 import { TaskDetail, TaskQuery } from '../domain/TaskContracts';
 import { SpeechSession, SpeechView } from '../speech/VoiceChatController';
 import { UnavailableSpeechSession } from '../speech/UnavailableSpeechSession';
-import { Notice } from '../domain/StorageModels';
+import { Notice, Task } from '../domain/StorageModels';
 import { StorageFailure, storageSuccess } from '../data/storage/StorageTypes';
 import { AgentExecutor } from './AgentExecutor';
 import { AgentLoop } from './AgentLoop';
@@ -31,6 +31,9 @@ export class TaskAgentView {
   speechEnabled: boolean = false;
   savedDetails: TaskDetail[] = [];
   detailsPending: boolean = false;
+  candidates: Task[] = [];
+  candidatesTruncated: boolean = false;
+  selectedTask: TaskDetail | null = null;
 }
 
 /** One explicit user turn at a time; the model sees only read/stage capabilities. */
@@ -94,6 +97,25 @@ export class TaskAgentController {
     this.speech.edit(this.view.input);
     this.publish();
   }
+  async chooseTask(id: string): Promise<void> {
+    if (this.busy() || this.view.historyPending || this.view.recoveryRequired || !this.view.candidates.some(task => task.id === id)) return;
+    this.view.phase = 'selecting'; this.publish();
+    try {
+      const result = await this.tasks.get(id);
+      if (!result.success || result.data === null) throw new StorageFailure(result.errorCode || 'STORAGE_FAILED', result.message);
+      const task: Task = result.data.task;
+      const choice: string = '我选择任务“' + task.title + '”，课程“' + (task.course || '未知') + '”，编号 ' + task.id + '；请仅修改这个既有任务，保留原来源和材料。';
+      const text: string = (this.view.input.length === 0 ? '' : this.view.input + '\n') + choice;
+      if (text.length > 4000) throw new StorageFailure('MESSAGE_TOO_LONG', '输入已接近长度上限，请先整理文字再选择任务。');
+      this.view.selectedTask = result.data; this.view.input = text; this.inputVersion++;
+      this.view.notice = '已选中实际任务，尚未发给模型或修改任务。请核对下方原文，再点发送。'; this.view.errorCode = '';
+    } catch (error) { this.handle(error as Error); }
+    finally { this.view.phase = 'idle'; this.publish(); }
+  }
+  clearTaskChoice(): void {
+    if (this.busy()) return;
+    this.view.selectedTask = null; this.view.notice = '已解除本轮目标限制；输入中的选择文字请按需修改。'; this.publish();
+  }
   async record(): Promise<void> {
     if (this.busy() || !this.view.speechEnabled || this.view.historyPending || this.view.recoveryRequired) return;
     this.speech.edit(this.view.input);
@@ -156,6 +178,7 @@ export class TaskAgentController {
     const message: string = this.view.input.trim();
     if (message.length === 0 || message.length > 4000) { this.fail(message.length === 0 ? 'EMPTY_MESSAGE' : 'MESSAGE_TOO_LONG'); return; }
     const generation: number = ++this.generation;
+    const selection: TaskDetail | null = this.view.selectedTask === null ? null : JSON.parse(JSON.stringify(this.view.selectedTask)) as TaskDetail;
     this.retryText = message;
     this.cancelRequested = ''; this.view.phase = 'preparing'; this.view.errorCode = ''; this.view.notice = ''; this.view.toolActions = []; this.publish();
     try {
@@ -164,16 +187,34 @@ export class TaskAgentController {
       await this.session.append('user', message);
       if (generation !== this.generation || this.cancelRequested.length > 0) return;
       this.view.input = ''; this.view.phase = 'running'; this.publish();
-      const context: Object = await this.session.context(this.prior);
+      const context: Object = Object.assign({}, await this.session.context(this.prior), {
+        userSelectedTask: selection === null ? null : { taskId: selection.task.id, version: selection.task.version },
+        selectionPolicy: 'userSelectedTask只来自用户屏幕选择；存在时既有任务更新必须使用这个ID和版本。多候选未选择时应追问，不猜同名任务。'
+      });
       if (generation !== this.generation) return;
       this.timer = this.clock.schedule(() => { this.stop('TIMEOUT'); }, 90000);
+      let ambiguousIds: string[] = [];
       const executor = new AgentExecutor({ list: async (query: Object) => {
         const result = await this.tasks.list(query as TaskQuery);
         if (!result.success || result.data === null) return result;
+        ambiguousIds = result.data.tasks.length > 1 ? result.data.tasks.map(task => task.id) : [];
+        if (generation === this.generation) {
+          this.view.candidates = result.data.tasks.slice(0, 30); this.view.candidatesTruncated = result.data.tasks.length > 30; this.publish();
+        }
         return storageSuccess({ tasks: result.data.tasks.slice(0, 30), revision: result.data.revision,
           total: result.data.tasks.length, truncated: result.data.tasks.length > 30 });
       },
-        get: async (id: string) => this.tasks.get(id) }, this.store, this.session);
+        get: async (id: string) => this.tasks.get(id) }, this.store, { stage: async (input: Object) => {
+          const proposal = input as ProposalDraft;
+          const updates = proposal.changes.filter(change => change.action === 'update');
+          if (selection !== null && updates.some(change => change.taskId !== selection.task.id || change.expectedVersion !== selection.task.version)) {
+            return { success: false, data: null, errorCode: 'INVALID_ARGUMENT', message: '更新对象或版本与用户屏幕选择不一致，请重新读取并由用户选择，不能改其他任务。' };
+          }
+          if (selection === null && updates.some(change => ambiguousIds.includes(change.taskId || ''))) {
+            return { success: false, data: null, errorCode: 'INVALID_ARGUMENT', message: '本轮查询命中多个候选，请让用户用屏幕选择实际任务后继续，不能猜测更新对象。' };
+          }
+          return this.session.stage(input);
+        } });
       const loop = new AgentLoop({ turn: async (text, state, tools, results) => {
         if (generation !== this.generation || this.cancelRequested.length > 0) return agentError(this.cancelRequested || 'CANCELLED');
         try {
@@ -238,6 +279,7 @@ export class TaskAgentController {
     this.view.phase = 'saving'; this.view.errorCode = ''; this.publish();
     try {
       this.view.receipt = await this.session.confirm();
+      this.view.selectedTask = null; this.view.candidates = []; this.view.candidatesTruncated = false;
       this.prior = null;
       this.view.notice = '已正式保存，可在下方核对实际回执；用户声明不代表学校平台已收到。';
       await this.readSavedDetails();

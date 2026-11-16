@@ -114,19 +114,18 @@ function validateChange(change: Object): string {
   if (draftError.length > 0) return draftError;
   if (!hasKey(change, 'checklistCreates') || !Array.isArray(c.checklistCreates)) return TOOL_ERRORS.INVALID_ARGUMENT;
   const creates: Object[] = c.checklistCreates as Object[];
+  for (const item of creates) {
+    if (!isRecord(item) || !hasOnlyKeys(item, MATERIAL_KEYS)) return TOOL_ERRORS.INVALID_ARGUMENT;
+    const m = item as Record<string, Object | null>;
+    if (!nonEmpty(m.label)) return TOOL_ERRORS.INVALID_ARGUMENT;
+    if (!hasKey(item, 'sourceNoticeId')) return TOOL_ERRORS.INVALID_ARGUMENT;
+    if (m.sourceNoticeId !== null && !nonEmpty(m.sourceNoticeId)) return TOOL_ERRORS.INVALID_ARGUMENT;
+  }
   if (c.action === 'create') {
     if (c.taskId !== null || c.expectedVersion !== null) return TOOL_ERRORS.INVALID_ARGUMENT;
-    for (const item of creates) {
-      if (!isRecord(item) || !hasOnlyKeys(item, MATERIAL_KEYS)) return TOOL_ERRORS.INVALID_ARGUMENT;
-      const m = item as Record<string, Object | null>;
-      if (!nonEmpty(m.label)) return TOOL_ERRORS.INVALID_ARGUMENT;
-      if (!hasKey(item, 'sourceNoticeId')) return TOOL_ERRORS.INVALID_ARGUMENT;
-      if (m.sourceNoticeId !== null && !nonEmpty(m.sourceNoticeId)) return TOOL_ERRORS.INVALID_ARGUMENT;
-    }
   } else {
     if (!nonEmpty(c.taskId) || typeof c.expectedVersion !== 'number' ||
       !Number.isSafeInteger(c.expectedVersion as number) || (c.expectedVersion as number) <= 0) return TOOL_ERRORS.INVALID_ARGUMENT;
-    if (creates.length > 0) return TOOL_ERRORS.INVALID_ARGUMENT; // 材料仅随新任务创建，T22 变化不支持
   }
   return '';
 }
@@ -246,7 +245,7 @@ export const AGENT_TOOL_SCHEMAS: Object[] = [
     { noticeId: { type: 'string' } }, ['noticeId']),
   schema('get_availability', '读取指定日期区间的可用时间与已占用区间（T24 排程前为占位）。',
     { dateFrom: { type: 'string' }, dateTo: { type: 'string' } }, ['dateFrom', 'dateTo']),
-  schema('propose_task_changes', '生成任务创建/修改草案与关联新通知；创建型可随附材料（checklistCreates），仅保存草案、不改正式任务，等待用户确认。',
+  schema('propose_task_changes', '生成任务创建/修改草案与关联新通知；可随附本次新增材料（checklistCreates），不得重复已有清单、改写准备状态或声明提交；仅保存草案、不改正式任务，等待用户确认。',
     { sessionId: { type: 'string' }, expectedRevision: { type: 'integer' },
       notices: { type: 'array' }, changes: { type: 'array', items: changeSchema } },
     ['sessionId', 'expectedRevision', 'notices', 'changes'])

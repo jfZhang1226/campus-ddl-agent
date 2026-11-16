@@ -127,7 +127,7 @@ function prepare(output) {
   ]},null,2)+'\n');
   for(const file of ['T15-VOICE-CHAT-ONLY.txt','T15-source-manifest.json'])fs.unlinkSync(path.join(result.output,file));
   write('T19-NOTICE-INTERACTION-ONLY.txt',
-    'Shared production confirmation flow with a native speech port. Explicit client confirmation uses T16 v2.\n'+
+    'Shared production confirmation flow with a native speech port. Explicit client confirmation uses T16 v2/v3.\n'+
     'New independent version. Unsigned/uninstalled until explicit device evidence is recorded.\n');
   const hashes={};
   for(const file of [pages+'NoticeChat.ets',pages+'NoticeSpeechOwner.ets',
@@ -142,7 +142,8 @@ function prepare(output) {
     'entry/src/main/ets/reminders/ReminderSettings.ts','entry/src/main/ets/reminders/TaskReminderController.ts',
     'entry/src/main/ets/reminders/ReminderOwner.ets','entry/src/main/ets/data/ClientStorage.ets','entry/src/main/ets/data/LocalStore.ts',
     'entry/src/main/ets/domain/CommitModels.ts','entry/src/main/ets/domain/CommitValidation.ts','entry/src/main/ets/domain/MaterialCommitValidation.ts',
-    'entry/src/main/ets/domain/TaskStateRules.ts','entry/src/main/ets/data/CommitServices.ts','entry/src/main/ets/tasks/TaskActionsController.ts'])
+    'entry/src/main/ets/domain/TaskStateRules.ts','entry/src/main/ets/data/CommitServices.ts','entry/src/main/ets/tasks/TaskActionsController.ts',
+    'entry/src/main/ets/agent/AgentTools.ts'])
     hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
   const manifest={...result,scope:'T19-local-integration',bundleName:app.app.bundleName,versionCode:400,formalSaveEnabled:true,hashes};
   write('T19-source-manifest.json',JSON.stringify(manifest,null,2)+'\n');
