@@ -19,7 +19,7 @@ function prepare(output) {
     'entryability/EntryAbility.ets','pages/CommitCheck.ets','data/diagnostics/NoticeRecoveryProbe.ts','notice/NoticeLeaveGuard.ts',
     'pages/Index.ets','pages/TaskAssistant.ets','agent/TaskAgentController.ts','agent/TaskAgentSession.ts',
     'agent/TaskAgentOwner.ets','agent/AgentGatewayProtocol.ts','agent/AgentTools.ts','agent/AgentLoop.ts',
-    'agent/AgentExecutor.ts','adapters/ArkAgentGatewayTransport.ets']) {
+    'agent/AgentExecutor.ts','adapters/ArkAgentGatewayTransport.ets','pages/Tasks.ets','tasks/TaskBoardController.ts']) {
     const file='entry/src/main/ets/'+f;hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
   }
   const manifest={...result,scope:'T19-shared-notice-entry',bundleName:app.app.bundleName,versionCode:300,hashes,

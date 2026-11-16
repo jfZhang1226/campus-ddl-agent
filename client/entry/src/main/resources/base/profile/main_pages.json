@@ -3,6 +3,7 @@
     "pages/Index",
     "pages/NoticeImport",
     "pages/TaskAssistant",
+    "pages/Tasks",
     "pages/StorageCheck",
     "pages/TaskCheck",
     "pages/HistoryCheck",

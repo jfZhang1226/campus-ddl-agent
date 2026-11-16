@@ -40,7 +40,7 @@ check('record, end, cancel, manual draft playback and immediate stop are reachab
     assert.ok(page.includes(".id('"+id+"')"));
   assert.match(read('entry/src/main/ets/pages/VoiceChat.ets'),/pages\/NoticeChat/);
   assert.deepEqual(json('entry/src/main/resources/base/profile/main_pages.json').src,
-    ['pages/VoiceChat','pages/NoticeChat','pages/TaskAssistant','pages/SpeechProbe']);
+    ['pages/VoiceChat','pages/NoticeChat','pages/TaskAssistant','pages/Tasks','pages/SpeechProbe']);
 });
 check('native owner and lifecycle release are confined to the exported assembly',()=>{
   const ability=read('entry/src/main/ets/entryability/EntryAbility.ets');
@@ -66,8 +66,8 @@ check('production pages and client files are preserved except explicit export co
     assert.equal(hash(path.join(root,file)),hash(path.join(output,file.slice(7))),file);
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
-check('manifest matches seventeen actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,17);
+check('manifest matches nineteen actual source outputs and existing export is refused without overwrite',()=>{
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,19);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);

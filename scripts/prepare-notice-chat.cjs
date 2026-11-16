@@ -88,6 +88,12 @@ function prepare(output) {
           this.controller?.pause();
           router.pushUrl({ url: 'pages/TaskAssistant' }).catch(() => { this.view.notice = '无法打开任务对话页。'; });
         })
+      Button('我的任务').id('open-task-board')
+        .enabled(!this.view.chat.busy && !this.view.speech.busy)
+        .onClick(() => {
+          this.controller?.pause();
+          router.pushUrl({ url: 'pages/Tasks' }).catch(() => { this.view.notice = '无法打开任务列表。'; });
+        })
       if (this.settingsOpen) { this.settings() }`);
   write(pages+'VoiceChat.ets',voicePage);
   let ability=fs.readFileSync(path.join(root,'probes/harmony-voicechat/EntryAbility.ets'),'utf8');
@@ -104,7 +110,7 @@ function prepare(output) {
   for(const row of strings.string)if(row.name==='EntryAbility_label')row.value='课事清通知联调';
   fs.writeFileSync(stringsFile,JSON.stringify(strings,null,2)+'\n');
   write('entry/src/main/resources/base/profile/main_pages.json',JSON.stringify({src:[
-    'pages/VoiceChat','pages/NoticeChat','pages/TaskAssistant','pages/SpeechProbe'
+    'pages/VoiceChat','pages/NoticeChat','pages/TaskAssistant','pages/Tasks','pages/SpeechProbe'
   ]},null,2)+'\n');
   for(const file of ['T15-VOICE-CHAT-ONLY.txt','T15-source-manifest.json'])fs.unlinkSync(path.join(result.output,file));
   write('T19-NOTICE-INTERACTION-ONLY.txt',
@@ -117,7 +123,8 @@ function prepare(output) {
     'entry/src/main/ets/notice/NoticeImportOwner.ts','entry/src/main/ets/speech/UnavailableSpeechSession.ts',
     'entry/src/main/ets/notice/NoticeLeaveGuard.ts', pages+'TaskAssistant.ets',pages+'TaskAgentSpeechOwner.ets',
     'entry/src/main/ets/agent/TaskAgentController.ts','entry/src/main/ets/agent/TaskAgentSession.ts',
-    pages+'VoiceChat.ets','entry/src/main/ets/entryability/EntryAbility.ets',pages+'HarmonySpeechPort.ets',pages+'SpeechProbeController.ts'])
+    pages+'VoiceChat.ets','entry/src/main/ets/entryability/EntryAbility.ets',pages+'HarmonySpeechPort.ets',pages+'SpeechProbeController.ts',
+    pages+'Tasks.ets','entry/src/main/ets/tasks/TaskBoardController.ts'])
     hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
   const manifest={...result,scope:'T19-local-integration',bundleName:app.app.bundleName,versionCode:400,formalSaveEnabled:true,hashes};
   write('T19-source-manifest.json',JSON.stringify(manifest,null,2)+'\n');
