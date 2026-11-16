@@ -4,6 +4,7 @@ const {LocalStore}=require(root+'data/LocalStore.ts'),{CommitServices}=require(r
 const {StorageCoordinator}=require(root+'data/storage/StorageCoordinator.ts'),{TaskDraft}=require(root+'domain/TaskContracts.ts');
 const {BusinessSnapshot}=require(root+'domain/StorageModels.ts');
 const {MATERIAL_PROPOSAL_RECORD,MATERIAL_OPERATION_RECORD}=require(root+'domain/MaterialCommitValidation.ts');
+const {TaskActionsController}=require(root+'tasks/TaskActionsController.ts');
 const clone=x=>structuredClone(x),ok=r=>{assert.equal(r.success,true,r.message);return r.data;};
 class Files {
  files=new Map();writes=0;failNext=false;loseAck=false;
@@ -28,6 +29,46 @@ async function stage(s,id,mutate=()=>{}) {
 }
 async function ready(s,id){const p=ok(await stage(s,id,(c,d)=>{c.draft.status='ready';c.checklistUpdates=d.checklistItems.map(i=>({itemId:i.id,state:'prepared'}));}));return apply(s,p);}
 async function submitted(s,id){await ready(s,id);return apply(s,ok(await stage(s,id,c=>{c.draft.status='submitted';c.confirmSubmission=true;})));}
+
+async function actions(s,id){const c=new TaskActionsController(s.store,s.tasks,s.commits);await c.initialize();c.select(ok(await s.tasks.get(id)));return c;}
+test('manual local checkboxes and discard never write; only confirmed staged action changes repository',async()=>{
+ const s=setup(),a=await seed(s),c=await actions(s,a.task.id),writes=s.files.writes;
+ c.toggle(a.items[0].id);assert.equal(c.hasLocalChanges(),true);assert.equal(s.files.writes,writes);
+ c.discardLocalChanges();assert.equal(c.hasLocalChanges(),false);assert.equal(s.files.writes,writes);
+ c.toggle(a.items[0].id);await c.prepareMaterials();assert.ok(c.snapshot().pending);assert.equal(ok(await s.tasks.get(a.task.id)).checklistItems[0].state,'pending');
+ assert.equal(await c.confirm(),true);assert.equal(ok(await s.tasks.get(a.task.id)).checklistItems[0].state,'prepared');assert.equal(await c.confirm(),false);
+});
+test('manual cold recovery never auto-confirms pending proposal and supports explicit cancellation',async()=>{
+ const s=setup(),a=await seed(s),c=await actions(s,a.task.id);c.toggle(a.items[0].id);await c.prepareMaterials();const id=c.snapshot().pending.id;c.dispose();
+ const cold=setup(s.files,s.runtime),again=await actions(cold,a.task.id);assert.equal(again.snapshot().pending.id,id);assert.equal(ok(await cold.tasks.get(a.task.id)).task.version,1);
+ await again.cancel();assert.equal(again.snapshot().pending,null);assert.equal(ok(await cold.tasks.get(a.task.id)).checklistItems[0].state,'pending');
+});
+test('manual stale selection and stale staged proposal cannot overwrite newer task; abandon remains possible',async()=>{
+ const s=setup(),a=await seed(s),c=await actions(s,a.task.id);c.toggle(a.items[0].id);
+ await apply(s,ok(await stage(s,a.task.id,ch=>{ch.draft.title='合成修改标题';})));await c.prepareMaterials();assert.equal(c.snapshot().errorCode,'VERSION_CONFLICT');assert.equal(c.snapshot().pending,null);
+ c.select(ok(await s.tasks.get(a.task.id)));c.toggle(a.items[0].id);await c.prepareMaterials();const d=new TaskDraft();d.title='合成其他任务';ok(await s.tasks.create(d,ok(await s.store.read()).revision));
+ assert.equal(await c.confirm(),false);assert.equal(c.snapshot().errorCode,'VERSION_CONFLICT');assert.match(c.snapshot().notice,/放弃/);await c.cancel();assert.equal(c.snapshot().pending,null);
+});
+test('manual add material and prepare-ready require screen confirmation; submission is a separate declaration',async()=>{
+ const s=setup(),a=await seed(s,1),c=await actions(s,a.task.id);await c.prepareAddMaterial('合成补充材料');assert.equal(c.snapshot().pending.checklistItems[0].sourceNoticeId,null);assert.equal(ok(await s.tasks.get(a.task.id)).checklistItems.length,1);await c.confirm();
+ c.select(ok(await s.tasks.get(a.task.id)));for(const item of c.snapshot().materials)c.toggle(item.itemId);await c.prepareStatus('ready');assert.equal(c.snapshot().pending.changes[0].draft.status,'ready');await c.confirm();
+ c.select(ok(await s.tasks.get(a.task.id)));await c.prepareStatus('submit');assert.equal(c.snapshot().pending.changes[0].confirmSubmission,true);assert.equal(ok(await s.tasks.get(a.task.id)).task.status,'ready');await c.confirm();assert.equal(c.snapshot().receipt.submissionSnapshots.length,1);
+});
+test('manual submission history shows old immutable snapshot and changed requirements need reconfirmation',async()=>{
+ const s=setup(),a=await seed(s);await submitted(s,a.task.id);await apply(s,ok(await stage(s,a.task.id,ch=>{ch.checklistCreates=[{label:'合成后续要求',sourceNoticeId:null}];})));
+ const c=await actions(s,a.task.id);await new Promise(r=>setImmediate(r));assert.equal(c.snapshot().submissions.length,1);assert.equal(c.snapshot().submissions[0].materials.length,2);assert.equal(c.snapshot().needsSubmissionReview,true);
+});
+test('manual stage acknowledgement uncertainty is locked until actual proposal recovery',async()=>{
+ const s=setup(),a=await seed(s),c=await actions(s,a.task.id);c.toggle(a.items[0].id);const original=s.commits.proposals.stage.bind(s.commits.proposals);
+ s.commits.proposals.stage=async input=>{await original(input);throw Error('synthetic lost UI acknowledgement');};await c.prepareMaterials();assert.equal(c.snapshot().recoveryRequired,true);await c.prepareMaterials();
+ await c.recover();assert.ok(c.snapshot().pending);assert.equal(c.snapshot().recoveryRequired,false);assert.equal(ok(await s.tasks.get(a.task.id)).task.version,1);await c.confirm();assert.equal(ok(await s.tasks.get(a.task.id)).task.version,2);
+});
+test('done and cancelled material history cannot be rewritten through low-level commit service',async()=>{
+ const s=setup(),a=await seed(s);await apply(s,ok(await stage(s,a.task.id,c=>{c.draft.status='cancelled';})));
+ assert.equal((await stage(s,a.task.id,c=>{c.checklistUpdates=[{itemId:a.items[0].id,state:'prepared'}];})).success,false);
+ assert.equal((await stage(s,a.task.id,c=>{c.checklistCreates=[{label:'不能追加',sourceNoticeId:null}];})).success,false);
+ const b=await seed(s,0,null);await apply(s,ok(await stage(s,b.task.id,c=>{c.draft.status='done';})));assert.equal((await stage(s,b.task.id,c=>{c.checklistCreates=[{label:'不能追加',sourceNoticeId:null}];})).success,false);
+});
 
 test('v3 material stage holds immutable before images and does not change formal material/task',async()=>{
  const s=setup(),initial=await seed(s),before=ok(await s.tasks.get(initial.task.id));const p=ok(await stage(s,initial.task.id,c=>{c.checklistUpdates=[{itemId:initial.items[0].id,state:'prepared'}];}));

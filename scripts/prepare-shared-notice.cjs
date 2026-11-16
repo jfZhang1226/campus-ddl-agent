@@ -21,7 +21,9 @@ function prepare(output) {
     'agent/TaskAgentOwner.ets','agent/AgentGatewayProtocol.ts','agent/AgentTools.ts','agent/AgentLoop.ts',
     'agent/AgentExecutor.ts','adapters/ArkAgentGatewayTransport.ets','pages/Tasks.ets','tasks/TaskBoardController.ts',
     'reminders/ReminderPlan.ts','reminders/ReminderService.ts','reminders/ReminderSettings.ts',
-    'reminders/TaskReminderController.ts','reminders/ReminderOwner.ets','data/ClientStorage.ets','data/LocalStore.ts']) {
+    'reminders/TaskReminderController.ts','reminders/ReminderOwner.ets','data/ClientStorage.ets','data/LocalStore.ts',
+    'domain/CommitModels.ts','domain/CommitValidation.ts','domain/MaterialCommitValidation.ts','domain/TaskStateRules.ts',
+    'data/CommitServices.ts','tasks/TaskActionsController.ts']) {
     const file='entry/src/main/ets/'+f;hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
   }
   const manifest={...result,scope:'T19-shared-notice-entry',bundleName:app.app.bundleName,versionCode:300,hashes,

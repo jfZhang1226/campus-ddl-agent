@@ -200,7 +200,8 @@ class CommitEngine {
           original.state = update.state;
           original.confirmedAt = update.state === 'prepared' ? this.now() : null;
         });
-        validateTaskTransition(before, taskDraft, currentItems.concat(items.filter(item => item.taskId === taskId)), change.confirmSubmission === true);
+        validateTaskTransition(before, taskDraft, currentItems.concat(items.filter(item => item.taskId === taskId)), change.confirmSubmission === true,
+          change.checklistCreates.length > 0 || (change.checklistUpdates || []).length > 0);
         const proposed: ProposedTaskChange = { action: change.action, taskId: taskId, expectedVersion: change.expectedVersion, before: before, draft: taskDraft };
         if (change.confirmSubmission === true) proposed.confirmSubmission = true;
         changes.push(proposed);
@@ -283,7 +284,7 @@ class CommitEngine {
       proposal.changes.forEach((change: ProposedTaskChange) => {
         const plannedItems = proposal.recordType === MATERIAL_PROPOSAL_RECORD ? finalMaterials(proposal, change.taskId, authorization.confirmedAt) :
           snapshot.checklistItems.filter(item => item.taskId === change.taskId).concat((proposal.checklistItems || []).filter(item => item.taskId === change.taskId));
-        validateTaskTransition(change.before, change.draft, plannedItems, change.confirmSubmission === true);
+        validateTaskTransition(change.before, change.draft, plannedItems, change.confirmSubmission === true, materialChangeForTask(proposal, change.taskId));
         const index: number = snapshot.tasks.findIndex((task: Task) => task.id === change.taskId);
         let task: Task;
         if (change.action === 'create') {
