@@ -1,0 +1,39 @@
+{
+  "runtimeCommit": "ff9400790c9704af10eff24d96bf95f72025663b",
+  "synthetic": true,
+  "scope": "Only the successful new two-message text flow; excludes earlier failed diagnostics, speech and other sessions",
+  "turns": [
+    {
+      "step": 1,
+      "type": "tool_calls",
+      "promptTokens": 1789,
+      "completionTokens": 49,
+      "totalTokens": 1838,
+      "cachedPromptTokens": 0,
+      "gatewayElapsedMs": 895
+    },
+    {
+      "step": 2,
+      "type": "tool_calls",
+      "promptTokens": 1882,
+      "completionTokens": 304,
+      "totalTokens": 2186,
+      "cachedPromptTokens": 1664,
+      "gatewayElapsedMs": 1226
+    },
+    {
+      "step": 3,
+      "type": "tool_calls",
+      "promptTokens": 2238,
+      "completionTokens": 358,
+      "totalTokens": 2596,
+      "cachedPromptTokens": 256,
+      "gatewayElapsedMs": 1695
+    }
+  ],
+  "totalTokens": 6620,
+  "totalPromptTokens": 5909,
+  "totalCompletionTokens": 711,
+  "priceCalculated": false,
+  "notBenchmark": true
+}

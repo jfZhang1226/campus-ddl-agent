@@ -35,6 +35,12 @@
     "taskVoiceControlsVisible": true,
     "recordingStartedByAgent": false,
     "audioVerified": false,
-    "userFeedback": "pending"
+    "userFeedback": "ASR完整；停说自动结束；日期阿拉伯数字",
+    "asrVerified": true,
+    "ttsVerified": false,
+    "realModelSent": false,
+    "transcriptDigitDate": "2026年12月10日",
+    "homophoneObserved": true,
+    "automationReviewBlockedSend": true
   }
 }
