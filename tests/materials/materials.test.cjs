@@ -38,6 +38,17 @@ test('manual local checkboxes and discard never write; only confirmed staged act
  c.toggle(a.items[0].id);await c.prepareMaterials();assert.ok(c.snapshot().pending);assert.equal(ok(await s.tasks.get(a.task.id)).checklistItems[0].state,'pending');
  assert.equal(await c.confirm(),true);assert.equal(ok(await s.tasks.get(a.task.id)).checklistItems[0].state,'prepared');assert.equal(await c.confirm(),false);
 });
+test('remaining effort is explicit, confirmed and reversible to unknown; zero never implies completion',async()=>{
+ const s=setup(),a=await seed(s),c=await actions(s,a.task.id);await c.prepareEffort(60);assert.equal(c.snapshot().pending.changes[0].draft.remainingMinutes,60);assert.equal(ok(await s.tasks.get(a.task.id)).task.remainingMinutes,null);await c.confirm();
+ assert.equal(ok(await s.tasks.get(a.task.id)).task.remainingMinutes,60);c.select(ok(await s.tasks.get(a.task.id)));await c.prepareEffort(0);await c.confirm();let actual=ok(await s.tasks.get(a.task.id));assert.equal(actual.task.remainingMinutes,0);assert.equal(actual.task.status,'todo');assert.ok(actual.checklistItems.every(i=>i.state==='pending'));
+ c.select(actual);await c.prepareEffort(null);await c.confirm();assert.equal(ok(await s.tasks.get(a.task.id)).task.remainingMinutes,null);
+ c.select(ok(await s.tasks.get(a.task.id)));const writes=s.files.writes;for(const invalid of [-1,1.5,NaN,Infinity]){await c.prepareEffort(invalid);assert.equal(c.snapshot().pending,null);assert.equal(c.snapshot().errorCode,'INVALID_ARGUMENT');}assert.equal(s.files.writes,writes);
+});
+test('clock rollback cannot create an earlier submission declaration than current task preparation',async()=>{
+ const s=setup(),a=await seed(s);s.runtime.time='2026-11-17T10:20:00+08:00';await submitted(s,a.task.id);
+ const before=ok(await s.tasks.get(a.task.id));s.runtime.time='2026-11-17T10:10:00+08:00';const p=ok(await stage(s,a.task.id,c=>{c.confirmSubmission=true;}));const request=ok(await s.commits.confirmation.confirm(p.id,p.expectedRevision));const writes=s.files.writes;
+ assert.equal((await s.commits.confirmation.apply(request)).errorCode,'INVALID_ARGUMENT');assert.equal(s.files.writes,writes);const after=ok(await s.tasks.get(a.task.id));assert.deepEqual(after.task,before.task);assert.deepEqual(after.checklistItems,before.checklistItems);assert.equal(after.revision,p.expectedRevision);
+});
 test('manual cold recovery never auto-confirms pending proposal and supports explicit cancellation',async()=>{
  const s=setup(),a=await seed(s),c=await actions(s,a.task.id);c.toggle(a.items[0].id);await c.prepareMaterials();const id=c.snapshot().pending.id;c.dispose();
  const cold=setup(s.files,s.runtime),again=await actions(cold,a.task.id);assert.equal(again.snapshot().pending.id,id);assert.equal(ok(await cold.tasks.get(a.task.id)).task.version,1);

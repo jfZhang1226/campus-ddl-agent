@@ -82,7 +82,7 @@ export class TaskActionsController {
     if (item === undefined || this.view.detail === null || ['done', 'cancelled'].includes(this.view.detail.task.status)) return;
     item.state = item.state === 'prepared' ? 'pending' : 'prepared'; this.publish();
   }
-  private async stage(mode: string, label: string = ''): Promise<void> {
+  private async stage(mode: string, label: string = '', effort: number | null = null): Promise<void> {
     if (this.disposed || this.view.busy || this.view.pending !== null || this.view.recoveryRequired || this.view.detail === null) return;
     const selected = copy(this.view.detail);
     const choices = copy(this.view.materials);
@@ -113,6 +113,11 @@ export class TaskActionsController {
       if (mode === 'done') draft.status = 'done';
       if (mode === 'cancel') draft.status = 'cancelled';
       if (mode === 'submit') { draft.status = 'submitted'; change.confirmSubmission = true; }
+      if (mode === 'effort') {
+        if (effort !== null && (!Number.isSafeInteger(effort) || effort < 0)) throw new StorageFailure('INVALID_ARGUMENT', '剩余工时须为非负整数分钟，未知请留空。');
+        if (effort === actual.task.remainingMinutes) throw new StorageFailure('INVALID_ARGUMENT', '剩余工时没有变化。');
+        draft.remainingMinutes = effort;
+      }
       if (mode === 'materials' && (change.checklistUpdates || []).length === 0) throw new StorageFailure('INVALID_ARGUMENT', '材料状态没有变化。');
       const input: ProposalDraft = { sessionId: SESSION, expectedRevision: actual.revision, notices: [], changes: [change] };
       this.view.recoveryRequired = true; // Stage acknowledgement can be lost; no automatic second proposal.
@@ -133,6 +138,7 @@ export class TaskActionsController {
     return this.stage(status);
   }
   prepareAddMaterial(label: string): Promise<void> { return this.stage('add', label); }
+  prepareEffort(minutes: number | null): Promise<void> { return this.stage('effort', '', minutes); }
   async confirm(): Promise<boolean> {
     if (this.disposed || this.view.busy || this.view.pending === null || this.view.recoveryRequired) return false;
     this.view.busy = true; this.view.errorCode = ''; this.publish();

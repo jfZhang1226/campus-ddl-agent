@@ -1,6 +1,6 @@
 import { ChecklistItem, Task } from './StorageModels';
 import { CommitProposal, CommitReceipt, ProposedChecklistState, UserSubmissionSnapshot } from './CommitModels';
-import { isOffsetTimestamp } from './DateRules';
+import { isOffsetTimestamp, timestampMillis } from './DateRules';
 import { requireStorage } from '../data/storage/StorageTypes';
 import { sha256Hex } from '../data/storage/Sha256';
 
@@ -78,6 +78,7 @@ export function validateMaterialReceipt(receipt: CommitReceipt): void {
       submission.submissionChannel === task.submissionChannel && JSON.stringify(submission.sourceNoticeIds) === JSON.stringify(task.noticeIds), '用户提交快照与回执不一致。');
     checkMaterialItems(submission.materials);
     requireStorage(submission.materials.length <= 200 && submission.materials.every(item => item.taskId === submission.taskId && item.state === 'prepared' &&
+      timestampMillis(item.confirmedAt as string) <= timestampMillis(submission.confirmedSubmittedAt) &&
       (item.sourceNoticeId === null || submission.sourceNoticeIds.includes(item.sourceNoticeId))), '提交时材料尚未准备或错绑任务/来源。');
   });
 }

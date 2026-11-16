@@ -17,6 +17,7 @@ struct TasksPage {
   @State leadMinutes: string = '60';
   @State actions: TaskActionsView = new TaskActionsView();
   @State materialLabel: string = '';
+  @State effortMinutes: string = '';
   @State localHint: string = '';
   private controller: TaskBoardController | null = null;
   private reminderController: TaskReminderController | null = null;
@@ -36,7 +37,7 @@ struct TasksPage {
       if (changed) {
         this.reminderController?.select(view.detail === null ? null : view.detail.task);
         this.actionsController?.select(view.detail);
-        this.materialLabel = ''; this.localHint = '';
+        this.materialLabel = ''; this.effortMinutes = view.detail?.task.remainingMinutes === null || view.detail === null ? '' : String(view.detail.task.remainingMinutes); this.localHint = '';
       }
     });
     this.controller.reload();
@@ -44,13 +45,20 @@ struct TasksPage {
   aboutToDisappear(): void { this.controller?.dispose(); this.controller = null; this.reminderController?.dispose(); this.reminderController = null; this.actionsController?.dispose(); this.actionsController = null; }
   onBackPress(): boolean {
     if (this.reminder.busy || this.actions.busy) return true;
-    if (this.hasLocalChanges()) { this.localHint = '还有未保存的材料勾选或名称，请先核对保存或放弃勾选。'; return true; }
+    if (this.hasLocalChanges()) { this.localHint = '还有未保存的勾选、材料名称或工时，请先核对保存或放弃本页修改。'; return true; }
     if (this.view.detail !== null) { this.controller?.closeDetail(); return true; }
     return false;
   }
-  private hasLocalChanges(): boolean { return (this.actionsController?.hasLocalChanges() || false) || this.materialLabel.trim().length > 0; }
-  private async refreshTask(id: string | null): Promise<void> {
-    if (this.hasLocalChanges() && this.actions.pending === null) { this.localHint = '刷新前请先保存或放弃未保存的材料勾选和名称。'; return; }
+  private originalEffort(): string { return this.view.detail === null || this.view.detail.task.remainingMinutes === null ? '' : String(this.view.detail.task.remainingMinutes); }
+  private hasLocalChanges(): boolean { return (this.actionsController?.hasLocalChanges() || false) || this.materialLabel.trim().length > 0 || this.effortMinutes !== this.originalEffort(); }
+  private readyForAction(mode: string): boolean {
+    if ((mode !== 'add' && this.materialLabel.trim().length > 0) || (mode !== 'effort' && this.effortMinutes !== this.originalEffort())) {
+      this.localHint = '材料名称或剩余工时尚未整理进方案，请先用对应的核对按钮处理，或放弃未保存内容。'; return false;
+    }
+    this.localHint = ''; return true;
+  }
+  private async refreshTask(id: string | null, confirmed: boolean = false): Promise<void> {
+    if (!confirmed && this.hasLocalChanges() && this.actions.pending === null) { this.localHint = '刷新前请先保存或放弃未保存内容。'; return; }
     await this.controller?.reload();
     if (id !== null) await this.controller?.select(id);
   }
@@ -58,8 +66,7 @@ struct TasksPage {
     const id: string | null = this.actions.pending?.changes[0]?.taskId || null;
     if (await this.actionsController?.confirm()) {
       this.materialLabel = '';
-      this.actionsController?.discardLocalChanges();
-      await this.refreshTask(id);
+      await this.refreshTask(id, true);
     }
   }
   @Builder
@@ -71,6 +78,7 @@ struct TasksPage {
           ForEach(this.actions.pending.changes, (change: ProposedTaskChange) => {
             Text(change.draft.title + '：' + this.status(change.before?.status || 'todo') + ' → ' + this.status(change.draft.status)).fontSize(13)
             Text('截止：' + (change.draft.deadlineDate || change.draft.dueAt || '未知') + '；渠道：' + (change.draft.submissionChannel || '未提供')).fontSize(11)
+            Text('剩余工时：' + (change.before?.remainingMinutes === null || change.before === null ? '未知' : String(change.before.remainingMinutes) + '分钟') + ' → ' + (change.draft.remainingMinutes === null ? '未知' : String(change.draft.remainingMinutes) + '分钟')).fontSize(12)
             if (change.confirmSubmission) { Text('本次仅记录你的提交声明，不代表学校平台已收到。').fontSize(12).fontColor('#9A541B') }
           }, (change: ProposedTaskChange) => change.taskId)
           Text('核对前的材料：' + (this.actions.pending.checklistBefore || []).map(item => item.label + (item.state === 'prepared' ? '（已准备）' : '（待准备）')).join('、')).fontSize(12)
@@ -103,34 +111,40 @@ struct TasksPage {
       }, (item: MaterialChoice) => item.itemId)
       if (this.actions.materials.length === 0) { Text('没有记录材料要求。').fontSize(13).fontColor('#617589') }
       Button('核对准备情况').id('task-material-prepare').fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
-        .onClick(() => { this.actionsController?.prepareMaterials(); })
+        .onClick(() => { if (this.readyForAction('materials')) this.actionsController?.prepareMaterials(); })
       if (this.view.detail?.task.status !== 'done' && this.view.detail?.task.status !== 'cancelled') {
         TextInput({ text: this.materialLabel, placeholder: '手动补充材料名称' }).id('task-material-name').maxLength(200)
           .enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired).onChange((text: string) => { this.materialLabel = text; })
         Button('核对新增材料').id('task-material-add').fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
-          .onClick(() => { this.actionsController?.prepareAddMaterial(this.materialLabel); })
+          .onClick(() => { if (this.readyForAction('add')) this.actionsController?.prepareAddMaterial(this.materialLabel); })
       }
-      Button('放弃未保存勾选和名称').id('task-material-discard').fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
-        .onClick(() => { this.actionsController?.discardLocalChanges(); this.materialLabel = ''; this.localHint = ''; })
+      Text('剩余工时（分钟）').fontSize(15)
+      Text('由你估计尚需完成的工作；留空表示未知，不根据材料数量猜测。').fontSize(12).fontColor('#617589')
+      TextInput({ text: this.effortMinutes, placeholder: '未知可留空，例如60' }).id('task-effort-minutes').type(InputType.Number).maxLength(8)
+        .enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired).onChange((text: string) => { this.effortMinutes = text; })
+      Button('核对剩余工时').id('task-effort-prepare').fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
+        .onClick(() => { if (this.readyForAction('effort')) this.actionsController?.prepareEffort(this.effortMinutes.trim().length === 0 ? null : /^\d+$/.test(this.effortMinutes) ? Number(this.effortMinutes) : NaN); })
+      Button('放弃本页未保存内容').id('task-material-discard').fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
+        .onClick(() => { this.actionsController?.discardLocalChanges(); this.materialLabel = ''; this.effortMinutes = this.originalEffort(); this.localHint = ''; })
       if (this.view.detail !== null && !['submitted', 'done', 'cancelled'].includes(this.view.detail.task.status)) {
         Row({ space: 5 }) {
           Button('进行中').id('task-status-progress').fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
-            .onClick(() => { this.actionsController?.prepareStatus('progress'); })
+            .onClick(() => { if (this.readyForAction('progress')) this.actionsController?.prepareStatus('progress'); })
           Button('准备完成').id('task-status-ready').fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
-            .onClick(() => { this.actionsController?.prepareStatus('ready'); })
+            .onClick(() => { if (this.readyForAction('ready')) this.actionsController?.prepareStatus('ready'); })
           Button('取消任务').id('task-status-cancel').fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
-            .onClick(() => { this.actionsController?.prepareStatus('cancel'); })
+            .onClick(() => { if (this.readyForAction('cancel')) this.actionsController?.prepareStatus('cancel'); })
         }
         if (this.view.detail.task.submissionChannel === null && this.actions.materials.length === 0) {
           Button('核对完成任务').id('task-status-done').fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
-            .onClick(() => { this.actionsController?.prepareStatus('done'); })
+            .onClick(() => { if (this.readyForAction('done')) this.actionsController?.prepareStatus('done'); })
         }
       }
       if (this.view.detail?.task.status === 'ready' || this.view.detail?.task.status === 'submitted') {
         Text('只有你在实际提交后才能声明已提交；本应用不会代交。').fontSize(12).fontColor('#617589')
         Button(this.view.detail?.task.status === 'submitted' ? '核对并重新声明已提交' : '核对用户已提交声明').id('task-status-submit')
           .fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
-          .onClick(() => { this.actionsController?.prepareStatus('submit'); })
+          .onClick(() => { if (this.readyForAction('submit')) this.actionsController?.prepareStatus('submit'); })
       }
       if (this.actions.needsSubmissionReview) { Text('任务或要求在上次声明后已变化，请重新核对；原提交声明仍保留。').fontSize(12).fontColor('#9A541B') }
       Text('提交声明历史（' + String(this.actions.submissions.length) + '）').fontSize(15)

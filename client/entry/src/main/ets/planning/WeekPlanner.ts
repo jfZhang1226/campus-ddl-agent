@@ -36,6 +36,7 @@ interface Interval { start: number; end: number; }
 const MINUTE: number = 60000;
 const TERMINAL: string[] = ['submitted', 'done', 'cancelled'];
 function copy<T>(input: T): T { return JSON.parse(JSON.stringify(input)) as T; }
+function compareId(a: string, b: string): number { return a === b ? 0 : a < b ? -1 : 1; }
 function interval(block: AvailabilityBlock | PlanBlock): Interval {
   requireArgument(block !== null && typeof block === 'object' && typeof block.id === 'string' && block.id.trim().length > 0 &&
     isOffsetTimestamp(block.startAt) && isOffsetTimestamp(block.endAt), '时间块标识或带偏移时刻无效。');
@@ -98,7 +99,7 @@ export function buildWeekPlan(source: WeekPlanInput): WeekPlanCandidate {
     if (block.locked || block.state === 'done' || time.start < start || time.end > end) output.retained.push(block);
     else output.replacedBlockIds.push(block.id);
   });
-  output.retained.sort((a, b) => timestampMillis(a.startAt) - timestampMillis(b.startAt) || a.id.localeCompare(b.id));
+  output.retained.sort((a, b) => timestampMillis(a.startAt) - timestampMillis(b.startAt) || compareId(a.id, b.id));
   output.replacedBlockIds.sort();
   let free: Interval[] = copy(available);
   output.retained.forEach((block, index) => {
@@ -120,7 +121,7 @@ export function buildWeekPlan(source: WeekPlanInput): WeekPlanCandidate {
   const priority = (task: Task): number => task.priority === 'high' ? 0 : task.priority === 'low' ? 2 : 1;
   const active: Task[] = input.tasks.filter(task => !TERMINAL.includes(task.status)).sort((a, b) => {
     const due = (task: Task): number => task.dueAt === null ? Number.MAX_SAFE_INTEGER : timestampMillis(task.dueAt);
-    return due(a) - due(b) || priority(a) - priority(b) || a.id.localeCompare(b.id);
+    return due(a) - due(b) || priority(a) - priority(b) || compareId(a.id, b.id);
   });
   active.forEach(task => {
     const reserved = output.retained.filter(block => block.taskId === task.id && block.state === 'pending' && timestampMillis(block.endAt) > start)

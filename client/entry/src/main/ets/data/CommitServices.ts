@@ -300,6 +300,8 @@ class CommitEngine {
             throw new StorageFailure('VERSION_CONFLICT', '任务版本已变化，请重新读取差异并确认。');
           }
           task = snapshot.tasks[index];
+          requireArgument(timestampMillis(authorization.confirmedAt) >= timestampMillis(task.updatedAt),
+            '确认时钟早于任务最近修改，请校正设备时间后重新核对。');
           requireArgument(change.before !== null && JSON.stringify(fields(task)) === JSON.stringify(fields(change.before)), '任务旧值与方案不一致，请重新读取。');
           if (JSON.stringify(fields(task)) !== JSON.stringify(change.draft) || materialChangeForTask(proposal, change.taskId)) {
             requireArgument(Number.isSafeInteger(task.version + 1) && timestampMillis(now) >= timestampMillis(task.updatedAt),

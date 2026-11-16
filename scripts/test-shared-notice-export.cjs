@@ -93,7 +93,7 @@ check('task dialogue uses one application storage, actual history/stage and scre
  assert.match(read('entry/src/main/ets/entryability/EntryAbility.ets'),/taskAgentOwner.pause\(\)/);
 });
 check('manifest matches sources and existing output cannot be overwritten',()=>{
- assert.equal(manifest.signed,false);assert.equal(manifest.deviceValidated,false);assert.equal(Object.keys(manifest.hashes).length,36);
+ assert.equal(manifest.signed,false);assert.equal(manifest.deviceValidated,false);assert.equal(Object.keys(manifest.hashes).length,37);
  for(const [f,value]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,f)),value);
  assert.throws(()=>prepare(output),/new output directory/);
 });
