@@ -31,10 +31,13 @@ export class AgentExecutor {
     private proposals: ProposalStagePort) {}
 
   async execute(call: ToolCall): Promise<ToolResult> {
+    if (call === null || typeof call !== 'object') {
+      return normalizeResult('', '', {}, false, null, TOOL_ERRORS.INVALID_ARGUMENT, '非法工具调用');
+    }
     // 入口先校验：非法请求不访问任何读写端口（独立可注入执行器必须满足自身错误契约）。
     const invalid: string = validateCall(call);
-    if (invalid.length > 0) return normalizeResult(typeof call.id === 'string' ? call.id : '',
-      typeof call.action === 'string' ? call.action : '', call.params === null || call.params === undefined ? {} : call.params,
+    if (invalid.length > 0) return normalizeResult(call !== null && typeof call.id === 'string' ? call.id : '',
+      call !== null && typeof call.action === 'string' ? call.action : '', call === null || call.params === null || call.params === undefined ? {} : call.params,
       false, null, invalid, '非法工具调用');
     try {
       if (call.action === 'get_tasks') return this.ok(call, await this.tasks.list(this.taskQuery(call.params)));

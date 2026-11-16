@@ -16,7 +16,10 @@ function prepare(output) {
   const hashes={};
   for(const f of ['pages/NoticeImport.ets','notice/NoticeImportController.ts','notice/NoticeConfirmedWriter.ts',
     'notice/NoticeSaveController.ts','notice/NoticeVoiceController.ts','notice/NoticeImportOwner.ts','speech/UnavailableSpeechSession.ts',
-    'entryability/EntryAbility.ets','pages/CommitCheck.ets','data/diagnostics/NoticeRecoveryProbe.ts','notice/NoticeLeaveGuard.ts']) {
+    'entryability/EntryAbility.ets','pages/CommitCheck.ets','data/diagnostics/NoticeRecoveryProbe.ts','notice/NoticeLeaveGuard.ts',
+    'pages/Index.ets','pages/TaskAssistant.ets','agent/TaskAgentController.ts','agent/TaskAgentSession.ts',
+    'agent/TaskAgentOwner.ets','agent/AgentGatewayProtocol.ts','agent/AgentTools.ts','agent/AgentLoop.ts',
+    'agent/AgentExecutor.ts','adapters/ArkAgentGatewayTransport.ets']) {
     const file='entry/src/main/ets/'+f;hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
   }
   const manifest={...result,scope:'T19-shared-notice-entry',bundleName:app.app.bundleName,versionCode:300,hashes,
