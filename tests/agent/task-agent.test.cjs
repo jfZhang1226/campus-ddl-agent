@@ -180,6 +180,9 @@ test('post-save date change looks up actual task and updates it once instead of 
  assert.equal(result.tasks.length,1);assert.equal(result.tasks[0].id,original.id);assert.equal(result.tasks[0].deadlineDate,'2026-12-06');assert.equal(result.tasks[0].version,2);
  assert.equal(result.checklistItems.length,2);assert.equal(result.operations.length,2);
  assert.equal(s.c.snapshot().receipt.checklistItems.length,0);assert.equal(s.c.snapshot().savedDetails[0].checklistItems.length,2);
+ assert.equal(s.c.snapshot().savedDetails[0].notices.length,2);
+ assert.ok(s.c.snapshot().savedDetails[0].notices.some(n=>n.rawText==='合成：交数据库报告'));
+ assert.ok(s.c.snapshot().savedDetails[0].notices.some(n=>n.rawText==='刚才的报告改为2026年12月6日'));
  await s.c.recover();assert.equal(s.c.snapshot().savedDetails[0].checklistItems.length,2);s.c.dispose();
 });
 

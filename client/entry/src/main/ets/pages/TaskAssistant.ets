@@ -15,6 +15,7 @@ struct TaskAssistantPage {
   @State view: TaskAgentView = new TaskAgentView();
   @State prompt: string = '';
   @State sourcesOpen: boolean = false;
+  @State expandedSavedTaskId: string = '';
   private controller: TaskAgentController | null = null;
   private previousKeyboardMode: KeyboardAvoidMode = KeyboardAvoidMode.OFFSET;
   private scroller: Scroller = new Scroller();
@@ -158,6 +159,20 @@ struct TaskAssistantPage {
               Text(item.label + ' · ' + (item.state === 'pending' ? '待准备' : item.state)).fontSize(12).fontColor('#617589')
             }, (item: ChecklistItem) => item.id + ':' + item.state)
             if (detail.checklistItems.length === 0) { Text('尚未记录材料要求。').fontSize(11).fontColor('#617589') }
+            Button(this.expandedSavedTaskId === detail.task.id ? '收起已保存来源' :
+              '查看任务来源（' + String(detail.notices.length) + '段）').id('task-agent-saved-sources-' + detail.task.id).fontSize(11)
+              .onClick(() => { this.expandedSavedTaskId = this.expandedSavedTaskId === detail.task.id ? '' : detail.task.id; })
+            if (this.expandedSavedTaskId === detail.task.id) {
+              if (detail.notices.length === 0) { Text('当前任务没有关联通知来源。').fontSize(11).fontColor('#617589') }
+              ForEach(detail.notices, (source: Notice) => {
+                Column({ space: 4 }) {
+                  Text(source.sourceLabel === null ? '来源未知' : source.sourceLabel).fontSize(11).fontColor('#176766')
+                  Text(source.rawText).fontSize(12).fontColor('#142C43').copyOption(CopyOptions.InApp)
+                  Text('发布时间：' + (source.publishedAt === null ? '未知' : source.publishedAt) + '；导入时间：' + source.importedAt)
+                    .fontSize(10).fontColor('#617589')
+                }.width('100%').alignItems(HorizontalAlign.Start).padding(8).backgroundColor('#FFFFFF').borderRadius(8)
+              }, (source: Notice) => source.id)
+            }
           }.width('100%').alignItems(HorizontalAlign.Start)
         }, (detail: TaskDetail) => detail.task.id + ':' + String(detail.revision))
         if (this.view.detailsPending) {
