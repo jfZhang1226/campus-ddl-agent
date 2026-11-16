@@ -7,12 +7,37 @@ export class ChecklistCreateDraft {
   sourceNoticeId: string | null = null;
 }
 
+/** Client-owned material state intent; the current item/version is read during staging. */
+export class ChecklistStateDraft {
+  itemId: string = '';
+  state: string = 'pending';
+}
+
+export interface ProposedChecklistState {
+  itemId: string;
+  taskId: string;
+  before: ChecklistItem;
+  state: string;
+}
+
+export interface UserSubmissionSnapshot {
+  id: string;
+  taskId: string;
+  taskVersion: number;
+  confirmedSubmittedAt: string;
+  submissionChannel: string | null;
+  sourceNoticeIds: string[];
+  materials: ChecklistItem[];
+}
+
 export class TaskChangeDraft {
   action: string = 'create';
   taskId: string | null = null;
   expectedVersion: number | null = null;
   draft: TaskDraft = new TaskDraft();
   checklistCreates: ChecklistCreateDraft[] = [];
+  checklistUpdates?: ChecklistStateDraft[];
+  confirmSubmission?: boolean;
 }
 
 export class ProposalDraft {
@@ -29,6 +54,7 @@ export interface ProposedTaskChange {
   expectedVersion: number | null;
   before: Task | null;
   draft: TaskDraft;
+  confirmSubmission?: boolean;
 }
 
 export interface CommitProposal {
@@ -45,6 +71,9 @@ export interface CommitProposal {
   operationId: string | null;
   // Required for v2; absent in preserved v1 records.
   checklistItems?: ChecklistItem[];
+  // v3 only: original material state is immutable evidence, not a live pointer.
+  checklistUpdates?: ProposedChecklistState[];
+  checklistBefore?: ChecklistItem[];
 }
 
 export class ConfirmedCommitRequest {
@@ -72,4 +101,6 @@ export interface CommitReceipt {
   notices?: Notice[];
   createdChecklistItemIds?: string[];
   checklistItems?: ChecklistItem[];
+  updatedChecklistItems?: ChecklistItem[];
+  submissionSnapshots?: UserSubmissionSnapshot[];
 }

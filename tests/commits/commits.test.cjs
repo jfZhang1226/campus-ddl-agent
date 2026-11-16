@@ -448,11 +448,17 @@ test('manual source-free materials and existing Unicode source IDs are supported
   const result = await applied(h, existing); assert.deepEqual(result.receipt.notices, []);
   assert.equal(ok(await h.store.read()).notices.length, 1);
 });
-test('existing task material changes are explicitly deferred to T22; normal task edits remain supported', async t => {
+test('existing task material addition uses v3 without early writes; ordinary no-op task edits remain v2', async t => {
   const h = await harness(t), task = (await applied(h, materialDraft())).receipt.tasks[0], change = edit(task, {});
   change.checklistCreates = [{ label: 'new on existing', sourceNoticeId: null }]; const before = await bytes(h);
-  bad(await h.services.proposals.stage(draft(2, { changes: [change] })), 'INVALID_ARGUMENT'); assert.equal(await bytes(h), before);
-  change.checklistCreates = []; const { receipt } = await applied(h, draft(2, { changes: [change] }));
+  const proposal = ok(await h.services.proposals.stage(draft(2, { changes: [change] })));
+  assert.equal(proposal.recordType, 't16.proposal.v3');
+  assert.deepEqual(JSON.parse(await bytes(h)).checklistItems, JSON.parse(before).checklistItems);
+  const request = ok(await h.services.confirmation.confirm(proposal.id, proposal.expectedRevision));
+  const added = ok(await h.services.confirmation.apply(request));
+  assert.equal(added.checklistItems.length, 1); assert.deepEqual(added.changedTaskIds, [task.id]);
+  const { receipt } = await applied(h, draft(added.committedRevision, { changes: [edit(added.tasks[0], {})] }));
+  assert.equal(receipt.recordType, 't16.operation.v2');
   assert.deepEqual(receipt.checklistItems, []); assert.deepEqual(receipt.changedTaskIds, []);
 });
 function legacy(snapshot) {
