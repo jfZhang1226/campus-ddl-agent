@@ -1,0 +1,194 @@
+{
+  "date": "2026-11-16",
+  "runtimeCommit": "a68038011e6cb32c006a44adc43fa98a74a3f009",
+  "implementationCommit": "3bce25a",
+  "change": "navigation confirmation for unsaved notice input, drafts and retained records",
+  "productionSchemaOrGatewayChanged": false,
+  "automaticUnsavedDraftPersistenceAdded": false,
+  "hostChecks": {
+    "saveRecoveryAndNavigation": 45,
+    "newNavigationCases": 8,
+    "interaction": 19,
+    "noticeImport": 19,
+    "sharedExport": 9,
+    "nativeExport": 7,
+    "voiceExport": 7,
+    "totalThisStep": 106,
+    "strictTypeScript": true,
+    "previousRunsNotAdded": true
+  },
+  "exports": {
+    "noticeentry": {
+      "bundle": "com.campusddl.noticeentry",
+      "versionCode": 300,
+      "copiedClientFiles": 121,
+      "sourceHashesUnchanged": 11,
+      "permissions": [
+        "ohos.permission.INTERNET"
+      ],
+      "unsignedBuildTime": "17s873ms",
+      "unsignedBytes": 1206462,
+      "unsignedSha256": "de85cb5aaf89b52f7c8175e654fa3b5e97b33d23f3356603ad4dea8f21f17af2",
+      "signedBuildTime": "15s708ms",
+      "signedBytes": 1250837,
+      "signedSha256": "dfdd59329ff15f676d7f028c6f2f212a20c79527430ca8d48645e00df6a61aaa",
+      "abcSha256": "d7c463c0cf42993e7b25e188ced6a13af501cbc1f0e0d10e8a7b3829802f344b",
+      "signedAbcMatchesVerifiedUnsigned": true,
+      "guardSha256": "586b432f03f8802b8874ab39e0a71eb59ea1bb3c363150f13f23d907da182b56",
+      "installedVersionVerified": true
+    },
+    "noticeprobe": {
+      "bundle": "com.campusddl.noticeprobe",
+      "versionCode": 400,
+      "copiedClientFiles": 121,
+      "sourceHashesUnchanged": 9,
+      "permissions": [
+        "ohos.permission.MICROPHONE",
+        "ohos.permission.INTERNET"
+      ],
+      "unsignedBuildTime": "16s142ms",
+      "unsignedBytes": 852198,
+      "unsignedSha256": "7d8b4eee5efd2b27e44eefc758d9c2ef34b947bfed025b55b7a6105045780f9c",
+      "signedBuildTime": "16s397ms",
+      "signedBytes": 900736,
+      "signedSha256": "6186084f2fbe4e8537dc87eb04bbfcca368830e447295087d2ff7cf0f2ba1458",
+      "abcSha256": "c84b57b7e956352786dff85f59a0255519564b13734b34a9da61a0bcfb02393d",
+      "signedAbcMatchesVerifiedUnsigned": true,
+      "guardSha256": "586b432f03f8802b8874ab39e0a71eb59ea1bb3c363150f13f23d907da182b56",
+      "installedVersionVerified": true
+    }
+  },
+  "device": {
+    "interfaceCheckpoints": 18,
+    "perEntryCheckpoints": 9,
+    "completedAliases": [
+      "noticeentry",
+      "noticeprobe"
+    ],
+    "allPassed": true,
+    "results": [
+      {
+        "alias": "noticeentry",
+        "checkpoint": "01-header-prompt",
+        "passed": true
+      },
+      {
+        "alias": "noticeentry",
+        "checkpoint": "02-repeated-system-back",
+        "passed": true
+      },
+      {
+        "alias": "noticeentry",
+        "checkpoint": "03-keep-header-input",
+        "passed": true
+      },
+      {
+        "alias": "noticeentry",
+        "checkpoint": "04-system-back-prompt",
+        "passed": true
+      },
+      {
+        "alias": "noticeentry",
+        "checkpoint": "05-keep-system-input",
+        "passed": true
+      },
+      {
+        "alias": "noticeentry",
+        "checkpoint": "06-explicit-discard-returns",
+        "passed": true
+      },
+      {
+        "alias": "noticeentry",
+        "checkpoint": "07-reenter-empty-old-task",
+        "passed": true
+      },
+      {
+        "alias": "noticeentry",
+        "checkpoint": "08-empty-page-direct-return",
+        "passed": true
+      },
+      {
+        "alias": "noticeentry",
+        "checkpoint": "09-final-task-baseline",
+        "passed": true
+      },
+      {
+        "alias": "noticeprobe",
+        "checkpoint": "01-header-prompt",
+        "passed": true
+      },
+      {
+        "alias": "noticeprobe",
+        "checkpoint": "02-repeated-system-back",
+        "passed": true
+      },
+      {
+        "alias": "noticeprobe",
+        "checkpoint": "03-keep-header-input",
+        "passed": true
+      },
+      {
+        "alias": "noticeprobe",
+        "checkpoint": "04-system-back-prompt",
+        "passed": true
+      },
+      {
+        "alias": "noticeprobe",
+        "checkpoint": "05-keep-system-input",
+        "passed": true
+      },
+      {
+        "alias": "noticeprobe",
+        "checkpoint": "06-explicit-discard-returns",
+        "passed": true
+      },
+      {
+        "alias": "noticeprobe",
+        "checkpoint": "07-reenter-empty-old-task",
+        "passed": true
+      },
+      {
+        "alias": "noticeprobe",
+        "checkpoint": "08-empty-page-direct-return",
+        "passed": true
+      },
+      {
+        "alias": "noticeprobe",
+        "checkpoint": "09-final-task-baseline",
+        "passed": true
+      }
+    ],
+    "headerBackPromptObserved": true,
+    "repeatedBackDidNotBypassPrompt": true,
+    "keepEditingRetainedRawExactly": true,
+    "explicitDiscardRequiredBeforeReturn": true,
+    "reentryInputEmpty": true,
+    "emptyPageReturnedDirectly": true,
+    "priorSavedTaskDeadlineMaterialsPreserved": true,
+    "systemBackInjection": "HDC Back key event",
+    "userPhysicalEdgeGestureRepeated": false,
+    "newModelDraftTestedOnDeviceThisStep": false,
+    "pendingAndUncertainNavigationTestedOnDeviceThisStep": false
+  },
+  "logicAndHostFileScope": {
+    "editedDraftAndMaterialProvenanceRetained": true,
+    "responseDuringPromptKeptWithoutResend": true,
+    "discardInvalidatesLateResponse": true,
+    "pendingLeaveDoesNotCancelOrAutoConfirm": true,
+    "uncertainRecoveryTracesPreserved": true,
+    "lateLockNeedsNewConsent": true,
+    "committingBlocksLeave": true,
+    "savedPageDirectLeave": true
+  },
+  "cleanup": {
+    "rawSyntheticInputExplicitlyDiscarded": true,
+    "bothGatewayConfigurationsAbsent": true,
+    "newRuntimeCredentialsEntered": false,
+    "port8000NotListening": true,
+    "usb8000MappingAbsent": true
+  },
+  "projectModelRequests": 0,
+  "audioPerformed": false,
+  "new400AudioAccepted": false,
+  "fullProductCompleted": false
+}

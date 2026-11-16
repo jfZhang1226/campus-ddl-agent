@@ -1,0 +1,72 @@
+{
+  "runtimeCommit": "aef84696c3f2aa62a823048d717014f34ea31b5d",
+  "bundle": "com.campusddl.noticeprobe",
+  "versionCode": 400,
+  "synthetic": true,
+  "recordingStartedByUser": true,
+  "recordingOperations": 1,
+  "playbackStartedByUser": true,
+  "playbackOperations": 1,
+  "explicitRealModelConsentDate": "2026-11-17",
+  "clientSendAttempts": 2,
+  "setupFailureBeforeRetry": true,
+  "observedModelTurns": [
+    {
+      "type": "tool_calls",
+      "actions": [
+        "get_tasks"
+      ],
+      "usage": {
+        "prompt_tokens": 2028,
+        "completion_tokens": 57,
+        "total_tokens": 2085,
+        "prompt_tokens_details": {
+          "cached_tokens": 128
+        },
+        "prompt_cache_hit_tokens": 128,
+        "prompt_cache_miss_tokens": 1900
+      },
+      "elapsedMs": 706
+    },
+    {
+      "type": "tool_calls",
+      "actions": [
+        "propose_task_changes"
+      ],
+      "usage": {
+        "prompt_tokens": 2120,
+        "completion_tokens": 317,
+        "total_tokens": 2437,
+        "prompt_tokens_details": {
+          "cached_tokens": 1920
+        },
+        "prompt_cache_hit_tokens": 1920,
+        "prompt_cache_miss_tokens": 200
+      },
+      "elapsedMs": 1434
+    }
+  ],
+  "savedRevision": 8,
+  "expected": {
+    "title": "软件工程报告（PDF报告＋源代码）",
+    "deadlinePrecision": "date_only",
+    "deadlineDate": "2026-12-10",
+    "dueAt": null,
+    "materials": [
+      "PDF 报告",
+      "源代码"
+    ]
+  },
+  "deviceChecks": {
+    "ownProcessChanged": true,
+    "configurationEmpty": true,
+    "inputEmpty": true,
+    "sameSavedTask": true,
+    "sameReceipt": true,
+    "currentMaterialsColdRead": true,
+    "gatewayPortOpen": false,
+    "usb8000MappingPresent": false,
+    "asrUserFeedback": "complete with digit date, homophone kept",
+    "ttsUserFeedback": "unsaved prefix and stop normal"
+  }
+}

@@ -106,6 +106,14 @@ struct Index {
     });
   }
 
+  private openNoticeImport(): void {
+    this.storageNavigationError = '';
+    chatOwner.pause();
+    router.pushUrl({ url: 'pages/NoticeImport' }).catch(() => {
+      this.storageNavigationError = '无法打开通知导入页，请稍后重试。';
+    });
+  }
+
   private openCommitCheck(): void {
     this.storageNavigationError = '';
     router.pushUrl({ url: 'pages/CommitCheck' }).catch(() => {
@@ -121,12 +129,22 @@ struct Index {
         Text('校园 DDL').fontSize(23).fontWeight(FontWeight.Bold).fontColor('#142C43')
         Text('文本助手').fontSize(12).fontColor('#617589')
       }.alignItems(HorizontalAlign.Start).layoutWeight(1)
+      Button('导入通知')
+        .id('notice-import-entry').width(86).fontSize(12)
+        .fontColor('#176766').backgroundColor('#E1F0EC')
+        .enabled(!this.view.busy)
+        .onClick(() => this.openNoticeImport())
       Button(this.settingsOpen ? '返回对话' : '网关设置')
-        .fontSize(13).fontColor('#176766').backgroundColor('#E1F0EC')
+        .width(76).fontSize(12).fontColor('#176766').backgroundColor('#E1F0EC')
         .enabled(!this.view.busy && this.historyView.confirmation.length === 0)
         .onClick(() => this.settingsOpen = !this.settingsOpen)
       }.width('100%')
       Row({ space: 10 }) {
+        Button('任务助手').id('task-agent-entry').fontSize(12).fontColor('#FFFFFF').backgroundColor('#176766')
+          .enabled(!this.view.busy).onClick(() => {
+            chatOwner.pause();
+            router.pushUrl({ url: 'pages/TaskAssistant' }).catch(() => { this.storageNavigationError = '无法打开任务助手，请重试。'; });
+          })
         Button('历史会话').id('history-open-list').fontSize(12).fontColor('#176766').backgroundColor('#E1F0EC')
           .enabled(this.historyAvailable()).onClick(() => { if (this.history !== null) this.history.showList(); })
         Button('新对话').id('chat-new-conversation').fontSize(12).fontColor('#176766').backgroundColor('#E1F0EC')
@@ -270,7 +288,7 @@ struct Index {
     Column({ space: 0 }) {
       Row({ space: 7 }) {
         Text(this.view.configured ? '● 已配置' : '○ 待配置').fontColor('#176766').fontSize(11)
-        Text('每次提问独立处理 · 暂不执行任务操作').fontColor('#617589').fontSize(11)
+        Text('对话独立处理 · 任务通过“导入通知”确认').fontColor('#617589').fontSize(11)
       }.width('100%').padding({ left: 20, right: 20, top: 8, bottom: 10 })
       List({ space: 14, scroller: this.scroller }) {
         if (this.view.messages.length === 0) {

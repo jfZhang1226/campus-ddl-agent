@@ -1,0 +1,60 @@
+{
+  "date": "2026-11-15",
+  "runtimeCommit": "d63931e709001a2ca2ad48b05630e1fa93501547",
+  "runtimeChangedThisStep": false,
+  "bundle": "com.campusddl.noticeentry",
+  "versionCode": 100,
+  "versionName": "0.1.0",
+  "permissions": ["ohos.permission.INTERNET"],
+  "signing": {
+    "userConfirmedAndSaved": true,
+    "existingProfileBoundToDefaultProduct": true,
+    "newAuthenticationAutomated": false,
+    "newCertificateCreatedByAgent": false,
+    "buildSuccess": true,
+    "buildTime": "16s80ms",
+    "signedBytes": 1187476,
+    "signedSha256": "b79ba0a895779f202575124ea4aa728e20ed11f4f56732f780e2d75d81b341c9",
+    "abcSha256": "315ae67bc89fc465c2772a1ea491c0d4249ea0faf1186676632464494d2f8613",
+    "abcMatchesVerifiedUnsigned": true,
+    "sourceHashesUnchanged": 8
+  },
+  "installation": {"successReported": true, "ownBundleVersionVerified": true, "sharedIndexToImportObserved": true, "otherBundleOverwritten": false},
+  "modelInput": {
+    "synthetic": true,
+    "rawText": "这是合成验收通知：操作系统报告在2026年11月26日18:00前上传课程平台，材料为PDF报告和源代码",
+    "sendActions": 2,
+    "taskFieldsPrefilled": false,
+    "sourceMetadataPrefilled": false,
+    "rawTextPreserved": true,
+    "firstTitle": "操作系统报告",
+    "course": "操作系统",
+    "submissionChannel": "课程平台",
+    "deadlineDate": "2026-11-26",
+    "deadlineTime": "18:00",
+    "materials": ["PDF报告", "源代码"],
+    "secondDraftDeadlineAndMaterialsObserved": true,
+    "tokenUsageMeasured": false
+  },
+  "cancel": {"titleEdited": true, "manualMaterialAdded": true, "cancelActionObserved": true, "rawTextRetained": true, "explicitReadbackShowedNoSavedPanel": true, "fullStoreCountInspected": false},
+  "confirmedSave": {
+    "explicitScreenConfirmAction": true,
+    "savedTitle": "操作系统报告-共享入口合成验证",
+    "savedDueAt": "2026-11-26T18:00:00+08:00",
+    "savedRevisionDisplayed": 2,
+    "savedTaskIdDisplayed": true,
+    "readbackMaterials": [
+      {"label": "PDF报告", "source": "原通知", "state": "待准备"},
+      {"label": "源代码", "source": "原通知", "state": "待准备"},
+      {"label": "合成自查表", "source": "人工补充", "state": "待准备"}
+    ],
+    "schoolPlatformSubmissionPerformed": false
+  },
+  "coldReadback": {"oldProcessStopped": true, "differentNewProcess": true, "sameTitleDeadlineMaterialsObserved": true, "gatewayNotConfigured": true, "rawInputEmpty": true, "physicalOfflineTest": false},
+  "directDeviceStorageInspection": {"directoryAccessDenied": true, "furtherPrivilegeEscalationAttempted": false, "snapshotRead": false, "fullStoreIdempotencyValidated": false},
+  "cleanup": {"loopbackOnly": true, "gatewayStopped": true, "port8000NotListening": true, "thisSessionUsb8000MappingRemovedAndReadbackVerified": true, "runtimeCredentialsClearedByOwnAppRestart": true},
+  "audioPerformed": false,
+  "backgroundLateResponseDeviceValidated": false,
+  "pendingFailureConflictDeviceMatrixCompleted": false,
+  "fullProductCompleted": false
+}

@@ -1,0 +1,89 @@
+{
+  "task": "T13",
+  "date": "2026-11-05",
+  "reviewSource": "https://github.com/jfZhang1226/campus-ddl-agent/pull/13#issuecomment-6657368700",
+  "reviewItems": [
+    {
+      "severity": "P2",
+      "issue": "Non-+08:00 exact deadlines were displayed using their raw offset wall time and edited as +08:00, changing the instant",
+      "resolution": "Project exact instants into the supported task timezone for display; build edited timestamps in that same timezone; preserve the original instant string when date/time is not edited"
+    },
+    {
+      "severity": "P2",
+      "issue": "After VERSION_CONFLICT, the page had no way to reload the current revision while retaining the draft",
+      "resolution": "Add a visible '重新读取本地版本' action, refresh only expectedRevision, preserve all draft fields, and require a new user confirmation"
+    }
+  ],
+  "hostChecks": {
+    "command": "node scripts/test-notice-import.cjs",
+    "testsPassed": 19,
+    "strictTypeScriptSources": 26,
+    "taskTestsPassed": 85,
+    "storageTestsPassed": 106,
+    "chatTestsPassed": 29,
+    "coverage": [
+      "Z and +00:00 exact deadlines",
+      "-05:00 and +14:00 exact deadlines",
+      "Asia/Shanghai cross-midnight display",
+      "UTC edit behavior",
+      "unchanged exact timestamp preserves the original string",
+      "editing displayed wall time changes the real instant by exactly one minute",
+      "conflict retains edited title",
+      "refresh updates expectedRevision without clearing the draft",
+      "second confirmation after refresh succeeds"
+    ]
+  },
+  "builds": {
+    "signedHap": {
+      "result": "BUILD SUCCESSFUL",
+      "sha256": "b07387c9d5af6280df2daf5f3d95a28ba204aee98cef58df1b3f6d12622ddd3a"
+    },
+    "productionApk": {
+      "result": "BUILD SUCCESSFUL",
+      "sha256": "9dc7507730b93e89b49644341410953f12672773eabe94bbdee4f15c1870070b"
+    },
+    "androidVerificationApk": {
+      "result": "BUILD SUCCESSFUL",
+      "applicationId": "com.campusddl.agent.t13",
+      "sha256": "63331aaef5df1eba68912c24f1f873e29024b29615494c1403f534408c0f24ef"
+    }
+  },
+  "deviceRegressionAfterFix": {
+    "result": "passed",
+    "device": {
+      "model": "ADY-AL10",
+      "product": "Pura 70",
+      "os": "HarmonyOS 7.0.0.109",
+      "api": 26
+    },
+    "zonedDeadline": {
+      "mockDueAt": "2026-11-06T18:30:00Z",
+      "displayed": "2026-11-07 02:30",
+      "displayedTimezone": "Asia/Shanghai"
+    },
+    "conflictRecovery": {
+      "forcedLocalRevision": 4,
+      "firstConfirmation": "VERSION_CONFLICT",
+      "draftAndEditsPreserved": true,
+      "refreshMessage": "已重新读取本地版本 4；草案和修改均已保留",
+      "retryResult": "passed",
+      "savedRevision": 5,
+      "taskTitle": "Offset deadline edited__ test",
+      "storedDueAt": "2026-11-07T02:30:00+08:00",
+      "screenshots": [
+        "docs/images/t13/harmony-conflict.jpeg",
+        "docs/images/t13/harmony-conflict-resolved.jpeg"
+      ]
+    },
+    "unchangedDeadlineSave": {
+      "displayed": "2026-11-07 02:30",
+      "displayedTimezone": "Asia/Shanghai",
+      "revisionBefore": 5,
+      "savedRevision": 6,
+      "taskTitle": "Offset deadline test",
+      "storedDueAt": "2026-11-06T18:30:00Z",
+      "originalStringPreserved": true,
+      "screenshot": "docs/images/t13/harmony-noedit-saved.jpeg"
+    }
+  }
+}

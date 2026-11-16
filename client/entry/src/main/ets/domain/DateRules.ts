@@ -46,6 +46,56 @@ export function isTaskTimezone(value: string): boolean {
   return value === 'Asia/Shanghai' || value === 'UTC' || value === 'Etc/UTC';
 }
 
+export interface ZonedDateTimeParts {
+  date: string;
+  time: string;
+}
+
+function zoneOffsetMinutes(zone: string): number | null {
+  if (zone === 'Asia/Shanghai') return 8 * 60;
+  if (zone === 'UTC' || zone === 'Etc/UTC') return 0;
+  return null;
+}
+
+function calendarText(date: Date): string | null {
+  const year: number = date.getUTCFullYear();
+  if (year < 1 || year > 9999) return null;
+  return year.toString().padStart(4, '0') + '-' +
+    (date.getUTCMonth() + 1).toString().padStart(2, '0') + '-' +
+    date.getUTCDate().toString().padStart(2, '0');
+}
+
+/** Project an exact instant into a supported task timezone for date/time editing. */
+export function zonedDateTimeParts(instant: string, zone: string): ZonedDateTimeParts | null {
+  const offset: number | null = zoneOffsetMinutes(zone);
+  const millis: number = timestampMillis(instant);
+  if (offset === null || !Number.isFinite(millis)) return null;
+  const shifted: Date = new Date(millis + offset * 60000);
+  const date: string | null = calendarText(shifted);
+  if (date === null) return null;
+  return {
+    date: date,
+    time: shifted.getUTCHours().toString().padStart(2, '0') + ':' +
+      shifted.getUTCMinutes().toString().padStart(2, '0')
+  };
+}
+
+/** Build an exact instant from supported-zone wall-clock date/time. Edited values use whole minutes. */
+export function zonedTimestamp(date: string, time: string, zone: string): string | null {
+  const offset: number | null = zoneOffsetMinutes(zone);
+  if (offset === null || !isCalendarDate(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return null;
+  const wallClock: Date = new Date(0);
+  wallClock.setUTCFullYear(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)));
+  wallClock.setUTCHours(Number(time.slice(0, 2)), Number(time.slice(3, 5)), 0, 0);
+  const millis: number = wallClock.getTime() - offset * 60000;
+  if (!Number.isFinite(millis)) return null;
+  const shifted: Date = new Date(millis + offset * 60000);
+  if (calendarText(shifted) !== date || shifted.getUTCHours() !== Number(time.slice(0, 2)) ||
+    shifted.getUTCMinutes() !== Number(time.slice(3, 5))) return null;
+  const suffix: string = offset === 0 ? '+00:00' : '+08:00';
+  return date + 'T' + time + ':00' + suffix;
+}
+
 export function deadlineIsValid(precision: string, date: string | null, instant: string | null): boolean {
   return (precision === 'unknown' && date === null && instant === null) ||
     (precision === 'date_only' && isCalendarDate(date as string) && instant === null) ||

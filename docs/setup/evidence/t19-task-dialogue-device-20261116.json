@@ -1,0 +1,59 @@
+{
+  "runtimeCommit": "ff9400790c9704af10eff24d96bf95f72025663b",
+  "bundle": "com.campusddl.noticeentry",
+  "versionCode": 300,
+  "synthetic": true,
+  "unsigned": {
+    "runtimeCommit": "ff9400790c9704af10eff24d96bf95f72025663b",
+    "bundle": "com.campusddl.noticeentry",
+    "versionCode": 300,
+    "copiedClientFiles": 130,
+    "sourceHashesUnchanged": 21,
+    "unsignedBytes": 1461779,
+    "unsignedSha256": "3fe26b1452ed1a284e74ab2bbb4d682e379d904ce87c5802e40f22aa155f0122",
+    "abcSha256": "7c14936c437303706a906df2aca424c5fc9477c0c1caee1be9ea4eb81f85be6f",
+    "buildTime": "17 s 495 ms"
+  },
+  "signed": {
+    "runtimeCommit": "ff9400790c9704af10eff24d96bf95f72025663b",
+    "bundle": "com.campusddl.noticeentry",
+    "versionCode": 300,
+    "signedBytes": 1511043,
+    "signedSha256": "fe2c2f62f0d29a854904bd876ce7c997d536ce7c65d108f70e943dd529f782fc",
+    "abcSha256": "7c14936c437303706a906df2aca424c5fc9477c0c1caee1be9ea4eb81f85be6f",
+    "sourceHashesUnchanged": 21,
+    "matchesUnsignedAbc": true,
+    "buildTime": "16 s 120 ms"
+  },
+  "steps": [
+    "real-model-incomplete-notice",
+    "natural-date-only-followup",
+    "inspect-two-separate-source-texts",
+    "explicit-screen-confirm",
+    "own-process-restart",
+    "cold-read-with-empty-runtime-gateway-configuration"
+  ],
+  "observedSavedRevision": 10,
+  "expected": {
+    "title": "人工智能实验报告",
+    "deadlinePrecision": "date_only",
+    "deadlineDate": "2026-12-08",
+    "dueAt": null,
+    "materials": [
+      "PDF 报告",
+      "源代码"
+    ],
+    "sourceCount": 2
+  },
+  "modelTurnResponsesObservedOnSuccess": 3,
+  "userMessagesOnSuccess": 2,
+  "audioOperations": 0,
+  "failedEarlierRuntime": "d53607350f81654a0ee35bd75b446b684ebc79bd",
+  "failureRetained": true,
+  "cleanup": {
+    "gatewayListening": false,
+    "usb8000MapPresent": false,
+    "audioRequests": 0,
+    "credentialsEmptyAfterRealRestart": true
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-12",
+  "scope": "D T19 local integration candidate, not complete business acceptance",
+  "branch": "codex/d-t19-notice-interaction",
+  "runtimeSourceCommit": "d01144193576182ef2cf3c04aedbfe8e35e4c07e",
+  "dependencies": {
+    "main": "3a22a025bbb51a2c6ebe119a26f35044e484f31d",
+    "T13Candidate": "5cf6d0d06ea905ed2d3a022ebdce1339d5ee5319",
+    "T16Candidate": "d38bfe7317a2992ed1913826f921fe2edda9d882",
+    "previousD": "c0116c9fc1ff777e47c51c891576b949ae32ce18"
+  },
+  "hostChecks": {
+    "t19Interaction": 15,
+    "t19SourceExport": 6,
+    "t13Import": 19,
+    "t11History": 66,
+    "t15VoiceChat": 16,
+    "t16Commits": 56,
+    "total": 178,
+    "allPassed": true,
+    "strictTypeScriptPassed": true,
+    "compiler": "existing DevEco TypeScript 4.9.5",
+    "modelAndNativePorts": "synthetic or simulated; not real model/audio evidence"
+  },
+  "harmonyBuild": {
+    "sdkApi": 26,
+    "hvigorPlugin": "4.24.1",
+    "sourceClientFiles": 114,
+    "successful": true,
+    "tasksExecuted": 67,
+    "tasksUpToDate": 0,
+    "reportedBuildSeconds": 32.165,
+    "signed": false,
+    "installed": false,
+    "bundleName": "com.campusddl.noticeprobe",
+    "versionCode": 100,
+    "permissions": ["ohos.permission.MICROPHONE", "ohos.permission.INTERNET"],
+    "hapBytes": 736650,
+    "hapSha256": "2f4b4e92e1b0d1c31d01deae9ef39288406e8772de99f318a224564aaacdd6fe",
+    "exportedSourceHashesRecheckedAfterBuild": 5,
+    "warningsRetained": ["target SDK default", "Hypium types", "native speech cross-platform", "file API exceptions", "router deprecated", "signing skipped"]
+  },
+  "formalSaveEnabledInT19Export": false,
+  "commitGate": "read-only; COMMIT_UNAVAILABLE, no base CRUD fallback",
+  "blockingIntegrationGap": "T16 candidate has task/notice changes but no atomic creation of T13 material checklist entries",
+  "realModelCallsThisRound": 0,
+  "deviceOperationsThisRound": 0,
+  "audioOperationsThisRound": 0,
+  "systemReminderValidated": false,
+  "pushed": false,
+  "newPrCreated": false,
+  "remotePrMerged": false
+}

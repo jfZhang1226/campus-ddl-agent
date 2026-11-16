@@ -1,0 +1,72 @@
+{
+  "date": "2026-11-14",
+  "sourceCommit": "fc98f48a6f52bca52dd1e19cfd91dac64089b4e7",
+  "t16Dependency": "bf8ec3a3d12e7760085f5a892765b4febd40b344",
+  "hostChecks": {
+    "confirmedSave": 18,
+    "interaction": 15,
+    "noticeImport": 19,
+    "confirmedCommit": 92,
+    "export": 6,
+    "voiceChat": 16,
+    "history": 66,
+    "total": 232
+  },
+  "strictTypeScript": true,
+  "export": {
+    "trackedClientFiles": 114,
+    "bundle": "com.campusddl.noticeprobe",
+    "versionCode": 200,
+    "signed": false,
+    "keySourceHashes": 6
+  },
+  "sdkBuild": {
+    "success": true,
+    "sourceCommit": "3fb5677b680d9112b17709a7f23096508e355f39",
+    "sdkVersion": "26.0.0.105",
+    "arkuiXSdkVersion": "26.0.0.28 Beta2",
+    "pluginVersion": "4.24.1",
+    "tasks": {
+      "total": 67,
+      "executed": 67,
+      "upToDate": 0
+    },
+    "buildTime": "26s967ms",
+    "hapBytes": 823125,
+    "hapSha256": "1a4ad266440ee1c09cd9ec89ddf3c2ca5a52a414ce117d29c1f13818c26733ec",
+    "bundle": "com.campusddl.noticeprobe",
+    "versionCode": 200,
+    "permissions": [
+      "ohos.permission.MICROPHONE",
+      "ohos.permission.INTERNET"
+    ],
+    "sourceHashesUnchanged": 6,
+    "abcSymbolsVerified": [
+      "NoticeConfirmedWriter",
+      "NoticeSaveController",
+      "checklistCreates",
+      "t16.proposal.v2"
+    ],
+    "signed": false,
+    "installed": false
+  },
+  "deviceValidation": false,
+  "realModelCalls": 0,
+  "remotePullRequestsMerged": false,
+  "t17Integrated": false,
+  "previousSdkBuild": {
+    "success": false,
+    "executedTasks": 0,
+    "reason": "Existing ArkUI-X SDK path unavailable; no HAP generated",
+    "dependencyInstallSucceeded": true,
+    "pluginVersion": "4.24.1"
+  },
+  "sdkRecovery": {
+    "sameVersionRestoredThroughOfficialManager": true,
+    "compilerFixCommit": "3fb5677b680d9112b17709a7f23096508e355f39",
+    "fix": "Use typed LocalStore result instead of an untyped ArkTS revision literal",
+    "exportChecksRerun": 6,
+    "connectedDevices": 0,
+    "deviceIdentifiersCollected": false
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "date": "2026-11-15",
+  "runtimeCommit": "d63931e709001a2ca2ad48b05630e1fa93501547",
+  "runtimeChangedThisStep": false,
+  "bundle": "com.campusddl.noticeprobe",
+  "previousVersionCode": 200,
+  "installedVersionCode": 300,
+  "installedVersionName": "0.3.0",
+  "signedBuildSuccess": true,
+  "signedBuildTime": "21s95ms",
+  "signedBytes": 883716,
+  "signedSha256": "be70fe06e7f425e10ed426e968d15500dbea7c9109a1489965d19d4872448a46",
+  "abcMatchesVerifiedUnsigned": true,
+  "sourceHashesUnchanged": 8,
+  "oldSyntheticReadback": {
+    "preservedAfterUpdate": true,
+    "title": "操作系统课程报告",
+    "deadlineDate": "2026-11-25",
+    "specificTimeUnknown": true,
+    "material": "PDF 报告",
+    "materialSource": "原通知",
+    "materialState": "待准备"
+  },
+  "realModel": {
+    "sendActions": 1,
+    "rawText": "这是合成验收通知：计算机网络实验报告提交课程平台，材料为PDF报告。）",
+    "inputHasAutomationTrailingParenthesis": true,
+    "taskFieldsPrefilled": false,
+    "sourceMetadataPrefilled": false,
+    "title": "计算机网络实验报告提交",
+    "course": "计算机网络",
+    "submissionChannel": "课程平台",
+    "material": "PDF报告",
+    "missingDateQuestionObserved": true,
+    "missingDateNotGuessed": true,
+    "tokenUsageMeasured": false
+  },
+  "localEditsWithoutResending": {
+    "validDate": "2026-11-28",
+    "precision": "date_only",
+    "questionClearedWhileCardTopVisible": true,
+    "validDateSavedThisStep": false,
+    "invalidDate": "2026-02-30",
+    "invalidDateConfirmRejected": true,
+    "draftCancelled": true,
+    "rawTextRetainedAfterCancel": true,
+    "latestReadbackUnchanged": true,
+    "fullStoreCountInspected": false
+  },
+  "coldReadback": {
+    "oldProcessStopped": true,
+    "differentNewProcess": true,
+    "oldSyntheticTaskReadback": true,
+    "gatewayNotConfiguredInNewProcess": true,
+    "rawInputEmpty": true,
+    "physicalOfflineTest": false
+  },
+  "cleanup": {
+    "loopbackOnly": true,
+    "gatewayStopped": true,
+    "port8000NotListening": true,
+    "thisSessionUsb8000MappingRemovedAndReadbackVerified": true,
+    "runtimeCredentialsClearedByOwnAppRestart": true
+  },
+  "sharedEntry": {
+    "bundle": "com.campusddl.noticeentry",
+    "userSigningConfirmationPending": true,
+    "signingConfigsPresent": false,
+    "installed": false,
+    "deviceValidated": false
+  },
+  "audioPerformed": false,
+  "newFormalTaskSavedThisStep": false,
+  "deviceBackgroundMicReleaseValidated": false,
+  "pendingFailureConflictDeviceMatrixCompleted": false,
+  "fullProductCompleted": false
+}

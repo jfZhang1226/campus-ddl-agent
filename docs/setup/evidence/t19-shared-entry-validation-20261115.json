@@ -1,0 +1,58 @@
+{
+  "date": "2026-11-15",
+  "runtimeCommit": "d63931e709001a2ca2ad48b05630e1fa93501547",
+  "initialImplementationCommit": "d4cdb924ff63293c2a5934e815b9ba1d75689eff",
+  "previousBuild": { "success": false, "reason": "ArkTS requires an Error-typed rethrow in page initialization", "fixedInRuntimeCommit": true },
+  "implementation": {
+    "sharedConfirmationCore": true,
+    "probeCompatibilityExportsOnly": true,
+    "productionNoticePageUsesT16": true,
+    "uniqueApplicationStorageReused": true,
+    "productionTextEntry": true,
+    "nativeSpeechInjectedOnlyByPlatformOwner": true,
+    "schemaOrGatewayChanged": false,
+    "naturalLanguageFollowupImplemented": false,
+    "t17Integrated": false
+  },
+  "hostChecks": { "confirmedSave": 28, "interaction": 19, "noticeImport": 19, "history": 66, "nativeNoticeExport": 6, "sharedNoticeExport": 7, "voiceExportRegression": 7, "total": 152, "newSaveChecks": 7, "newSharedExportChecks": 7, "strictTypeScript": true },
+  "exports": {
+    "trackedClientFilesEach": 119,
+    "keyHashesUnchangedEach": 8,
+    "identicalSharedCoreFiles": 6,
+    "sharedEntry": {
+      "bundle": "com.campusddl.noticeentry",
+      "versionCode": 100,
+      "permissions": ["ohos.permission.INTERNET"],
+      "buildSuccess": true,
+      "buildTime": "25s180ms",
+      "finishedTaskLogEntries": 67,
+      "unsignedBytes": 1139673,
+      "unsignedSha256": "de8d2958538ad2dd1234bc64472c36f4e79f9d29618f851abe83449b2be4f1b6",
+      "abcSha256": "315ae67bc89fc465c2772a1ea491c0d4249ea0faf1186676632464494d2f8613",
+      "productionPageSymbolVerified": true,
+      "signed": false,
+      "installed": false
+    },
+    "nativeVoice": {
+      "bundle": "com.campusddl.noticeprobe",
+      "versionCode": 300,
+      "permissions": ["ohos.permission.INTERNET", "ohos.permission.MICROPHONE"],
+      "buildSuccess": true,
+      "buildTime": "24s565ms",
+      "finishedTaskLogEntries": 67,
+      "unsignedBytes": 835106,
+      "unsignedSha256": "5e4f63dad0d526a27836c598bfe5c6b7bcc6dc3d4c4b63e9143bfe01dbcbed6f",
+      "abcSha256": "3fd020033f0f3509270956ca20248eb762f1637f4840bc1d9554ed730c43bbe2",
+      "nativePageSymbolVerified": true,
+      "signed": false,
+      "installed": false
+    }
+  },
+  "deviceOperationsPerformed": false,
+  "realModelRequests": 0,
+  "audioPerformed": false,
+  "deviceValidation": false,
+  "crossPlatformAcceptance": false,
+  "reminderValidation": false,
+  "remotePullRequestsMerged": false
+}

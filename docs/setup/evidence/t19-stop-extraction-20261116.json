@@ -1,0 +1,104 @@
+{
+  "date": "2026-11-16",
+  "runtimeCommit": "c9896c1bc3e72248902bc6e44bb0866ef32c9a9a",
+  "tests": {
+    "confirmedSave": 51,
+    "interaction": 23,
+    "noticeImport": 19,
+    "sharedExport": 11,
+    "nativeExport": 7,
+    "total": 111
+  },
+  "builds": [
+    {
+      "runtimeCommit": "c9896c1bc3e72248902bc6e44bb0866ef32c9a9a",
+      "bundle": "com.campusddl.noticeentry",
+      "versionCode": 300,
+      "copiedClientFiles": 121,
+      "sourceHashesUnchanged": 11,
+      "unsignedBytes": 1213051,
+      "unsignedSha256": "7a0b2ea8e19506f101b7b5885dbf5684dc703807a84ff91017a1820b84298378",
+      "abcSha256": "3065cb555b9ee3477997524a833fb0337404479a0cc583e756b1caefd503865f",
+      "buildTime": "17 s 431 ms"
+    },
+    {
+      "runtimeCommit": "c9896c1bc3e72248902bc6e44bb0866ef32c9a9a",
+      "bundle": "com.campusddl.noticeprobe",
+      "versionCode": 400,
+      "copiedClientFiles": 121,
+      "sourceHashesUnchanged": 9,
+      "unsignedBytes": 858767,
+      "unsignedSha256": "8c2f26e106b0081b72ebeb3ac42b43713cacb89c876cc30966e0497d70768d75",
+      "abcSha256": "6fb06bff630acca40ed7f1c303ea436bc77f63876b0a735d5edd85c25fb79eb0",
+      "buildTime": "17 s 14 ms"
+    }
+  ],
+  "signedSharedBuild": {
+    "runtimeCommit": "c9896c1bc3e72248902bc6e44bb0866ef32c9a9a",
+    "bundle": "com.campusddl.noticeentry",
+    "versionCode": 300,
+    "signedBytes": 1258233,
+    "signedSha256": "ab45e1e5a290d9d5e35bd5536d62c1ce61fe0f1a57d9b429b5bf58c46e92c882",
+    "abcSha256": "3065cb555b9ee3477997524a833fb0337404479a0cc583e756b1caefd503865f",
+    "sourceHashesUnchanged": 11,
+    "matchesUnsignedAbc": true,
+    "buildTime": "16 s 372 ms"
+  },
+  "device": {
+    "bundle": "com.campusddl.noticeentry",
+    "versionCode": 300,
+    "synthetic": true,
+    "controlledService": true,
+    "endpoint": "/api/agent/extract-notice",
+    "realModelRequests": 0,
+    "audioRequests": 0,
+    "manualStopPreservesRaw": true,
+    "lateFirstResponseNotApplied": true,
+    "manualRetryReturnsUnconfirmedDraft": true,
+    "backgroundSameProcessReturn": true,
+    "backgroundPromptObserved": true,
+    "previousDraftPreserved": true,
+    "explicitDraftDiscard": true,
+    "coldConfigurationEmpty": true,
+    "oldSavedTaskReadbackUnchanged": true,
+    "rawInputEmptyAtEnd": true
+  },
+  "controlledRequests": [
+    {
+      "sequence": 1,
+      "rawHash": "96d5a353b43f49708fb7d1a2dd2289797a89bbbebc208432074f7acdc26a1d21",
+      "status": "response-written"
+    },
+    {
+      "sequence": 2,
+      "rawHash": "96d5a353b43f49708fb7d1a2dd2289797a89bbbebc208432074f7acdc26a1d21",
+      "status": "response-written"
+    },
+    {
+      "sequence": 3,
+      "rawHash": "96d5a353b43f49708fb7d1a2dd2289797a89bbbebc208432074f7acdc26a1d21",
+      "status": "response-written"
+    }
+  ],
+  "cleanup": {
+    "usb8000MapPresent": false,
+    "gatewayListening": false,
+    "realModelRequests": 0,
+    "controlledDelayedRequests": 3,
+    "audioRequests": 0,
+    "credentialsClearedByOwnAppRestart": true,
+    "confirmationClicks": 0,
+    "initialSetupClientAttempts": 2
+  },
+  "setupNotes": [
+    "Two initial client clicks were rejected by a wrong path in the local test service; service corrected, then three delayed requests executed.",
+    "Background message was initially above viewport; scrolled and continued the same third request verification, no extra request.",
+    "Initial post-install layout unavailable; reopening the same application succeeded."
+  ],
+  "limits": [
+    "Controlled responses are not real model results.",
+    "No full production snapshot audit.",
+    "No audio or native package update.",
+    "Stopping client waiting does not guarantee cancellation of provider computation."
+  ]
+}

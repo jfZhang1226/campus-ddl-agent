@@ -4,6 +4,10 @@ T06 从 ArkUI-X SDK 26.0.0.28 Beta2 随附 ACE 的 `app` 模板创建。当前�
 
 进入应用先填写网关根地址与项目凭证；服务商 Key 留在服务端。T10 消息和配置仍仅在内存中，不会因合入 T08 而自动持久化，尚未接入 T11 历史。网关设置页底部保留“T08 存储验证（开发用）”入口；离开对话页沿用 T10 的暂停/取消与迟到结果保护。配置和协议范围见 [T10 接入说明](../docs/setup/T10-文本对话与网关接入.md)。
 
+## T13 通知导入
+
+主页面右上角“导入通知”进入共享 `pages/NoticeImport.ets`。页面调用 `POST /api/agent/extract-notice`，先显示可编辑草案；只有用户确认后，才将 Notice、Task 和 ChecklistItem 在同一业务快照 revision 中保存。取消、网络失败和版本冲突均不会显示为保存成功。实现和验收边界见 [T13 接入说明](../docs/setup/T13-通知输入与创建确认卡.md)。
+
 ## 工程入口
 
 ```text
@@ -35,6 +39,8 @@ ace build apk --debug --target-platform arm64
 详细步骤见 [鸿蒙构建与签名](../docs/build-harmony.md)、[Android 构建与安装](../docs/build-android.md)，实际证据与待验收项见 [T06 记录](../docs/setup/T06-共享工程与双端验证.md)。DevEco Studio 打开本目录即可查看共享工程，ArkUI-X SDK 位置按本机环境配置。
 
 不要只执行 Android 的 `gradlew assembleDebug` 来代替完整跨端构建：模板默认关闭独立 Gradle 触发 ArkTS 编译，可能打入旧资源。ACE 自动生成的运行库、跨端资源和包含本机路径的 `buildArkTS` 脚本均已忽略；每台电脑由 ACE 重新生成。`oh-package-lock.json5` 和 Gradle wrapper 属于共享源码。
+
+Android 顶层构建仓库已移除停用的 JCenter，优先使用阿里云/华为云 Maven 镜像，再回退 Google Maven 与 Maven Central。Gradle 8.4 / AGP 7.4.1 使用 JDK 17；DevEco Studio 26 自带的 JDK 25 不适用于该组合。
 
 T08 实测还发现增量构建可能遗漏新增 API 原生库。新增原生 API 或真机出现模块缺失时，先 `devecocli build clean` 再完整 ACE 构建，并从 client/ 执行 `& ../scripts/check-storage-apk.ps1` 检查文件/路由依赖库；不手工修改 SDK 或向源码提交运行库。
 

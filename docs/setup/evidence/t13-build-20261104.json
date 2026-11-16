@@ -1,0 +1,74 @@
+{
+  "task": "T13",
+  "role": "A",
+  "date": "2026-11-04",
+  "sourceBranch": "feat/a-t13-notice-confirm",
+  "scope": "Notice input, editable extraction draft, confirmation and atomic local Notice/Task/Checklist import",
+  "hostChecks": {
+    "command": "node scripts/test-notice-import.cjs",
+    "sharedStrictTypeScriptSources": 26,
+    "testsPassed": 10,
+    "latestRun": "2026-11-04",
+    "notes": [
+      "SHA-256 matched Node crypto for empty, Chinese, emoji and 10000-character inputs",
+      "T12 exact/date_only/unknown draft parsing accepted",
+      "Cancel and network failure created no task",
+      "Version conflict did not overwrite data",
+      "Notice, Task and ChecklistItem committed in one snapshot revision",
+      "Native HTTP adapter used the extraction endpoint, bearer token, bounded timeout and released its handle"
+    ]
+  },
+  "toolchains": {
+    "devEcoStudio": "26.0.0.821",
+    "harmonyOSSDK": "26.0.0",
+    "arkUIXSDK": "26.0.0.28 Beta2",
+    "arkUIXArchiveSHA256": "07182b4be1568ed941fd2538423231485e953b7684b23dfbd5909c09b195a33b",
+    "androidCommandLineTools": "19.0",
+    "androidPlatformTools": "37.0.1",
+    "androidPlatform": "33 revision 3",
+    "androidBuildTools": "30.0.3",
+    "java": "Eclipse Temurin 17.0.20.1+1",
+    "javaArchiveSHA256": "e53a79c3c3d86865bd7e787903884331068e71321714ffd44f145785affc7cb0",
+    "gradleWrapper": "8.4",
+    "androidGradlePlugin": "7.4.1"
+  },
+  "builds": {
+    "harmony": {
+      "command": "ace build hap --debug",
+      "result": "BUILD SUCCESSFUL",
+      "tasks": 66,
+      "artifact": "client/entry/build/default/outputs/default/entry-default-unsigned.hap",
+      "bytes": 629897,
+      "sha256": "021ce737949564bcfdf095241ecaecc39bc5abf4e4e3e15249814f645c690651",
+      "signed": false
+    },
+    "android": {
+      "command": "ace build apk --debug --target-platform arm64",
+      "result": "BUILD SUCCESSFUL",
+      "tasks": 32,
+      "artifact": "client/.arkui-x/android/app/build/outputs/apk/debug/app-debug.apk",
+      "bytes": 47281289,
+      "sha256": "c3ffd9b7755ae2e63838b77f2764249c9111b7cc3ea07fcf60ceb9cc57c08d24",
+      "package": "com.campusddl.agent",
+      "minSdk": 26,
+      "targetAndCompileSdk": 33,
+      "abi": "arm64-v8a",
+      "signature": "APK Signature Scheme v2 verified"
+    }
+  },
+  "deviceValidation": {
+    "adbDevices": "none",
+    "hdcTargets": "none",
+    "installed": false,
+    "interactionChecked": false,
+    "restartPersistenceChecked": false
+  },
+  "notClaimed": [
+    "T13 final acceptance",
+    "HarmonyOS or Android real-device interaction",
+    "T16 persistent operationId and crash-recovery idempotency",
+    "T18 task list and task detail page",
+    "T21 change card",
+    "T24 seven-day plan"
+  ]
+}

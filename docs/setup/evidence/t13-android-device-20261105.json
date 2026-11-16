@@ -1,0 +1,84 @@
+{
+  "task": "T13",
+  "date": "2026-11-05",
+  "scope": "Android real-device UI and local persistence verification",
+  "device": {
+    "model": "V2364A",
+    "product": "PD2364",
+    "os": "Android 16",
+    "api": 36,
+    "abi": "arm64-v8a",
+    "overrideResolution": "1080x2400",
+    "physicalResolution": "1260x2800"
+  },
+  "verificationPackage": {
+    "applicationId": "com.campusddl.agent.t13",
+    "reason": "The previously installed application used a different debug signing certificate; a separate test application ID preserved existing app data.",
+    "sha256": "438d5a085ee73c473c3af70bbc997bd51234920572bd7d499b4f0cd5b7847338",
+    "source": "Exported from commit a4ae118 with only a runtime-only debug applicationIdSuffix"
+  },
+  "extraction": {
+    "mode": "deterministic-contract-mock plus real DeepSeek cloud model through project gateway",
+    "realModelCalled": true,
+    "realModelSample": "Database course notice: submit the database lab report as PDF and source code to Learning Platform before 2026-11-12 23:59.",
+    "realModelResult": {
+      "title": "Submit database lab report",
+      "course": "Database",
+      "deadlinePrecision": "exact",
+      "dueAt": "2026-11-12T23:59:00+08:00",
+      "submissionChannel": "Learning Platform",
+      "materials": ["PDF lab report", "source code"],
+      "degraded": false
+    }
+  },
+  "passed": [
+    "APK installed and cold-started on real Android device",
+    "Main page exposed the notice-import entry",
+    "Gateway settings accepted the adb-reverse local address and project token",
+    "Exact-deadline draft rendered title, course, channel, due time and two checklist items",
+    "Draft remained explicitly un-saved before confirmation",
+    "Cancel retained raw text and created no task",
+    "Missing-title/deadline draft rendered clarification questions and unknown deadline state",
+    "User edited title, exact date/time, priority and remaining minutes",
+    "Confirmed import saved Notice, Task and all ChecklistItem records in one snapshot",
+    "Three confirmed imports increased revision from 1 through 3 with matching counts",
+    "A cold restart changed the app process but left the revision-2 snapshot bytes unchanged with two tasks",
+    "With the mock gateway stopped, the page showed a reachable network error and left revision/task count unchanged",
+    "A valid DeepSeek key produced a real-model draft with title, course, exact deadline, submission channel and materials",
+    "The real-model draft was confirmed and saved as revision 4"
+  ],
+  "savedSnapshotChecks": {
+    "finalRevision": 4,
+    "notices": 4,
+    "tasks": 4,
+    "checklistItems": 7,
+    "exactTimeSample": {
+      "title": "Relative report follow-up",
+      "deadlinePrecision": "exact",
+      "dueAt": "2026-11-10T18:30:00+08:00",
+      "remainingMinutes": 30,
+      "status": "todo"
+    },
+    "prioritySample": {
+      "title": "Submit database report",
+      "priority": "high",
+      "status": "todo"
+    },
+    "realModelTaskTitle": "Submit database lab report",
+    "realModelSubmissionChannel": "Learning Platform",
+    "networkFailureRevisionUnchanged": true
+  },
+  "screenshots": [
+    "docs/images/t13/android-draft-top.png",
+    "docs/images/t13/android-draft-bottom.png",
+    "docs/images/t13/android-clarification.png",
+    "docs/images/t13/android-saved.png",
+    "docs/images/t13/android-network-error.png",
+    "docs/images/t13/android-real-draft.png",
+    "docs/images/t13/android-real-saved.png"
+  ],
+  "notClaimed": [
+    "T13 final acceptance",
+    "Clean install of the production applicationId on a matching signing certificate"
+  ]
+}
