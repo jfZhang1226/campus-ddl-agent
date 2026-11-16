@@ -1,0 +1,40 @@
+{
+  "runtimeCommit": "aef84696c3f2aa62a823048d717014f34ea31b5d",
+  "bundle": "com.campusddl.noticeprobe",
+  "versionCode": 400,
+  "unsigned": {
+    "runtimeCommit": "aef84696c3f2aa62a823048d717014f34ea31b5d",
+    "bundle": "com.campusddl.noticeprobe",
+    "versionCode": 400,
+    "copiedClientFiles": 130,
+    "sourceHashesUnchanged": 17,
+    "unsignedBytes": 1131893,
+    "unsignedSha256": "399c2b544d842d136d77b05caf55a3273b36d3cb939a0899f4075075f3ff05c4",
+    "abcSha256": "ff223eae6d2115cace5cb82a361d08599f2e5655edeb8e64de53089e6ce87bd6",
+    "buildTime": "16 s 435 ms"
+  },
+  "signed": {
+    "runtimeCommit": "aef84696c3f2aa62a823048d717014f34ea31b5d",
+    "bundle": "com.campusddl.noticeprobe",
+    "versionCode": 400,
+    "signedBytes": 1177001,
+    "signedSha256": "d4e0abae43c2cdaa2aae6ed8dfcd5df9c89a23b5667c4e8caae9a302beadbc76",
+    "abcSha256": "ff223eae6d2115cace5cb82a361d08599f2e5655edeb8e64de53089e6ce87bd6",
+    "sourceHashesUnchanged": 17,
+    "matchesUnsignedAbc": true,
+    "buildTime": "16 s 407 ms"
+  },
+  "tests": {
+    "taskAgent": 23,
+    "sharedExport": 12,
+    "nativeExport": 8
+  },
+  "device": {
+    "installed": true,
+    "oldTaskReadAfterUpdate": true,
+    "taskVoiceControlsVisible": true,
+    "recordingStartedByAgent": false,
+    "audioVerified": false,
+    "userFeedback": "pending"
+  }
+}
