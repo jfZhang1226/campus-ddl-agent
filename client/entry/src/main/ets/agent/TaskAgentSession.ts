@@ -112,6 +112,7 @@ export class TaskAgentSession {
       '创建或更新时调用propose_task_changes；sessionId用本上下文真实值，expectedRevision用最新查询revision或本上下文expectedRevision。' +
       '查询若有truncated=true需收窄条件，不能声称列出全部任务。notices必须是空数组，由客户端附上可信来源。' +
       'draft必须含schema全部字段；未知可空字段填null。新任务action=create时taskId和expectedVersion必须为null，status=todo；' +
+      '截止三种互斥：exact时deadlineDate必须null，只填dueAt带偏移时刻；date_only只填deadlineDate且dueAt=null；unknown两者都null。' +
       'noticeIds引用preparedSources中的真实ID，不能编造。priorProposal是可重新提交的草案，只按用户新消息修改必要字段。' +
       '材料sourceNoticeId引用支持该要求的来源ID；人工材料填null。创建或更新可用checklistCreates追加本次新增材料，更新前读取真实已有清单，不要复制或重复已有项。' +
       '材料勾选状态与用户提交声明只能由用户在详情页操作。暂不支持删除或重命名材料，要明确说明，不能伪造取消要求成功。' +

@@ -81,6 +81,22 @@ test('integrated B schema admits actual null and malformed executor calls touch 
  for(const call of [null,undefined,{id:'x',action:'get_notice',params:{noticeId:''}},{id:'x',action:'get_tasks',params:{extra:true}}])assert.equal((await ex.execute(call)).errorCode,'INVALID_ARGUMENT');
  assert.equal(touched,0);
 });
+test('observed redundant exact date is rejected first, one structural repair may stage a valid exact proposal',async()=>{
+ const h=setup(),s=controller(h,(req,n)=>{const p=proposal(req.context,'2026-12-20');p.changes[0].draft.deadlinePrecision='exact';p.changes[0].draft.dueAt='2026-12-20T18:00:00+08:00';
+  if(n===1)p.changes[0].draft.deadlineDate='2026-12-20';else {assert.equal(req.context.protocolRepair.attempt,1);p.changes[0].draft.deadlineDate=null;}
+  return {type:'tool_calls',calls:[{id:'shape'+n,action:'propose_task_changes',params:p}]};});
+ await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));await send(s.c,'合成：2026年12月20日18点交报告');
+ assert.equal(s.calls.length,2);assert.equal(s.c.snapshot().proposal.changes[0].draft.deadlineDate,null);const actual=ok(await h.store.read());assert.equal(actual.proposals.length,1);assert.equal(actual.tasks.length,0);assert.deepEqual(s.c.snapshot().toolActions,['propose_task_changes']);s.c.dispose();
+});
+test('repeated invalid structure stops after one repair, keeps input and performs no staged or formal write',async()=>{
+ const h=setup(),s=controller(h,()=>({type:'tool_calls',calls:[{id:'forged',action:'apply_confirmed_proposal',params:{}}]}));await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));
+ await send(s.c,'合成非法回包恢复测试');assert.equal(s.calls.length,2);assert.equal(s.c.snapshot().errorCode,'INVALID_RESPONSE');assert.equal(s.c.snapshot().input,'合成非法回包恢复测试');assert.equal(ok(await h.store.read()).proposals.length,0);s.c.dispose();
+});
+test('HTTP authorization failure is not retried as model structure and cancellation invalidates late repair',async()=>{
+ const h=setup(),s=controller(h);await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));s.c.edit('合成授权失败');let sending=s.c.send();await tick();s.calls[0].resolve(new GatewayResponse(401,'{}'));await sending;assert.equal(s.calls.length,1);
+ s.c.edit('合成取消结构修复');sending=s.c.send();await tick();s.calls[1].resolve(new GatewayResponse(200,'{}'));await tick();assert.equal(s.calls.length,3);await s.c.stop();assert.equal(s.calls[2].cancelled,1);
+ s.calls[2].resolve(new GatewayResponse(200,JSON.stringify({type:'tool_calls',calls:[{id:'late',action:'propose_task_changes',params:proposal(s.calls[2].req.context)}]})));await sending;assert.equal(ok(await h.store.read()).proposals.length,0);assert.equal(s.c.snapshot().input,'合成取消结构修复');s.c.dispose();
+});
 test('follow-up requirement appends only new material with its source; prior draft corrections retain addition and old prepared state',async()=>{
  const h=setup(),ctx=await prepared(h,'合成原通知：报告需要PDF'),created=await h.session.stage(proposal(ctx));ok(created);await h.session.confirm();
  const task=ok(await h.store.read()).tasks[0],oldItems=clone(ok(await h.tasks.get(task.id)).checklistItems);

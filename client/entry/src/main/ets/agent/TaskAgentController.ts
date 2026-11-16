@@ -1,4 +1,4 @@
-import { ChatClock, ChatMessage, GatewayCall, GatewayConfig, SystemChatClock } from '../chat/ChatModels';
+import { ChatClock, ChatMessage, GatewayCall, GatewayConfig, GatewayResponse, SystemChatClock } from '../chat/ChatModels';
 import { errorText, validateConfig } from '../chat/GatewayProtocol';
 import { TaskRepository } from '../data/TaskRepository';
 import { LocalStore } from '../data/LocalStore';
@@ -194,6 +194,7 @@ export class TaskAgentController {
       if (generation !== this.generation) return;
       this.timer = this.clock.schedule(() => { this.stop('TIMEOUT'); }, 90000);
       let ambiguousIds: string[] = [];
+      let structureRepairs: number = 0;
       const executor = new AgentExecutor({ list: async (query: Object) => {
         const result = await this.tasks.list(query as TaskQuery);
         if (!result.success || result.data === null) return result;
@@ -218,11 +219,25 @@ export class TaskAgentController {
       const loop = new AgentLoop({ turn: async (text, state, tools, results) => {
         if (generation !== this.generation || this.cancelRequested.length > 0) return agentError(this.cancelRequested || 'CANCELLED');
         try {
-          const call = this.transport.start(this.config, encodeAgentTurn(text, state, tools, results)); this.call = call;
-          const response = await call.result;
-          if (this.call === call) this.call = undefined;
+          const request = async (context: Object): Promise<GatewayResponse> => {
+            const call = this.transport.start(this.config, encodeAgentTurn(text, context, tools, results)); this.call = call;
+            const response = await call.result;
+            if (this.call === call) this.call = undefined;
+            return response;
+          };
+          let response = await request(state);
           if (generation !== this.generation || this.cancelRequested.length > 0) return agentError(this.cancelRequested || 'CANCELLED');
-          return decodeAgentTurn(response);
+          let decoded = decodeAgentTurn(response);
+          if (decoded.errorCode === 'INVALID_RESPONSE' && response.status >= 200 && response.status < 300 && structureRepairs < 1) {
+            structureRepairs++;
+            response = await request(Object.assign({}, state, { protocolRepair: {
+              attempt: 1, maximum: 1,
+              instruction: '上一次回包未通过客户端协议校验，尚未执行其中任何工具。请按同一用户消息和工具schema重新输出合法回答或工具请求，只修正结构，不猜缺失信息、不改变原用户目标、来源、日期或选择对象。exact必须deadlineDate=null且dueAt是带偏移时刻；date_only必须dueAt=null；unknown两者null。草案字段须完整，未知合法可空字段用真正null。不要声称保存成功。'
+            } }));
+            if (generation !== this.generation || this.cancelRequested.length > 0) return agentError(this.cancelRequested || 'CANCELLED');
+            decoded = decodeAgentTurn(response);
+          }
+          return decoded;
         } catch (error) {
           const code: string = (error as Error).message;
           return agentError(code === 'TIMEOUT' || code === 'REQUEST_TOO_LARGE' ? code : 'NETWORK');
