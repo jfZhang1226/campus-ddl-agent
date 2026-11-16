@@ -22,7 +22,7 @@ export interface AgentTurn {
 
 // 注入的工具执行器：白名单动作 → 真实结果（查询走 T14，草案走 T16 stage，apply 不在此）。
 export interface ToolExecutor {
-  execute(action: string, params: Object): Promise<ToolResult>;
+  execute(call: ToolCall): Promise<ToolResult>;
 }
 
 export class AgentOutcome {
@@ -56,7 +56,7 @@ export class AgentLoop {
       const executed: ToolResult[] = [];
       for (const call of reply.calls) {
         if (validateCall(call).length > 0) return this.outcome('error', '', TOOL_ERRORS.INVALID_ARGUMENT);
-        const result: ToolResult = await this.executor.execute(call.action, call.params);
+        const result: ToolResult = await this.executor.execute(call);
         executed.push(result);
         // 首个成功 propose 立即交还客户端展示确认卡，停止本批次后续工具，避免隐藏追加/过期方案。
         if (call.action === 'propose_task_changes' && result.success && isRecord(result.data)) {
