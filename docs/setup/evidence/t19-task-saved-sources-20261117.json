@@ -1,0 +1,31 @@
+{
+  "runtimeCommit": "0baac0ada84c0ea52a17d8da00eba7b8af126776",
+  "sourceHashesUnchanged": 17,
+  "copiedClientFiles": 130,
+  "unsignedBytes": 1140385,
+  "unsignedSha256": "b1e8ad5d362c2ad73bf5e45c4b8716a76e38c254778da7af1d290bad1f631bbf",
+  "abcSha256": "4dcc04045f98eb98862cce02d5c7cfb1823a7f9d1ba0edd57415a32e9137c2cd",
+  "buildTime": "17 s 651 ms",
+  "tests": {
+    "taskAgent": 24,
+    "sharedExport": 12,
+    "nativeExport": 8
+  },
+  "signedBytes": 1186624,
+  "signedSha256": "f1a319ad405236be87daddcee6dfba2cb31f4d38f04afa4c31aadeb079a02ead",
+  "signedBuildTime": "16 s 581 ms",
+  "signedAbcMatches": true,
+  "device": {
+    "installed": true,
+    "sameTaskAndReceiptAfterUpdate": true,
+    "sourceCount": 2,
+    "originalAsrTextUnchanged": true,
+    "separateUpdateTextUnchanged": true,
+    "unknownPublishedTimesAndDistinctImportTimesVisible": true,
+    "noModelCalls": true,
+    "audioOperations": 0,
+    "runtimeConfigurationEmpty": true,
+    "gatewayAndMappingStopped": true,
+    "secondImportTimestampRequiredOneFurtherScroll": true
+  }
+}
