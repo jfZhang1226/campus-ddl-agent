@@ -10,8 +10,9 @@ export class ReminderOwner {
   private running: boolean = false;
   private pending: boolean = false;
   private generation: number = 0;
+  private factory: ((context: common.UIAbilityContext) => ReminderPort) | undefined;
   lastError: string = '';
-  constructor(private factory: ((context: common.UIAbilityContext) => ReminderPort) | undefined = undefined) {}
+  constructor(factory: ((context: common.UIAbilityContext) => ReminderPort) | undefined = undefined) { this.factory = factory; }
   get(context: common.UIAbilityContext): ReminderService {
     if (this.service === undefined) {
       const storage = getClientStorage(context.filesDir);

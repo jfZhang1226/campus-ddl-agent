@@ -9,7 +9,8 @@ import { timestampMillis } from '../domain/DateRules';
 
 /** Native API26 bridge only; no audio playback and no immediate test notification. */
 export class HarmonyReminderPort implements ReminderPort {
-  constructor(private context: common.UIAbilityContext) {}
+  private context: common.UIAbilityContext;
+  constructor(context: common.UIAbilityContext) { this.context = context; }
   supported(): boolean { return deviceInfo.osFullName.startsWith('OpenHarmony') && deviceInfo.sdkApiVersion >= 26; }
   private failure(error: BusinessError): StorageFailure {
     return new StorageFailure('REMINDER_OS_' + String(error.code), '系统提醒操作未完成，请核对通知权限或重新读取。');
