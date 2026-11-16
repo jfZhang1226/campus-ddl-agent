@@ -1,0 +1,26 @@
+{
+  "runtimeCommit": "ede6308eca3b7f2fd6db27c47fcc7b3808bf9554",
+  "sourceHashesUnchanged": 19,
+  "copiedClientFiles": 132,
+  "unsignedBytes": 1208311,
+  "unsignedSha256": "175a8e154de6923089ec9b3d43fd686ecf9eabd143eb0563033855cba75df675",
+  "abcSha256": "60b4df29f49d38e5274ba61faa6ff79b0894b7a2eed32a804749d71960475701",
+  "buildTime": "22 s 852 ms",
+  "tests": {
+    "taskBoard": 8,
+    "sharedExport": 12,
+    "nativeExport": 8
+  },
+  "signedBytes": 1256715,
+  "signedSha256": "cc982ebf94821c3526df7e7f29a12a916e4ab87bb5db2a7b0ac77126396a5d08",
+  "signedAbcMatches": true,
+  "signedBuildTime": "16 s 80 ms",
+  "device": {
+    "installed": true,
+    "realListOpened": true,
+    "sameSavedTaskDetail": true,
+    "sameDateAndMaterials": true,
+    "modelCalls": 0,
+    "audioOperations": 0
+  }
+}
