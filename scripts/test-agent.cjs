@@ -55,18 +55,26 @@ test('validateCall / validateParams 逐动作校验', () => {
   assert.equal(tools.validateParams('get_tasks', { includeUndated: 1 }), tools.TOOL_ERRORS.INVALID_ARGUMENT);
 });
 
+const fullDraft = (over) => Object.assign({ title: '交作业', course: null, kind: null, deadlinePrecision: 'unknown',
+  deadlineDate: null, dueAt: null, timezone: 'Asia/Shanghai', priority: null, status: 'todo',
+  remainingMinutes: null, submissionChannel: null, noticeIds: [] }, over || {});
 const createChange = (checklistCreates) => ({ action: 'create', taskId: null, expectedVersion: null,
-  draft: { title: '交作业', noticeIds: [] }, checklistCreates });
+  draft: fullDraft(), checklistCreates: checklistCreates || [] });
 
 test('validateParams 拒绝编辑变化携带材料，允许创建型材料', () => {
   const update = { sessionId: 's1', expectedRevision: 0, notices: [],
-    changes: [{ action: 'update', taskId: 't1', expectedVersion: 1, draft: { title: 'x', noticeIds: [] },
+    changes: [{ action: 'update', taskId: 't1', expectedVersion: 1, draft: fullDraft(),
       checklistCreates: [{ label: 'PDF', sourceNoticeId: null }] }] };
   assert.equal(tools.validateParams('propose_task_changes', update), tools.TOOL_ERRORS.INVALID_ARGUMENT);
   assert.equal(tools.validateParams('propose_task_changes',
     { sessionId: 's1', expectedRevision: 0, notices: [], changes: [createChange([{ label: 'PDF', sourceNoticeId: null }])] }), '');
   assert.equal(tools.validateParams('propose_task_changes',
     { sessionId: 's1', expectedRevision: 0, notices: [], changes: [createChange([])], extra: 1 }),
+    tools.TOOL_ERRORS.INVALID_ARGUMENT);
+  // partial draft 缺失 TaskDraft 字段 → 拒绝（与 T16 stage 一致，不静默补默认）
+  assert.equal(tools.validateParams('propose_task_changes',
+    { sessionId: 's1', expectedRevision: 0, notices: [],
+      changes: [{ action: 'create', taskId: null, expectedVersion: null, draft: { title: '合成任务', noticeIds: [] }, checklistCreates: [] }] }),
     tools.TOOL_ERRORS.INVALID_ARGUMENT);
 });
 
@@ -82,8 +90,7 @@ function scriptTurn(script) {
 const answer = text => ({ type: 'answer', text, calls: [], errorCode: '' });
 const call = (id, action, params = {}) => ({ type: 'tool_calls', text: '', calls: [{ id, action, params }], errorCode: '' });
 const okResult = (call, data) => ({ id: call.id, action: call.action, params: call.params, success: true, data, errorCode: null, message: '' });
-const proposeParams = () => ({ sessionId: 's1', expectedRevision: 0, notices: [],
-  changes: [{ action: 'create', taskId: null, expectedVersion: null, draft: { title: 'x', noticeIds: [] } }] });
+const proposeParams = () => ({ sessionId: 's1', expectedRevision: 0, notices: [], changes: [createChange()] });
 
 test('循环：直接回答 + 一次查询后回答', async () => {
   let executed = 0;
@@ -180,6 +187,26 @@ test('执行器 端口抛 StorageFailure 如实传递', async () => {
   const r = await ex.execute({ id: 'c1', action: 'get_tasks', params: {} });
   assert.equal(r.success, false);
   assert.equal(r.errorCode, 'CORRUPT_DATA');
+});
+
+test('执行器 入口校验：非法请求不访问端口', async () => {
+  let reads = 0;
+  const ex = new AgentExecutor({ list: async () => ok({}), get: async () => ok({}) },
+    { read: async () => { reads++; return ok({ notices: [], revision: 1 }); } }, { stage: async () => ok({}) });
+  const cases = [
+    { id: '', action: 'get_notice', params: { noticeId: 'n1' } },
+    { id: 'c1', action: 'get_notice', params: { noticeId: '' } },
+    { id: 'c1', action: 'get_notice', params: null },
+    { id: 'c1', action: 'get_notice', params: { noticeId: 'n1', extra: 1 } },
+    { id: 'c1', action: 'apply_confirmed_proposal', params: {} },
+    { id: 'c1', action: 'get_tasks', params: { unknown: 1 } }
+  ];
+  for (const c of cases) {
+    const r = await ex.execute(c);
+    assert.equal(r.success, false, JSON.stringify(c));
+    assert.equal(r.errorCode, tools.TOOL_ERRORS.INVALID_ARGUMENT, JSON.stringify(c));
+  }
+  assert.equal(reads, 0);
 });
 
 (async () => {

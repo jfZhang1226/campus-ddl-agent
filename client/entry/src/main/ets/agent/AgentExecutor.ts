@@ -6,7 +6,7 @@
 // - ProposalStagePort = ProposalRepository.stage（保存草案，不改正式任务）
 // apply/confirm/cancel 不在此；get_availability 在 T24 前返回 NOT_IMPLEMENTED。
 
-import { ToolCall, ToolResult, TOOL_ERRORS, normalizeResult } from './AgentTools';
+import { ToolCall, ToolResult, TOOL_ERRORS, normalizeResult, validateCall } from './AgentTools';
 import { StorageFailure, StorageResult } from '../data/storage/StorageTypes';
 
 export interface TaskReadPort {
@@ -31,6 +31,11 @@ export class AgentExecutor {
     private proposals: ProposalStagePort) {}
 
   async execute(call: ToolCall): Promise<ToolResult> {
+    // 入口先校验：非法请求不访问任何读写端口（独立可注入执行器必须满足自身错误契约）。
+    const invalid: string = validateCall(call);
+    if (invalid.length > 0) return normalizeResult(typeof call.id === 'string' ? call.id : '',
+      typeof call.action === 'string' ? call.action : '', call.params === null || call.params === undefined ? {} : call.params,
+      false, null, invalid, '非法工具调用');
     try {
       if (call.action === 'get_tasks') return this.ok(call, await this.tasks.list(this.taskQuery(call.params)));
       if (call.action === 'get_task_detail') return this.ok(call, await this.tasks.get(record(call.params).taskId as string));
