@@ -223,6 +223,31 @@ test('clearing every material commits an empty collection without resurrecting m
  const h=await setup(t);await ready(h);while(h.controller.snapshot().materials.length)h.controller.removeMaterial(0);
  await h.controller.confirm();const s=ok(await h.store.read());assert.deepEqual(s.checklistItems,[]);assert.deepEqual(s.operations[0].createdChecklistItemIds,[]);
 });
+test('stopping extraction leaves actual business bytes unchanged and preserved edits can still confirm',async t=>{
+ const h=await setup(t);ok(await h.store.save(ok(await h.store.read()),0));await h.controller.restore();await ready(h);
+ h.controller.edit('title','合成：停止后保留标题');h.controller.setMaterial(0,'合成：人工替换');
+ const before=await bytes(h);h.controller.extract();h.controller.stopExtraction();
+ assert.equal(await bytes(h),before);assert.equal(h.controller.snapshot().phase,'idle');
+ assert.equal(h.controller.snapshot().materialFromNotice[0],false);assert.equal(h.calls.length,2);
+ h.calls[1].resolve(new GatewayResponse(200,JSON.stringify({type:'draft',draft:clone(fixture)})));await tick();
+ assert.equal(await bytes(h),before);await h.controller.confirm();
+ const s=ok(await h.store.read());assert.equal(s.tasks.length,1);assert.equal(s.tasks[0].title,'合成：停止后保留标题');
+ assert.equal(s.checklistItems[0].sourceNoticeId,null);assert.equal(s.checklistItems[0].label,'合成：人工替换');
+});
+
+test('stop-extraction never cancels a saving operation, locked proposal or completed result',async t=>{
+ const h=await setup(t);await ready(h);const create=h.writer.create.bind(h.writer);let release;
+ h.writer.create=async(...args)=>{await new Promise(r=>release=r);return create(...args);};
+ const saving=h.controller.confirm();assert.equal(h.controller.snapshot().phase,'saving');
+ const during=clone(h.controller.snapshot());h.controller.stopExtraction();assert.deepEqual(clone(h.controller.snapshot()),during);
+ const apply=h.commits.confirmation.apply.bind(h.commits.confirmation);let fail=true;
+ h.commits.confirmation.apply=async r=>{if(fail){fail=false;h.files.fail='replace:task-store.json';}return apply(r);};
+ release();await saving;assert.equal(h.controller.saveSnapshot().locked,true);const pending=await bytes(h);
+ const locked=clone(h.controller.snapshot());h.controller.stopExtraction();assert.deepEqual(clone(h.controller.snapshot()),locked);assert.equal(await bytes(h),pending);
+ h.writer.create=create;await h.controller.confirm();assert.equal(h.controller.snapshot().phase,'saved');
+ const saved=clone(h.controller.snapshot()),committed=await bytes(h);h.controller.stopExtraction();assert.deepEqual(clone(h.controller.snapshot()),saved);assert.equal(await bytes(h),committed);
+});
+
 test('cancelling before confirmation never stages or writes business data',async t=>{
  const h=await setup(t);await ready(h);h.controller.cancel();const s=ok(await h.store.read());assert.equal(s.revision,0);assert.equal(s.tasks.length,0);assert.equal(s.proposals.length,0);
 });

@@ -151,6 +151,43 @@ test('cancelled extraction never resurrects its card or starts speech/saving on 
   assert.equal(s.c.snapshot().draft,null);assert.equal(s.c.snapshot().rawText,'合成原文');
   assert.equal(s.c.snapshot().phase,'cancelled');assert.equal(s.port.tts.length,0);assert.equal(s.store.writes,0);s.c.dispose();
 });
+test('stopping an initial extraction keeps raw input and ignores late success without new speech or writes', async () => {
+ const s=setup();s.c.setRawText(fixtures.samples[0].draft.notice.rawText);s.c.extract();
+ s.c.stopExtraction();s.c.stopExtraction();const stopped=clone(s.c.snapshot());
+ assert.equal(stopped.phase,'idle');assert.equal(stopped.errorCode,'CANCELLED');assert.equal(stopped.draft,null);
+ assert.equal(stopped.rawText,fixtures.samples[0].draft.notice.rawText);assert.equal(s.calls[0].cancelled,1);
+ await extracted(s);assert.deepEqual(clone(s.c.snapshot()),stopped);assert.equal(s.calls.length,1);
+ assert.equal(s.port.microphones,0);assert.equal(s.port.tts.length,0);assert.equal(s.store.writes,0);s.c.dispose();
+});
+
+test('stopping a subsequent extraction keeps edited fields, material origins and answers through manual retry', async () => {
+ const s=setup();await draftReady(s);s.c.edit('title','合成：保留人工标题');s.c.setMaterial(0,'合成：人工材料');
+ s.c.edit('precision','date_only');s.c.edit('date','2026-12-04');const before=clone(s.c.snapshot());s.c.extract();
+ const old=s.calls[1];s.c.stopExtraction();const after=s.c.snapshot();
+ for(const key of ['rawText','draft','title','deadlinePrecision','deadlineDate','materials','materialFromNotice'])
+  assert.deepEqual(clone(after)[key],before[key],key);
+ assert.equal(after.errorCode,'CANCELLED');s.c.extract();assert.equal(s.calls.length,3);
+ assert.deepEqual(s.calls[2].request,s.calls[1].request);
+ old.resolve(new GatewayResponse(200,JSON.stringify({type:'draft',draft:clone(fixtures.samples[2].draft)})));await flush();
+ assert.equal(s.c.snapshot().phase,'extracting');assert.equal(s.c.snapshot().title,before.title);
+ await extracted(s);assert.equal(s.c.snapshot().title,before.title);assert.deepEqual(s.c.snapshot().materialFromNotice,before.materialFromNotice);
+ assert.equal(s.store.writes,0);s.c.dispose();
+});
+
+test('a stopped rejection cannot clear a newer request or replace its draft', async () => {
+ const s=setup();s.c.setRawText(fixtures.samples[0].draft.notice.rawText);s.c.extract();const old=s.calls[0];
+ s.c.stopExtraction();s.c.extract();old.reject(Error('synthetic old failure'));await flush();
+ assert.equal(s.c.snapshot().phase,'extracting');assert.equal(s.c.snapshot().errorCode,'');
+ await extracted(s);assert.notEqual(s.c.snapshot().draft,null);assert.equal(s.c.snapshot().errorCode,'');s.c.dispose();
+});
+
+test('stop-extraction is inert outside extraction, including speech and disposal', async () => {
+ const s=setup();const initial=clone(s.c.snapshot());s.c.stopExtraction();assert.deepEqual(clone(s.c.snapshot()),initial);
+ await draftReady(s);const ready=clone(s.c.snapshot());s.c.stopExtraction();assert.deepEqual(clone(s.c.snapshot()),ready);
+ await s.c.record();const speech=clone(s.c.speechSnapshot());s.c.stopExtraction();assert.deepEqual(clone(s.c.speechSnapshot()),speech);
+ s.c.dispose();const disposed=clone(s.c.snapshot());s.c.stopExtraction();assert.deepEqual(clone(s.c.snapshot()),disposed);
+});
+
 test('a new original notice clears old answer overrides', async () => {
   const s=setup();await draftReady(s);s.c.edit('title','旧改动');s.c.setMaterial(0,'旧材料');
   s.c.setRawText('另一条合成通知');s.c.extract();

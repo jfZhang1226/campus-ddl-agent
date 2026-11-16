@@ -335,6 +335,14 @@ export class NoticeImportController {
     this.publish();
   }
 
+  /** Stop only the in-flight extraction. Keep the current draft/edits for manual retry or confirmation. */
+  stopExtraction(): void {
+    if (this.state.phase !== 'extracting') return;
+    this.release('CANCELLED');
+    this.state.phase = 'idle';
+    this.publish();
+  }
+
   cancel(): void {
     if (this.state.phase === 'saving') return;
     this.release('CANCELLED');

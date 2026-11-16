@@ -140,6 +140,14 @@ struct NoticeImportPage {
       }.width('100%')
       Text('通知原文会原样保留；模型提取出的标题、日期和材料均可修改。')
         .fontSize(12).fontColor('#617589').lineHeight(18)
+      if (this.view.phase === 'extracting') {
+        Row({ space: 10 }) {
+          Text('正在整理，可停止等待并保留当前内容').fontSize(12).fontColor('#617589').layoutWeight(1)
+          Button('停止整理').id('notice-stop-extraction').fontSize(12).height(34)
+            .fontColor('#176766').backgroundColor('#E1F0EC').enabled(!this.save.busy)
+            .onClick(() => { this.controller?.stopExtraction(); })
+        }.width('100%')
+      }
     }.width('100%').padding({ left: 18, right: 18, top: 16, bottom: 12 })
   }
 

@@ -70,6 +70,16 @@ check('shared and native confirmation cards show material origin before saving w
   assert.match(page,/sourceNoticeId === null \? '人工补充或修改' : '通知提取'/);
  }
 });
+check('both entry headers expose stop only during extraction, outside disabled editing fields',()=>{
+ for(const [dir,name] of [[output,'NoticeImport.ets'],[nativeOutput,'NoticeChat.ets']]) {
+  const page=fs.readFileSync(path.join(dir,'entry/src/main/ets/pages',name),'utf8');
+  const header=page.slice(page.indexOf('  header()'),page.indexOf('  leaveConfirmation()'));
+  assert.match(header,/if \(this.view.phase === 'extracting'\)/);
+  assert.ok(header.includes(".id('notice-stop-extraction')"));
+  assert.match(header,/this.controller\?\.stopExtraction\(\)/);
+  assert.doesNotMatch(header,/\.enabled\(this.editable\(\)\)/);
+ }
+});
 check('manifest matches sources and existing output cannot be overwritten',()=>{
  assert.equal(manifest.signed,false);assert.equal(manifest.deviceValidated,false);assert.equal(Object.keys(manifest.hashes).length,11);
  for(const [f,value]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,f)),value);

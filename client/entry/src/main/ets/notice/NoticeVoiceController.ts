@@ -65,6 +65,7 @@ export class NoticeVoiceController extends NoticeImportController {
     return !this.released && !this.speechView.busy && super.configure(config);
   }
   extract(): void { if (!this.released && !this.speechView.busy) super.extract(); }
+  stopExtraction(): void { if (!this.released) super.stopExtraction(); }
   async confirm(): Promise<void> {
     if (!this.released && !this.speechView.busy) await super.confirm();
   }
