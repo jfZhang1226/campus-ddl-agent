@@ -40,7 +40,7 @@ check('record, end, cancel, manual draft playback and immediate stop are reachab
     assert.ok(page.includes(".id('"+id+"')"));
   assert.match(read('entry/src/main/ets/pages/VoiceChat.ets'),/pages\/NoticeChat/);
   assert.deepEqual(json('entry/src/main/resources/base/profile/main_pages.json').src,
-    ['pages/VoiceChat','pages/NoticeChat','pages/SpeechProbe']);
+    ['pages/VoiceChat','pages/NoticeChat','pages/TaskAssistant','pages/SpeechProbe']);
 });
 check('native owner and lifecycle release are confined to the exported assembly',()=>{
   const ability=read('entry/src/main/ets/entryability/EntryAbility.ets');
@@ -59,19 +59,29 @@ check('native assembly keeps the same leave guard and does not bypass explicit k
 check('production pages and client files are preserved except explicit export configuration',()=>{
   const changed=new Set(['build-profile.json5','.arkui-x/arkui-x-config.json5','AppScope/app.json5',
     'entry/src/main/module.json5','entry/src/main/resources/base/element/string.json',
-    'entry/src/main/ets/entryability/EntryAbility.ets','entry/src/main/resources/base/profile/main_pages.json']);
+    'entry/src/main/ets/entryability/EntryAbility.ets','entry/src/main/resources/base/profile/main_pages.json',
+    'entry/src/main/ets/pages/TaskAssistant.ets']);
   const files=cp.execFileSync('git',['ls-files','-z','client/'],{cwd:root,encoding:'utf8'}).split('\0').filter(Boolean);
   for(const file of files)if(!changed.has(file.slice(7)))
     assert.equal(hash(path.join(root,file)),hash(path.join(output,file.slice(7))),file);
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
-check('manifest matches nine actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,9);
+check('manifest matches seventeen actual source outputs and existing export is refused without overwrite',()=>{
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,17);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
   assert.equal(hash(path.join(output,'T19-source-manifest.json')),prior);
   assert.equal(fs.existsSync(path.join(output,'T15-source-manifest.json')),false);
   assert.match(read('T19-NOTICE-INTERACTION-ONLY.txt'),/Explicit client confirmation uses T16 v2/);
+});
+check('task dialogue native owner supplies speech while shared business, validation and explicit confirmation stay identical',()=>{
+  const page=read('entry/src/main/ets/pages/TaskAssistant.ets'),owner=read('entry/src/main/ets/pages/TaskAgentSpeechOwner.ets');
+  assert.match(owner,/new SpeechProbeController\(new HarmonySpeechPort\(context\), clock\)/);
+  assert.match(owner,/storage.local, clock, speech/);assert.match(page,/taskAgentSpeechOwner as taskAgentOwner/);
+  assert.match(page,/voiceChatOwner.get\(context\).configuration/);
+  for(const file of ['agent/TaskAgentController.ts','agent/TaskAgentSession.ts'])assert.equal(read('entry/src/main/ets/'+file),fs.readFileSync(path.join(root,'client/entry/src/main/ets',file),'utf8'));
+  const ability=read('entry/src/main/ets/entryability/EntryAbility.ets');
+  assert.match(ability,/onBackground.*taskAgentSpeechOwner.pause/);assert.match(ability,/onDestroy.*taskAgentSpeechOwner.destroy/);
 });
 console.log(`${count} T19 source-export checks passed. No signing, network, microphone or device calls.`);

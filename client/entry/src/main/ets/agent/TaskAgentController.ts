@@ -3,7 +3,9 @@ import { errorText, validateConfig } from '../chat/GatewayProtocol';
 import { TaskRepository } from '../data/TaskRepository';
 import { LocalStore } from '../data/LocalStore';
 import { CommitProposal, CommitReceipt } from '../domain/CommitModels';
-import { TaskQuery } from '../domain/TaskContracts';
+import { TaskDetail, TaskQuery } from '../domain/TaskContracts';
+import { SpeechSession, SpeechView } from '../speech/VoiceChatController';
+import { UnavailableSpeechSession } from '../speech/UnavailableSpeechSession';
 import { Notice } from '../domain/StorageModels';
 import { StorageFailure, storageSuccess } from '../data/storage/StorageTypes';
 import { AgentExecutor } from './AgentExecutor';
@@ -25,6 +27,10 @@ export class TaskAgentView {
   receipt: CommitReceipt | null = null;
   toolActions: string[] = [];
   sources: Notice[] = [];
+  speech: SpeechView = new SpeechView();
+  speechEnabled: boolean = false;
+  savedDetails: TaskDetail[] = [];
+  detailsPending: boolean = false;
 }
 
 /** One explicit user turn at a time; the model sees only read/stage capabilities. */
@@ -40,8 +46,28 @@ export class TaskAgentController {
   private prior: CommitProposal | null = null;
   private retryText: string = '';
   private sourceReady: boolean = false;
+  private speech: SpeechSession;
+  private recording: boolean = false;
+  private inputVersion: number = 0;
+  private recordingVersion: number = 0;
   constructor(private session: TaskAgentSession, private transport: AgentGatewayTransport,
-    private tasks: TaskRepository, private store: LocalStore, private clock: ChatClock = new SystemChatClock()) {}
+    private tasks: TaskRepository, private store: LocalStore, private clock: ChatClock = new SystemChatClock(),
+    speech?: SpeechSession) {
+    this.speech = speech === undefined ? new UnavailableSpeechSession() : speech;
+    this.view.speechEnabled = speech !== undefined;
+    this.speech.subscribe((state: SpeechView): void => {
+      if (this.disposed) return;
+      this.view.speech = Object.assign(new SpeechView(), state);
+      if (this.recording && !state.busy) {
+        this.recording = false;
+        if (state.phase === 'ready' && this.recordingVersion === this.inputVersion) {
+          this.view.input = state.text.slice(0, 4000);
+          this.view.notice = '转写已放入输入框，请核对后点发送。尚未交给模型。';
+        }
+      }
+      this.publish();
+    });
+  }
   snapshot(): TaskAgentView { return JSON.parse(JSON.stringify(this.view)) as TaskAgentView; }
   subscribe(observer: (view: TaskAgentView) => void): void { this.observer = observer; this.publish(); }
   unsubscribe(): void { this.observer = undefined; }
@@ -53,7 +79,7 @@ export class TaskAgentController {
     this.view.proposal = this.session.proposal();
     this.observer?.(this.snapshot());
   }
-  busy(): boolean { return this.disposed || this.view.phase !== 'idle'; }
+  busy(): boolean { return this.disposed || this.view.phase !== 'idle' || this.view.speech.busy; }
   configure(config: GatewayConfig): boolean {
     if (this.busy() && this.view.phase !== 'initializing') return false;
     const code: string = validateConfig(config);
@@ -61,13 +87,63 @@ export class TaskAgentController {
     this.config = new GatewayConfig(config.baseUrl.trim(), config.token, config.timeoutMs);
     this.view.configured = true; this.publish(); return true;
   }
-  edit(text: string): void { if (!this.busy()) { this.view.input = text; this.publish(); } }
+  edit(text: string): void {
+    if (this.disposed || this.view.phase !== 'idle') return;
+    this.inputVersion++;
+    this.view.input = text.slice(0, 4000);
+    this.speech.edit(this.view.input);
+    this.publish();
+  }
+  async record(): Promise<void> {
+    if (this.busy() || !this.view.speechEnabled || this.view.historyPending || this.view.recoveryRequired) return;
+    this.speech.edit(this.view.input);
+    this.recordingVersion = this.inputVersion; this.recording = true;
+    await this.speech.record();
+  }
+  finishRecording(): void { if (!this.disposed) this.speech.finishRecording(); }
+  cancelVoice(): void {
+    if (this.disposed) return;
+    this.recording = false; this.speech.cancel();
+  }
+  async speakProposal(): Promise<void> {
+    if (this.busy() || !this.view.speechEnabled || this.view.proposal === null || !this.sourceReady) return;
+    const proposal = this.view.proposal;
+    let text: string = '本次改动尚未保存，请核对后在屏幕确认。';
+    for (const change of proposal.changes) {
+      const draft = change.draft;
+      text += (change.action === 'create' ? '新增' : '更新') + draft.title + '。';
+      text += draft.deadlinePrecision === 'exact' ? '截止时间' + draft.dueAt + '，时区' + draft.timezone + '。' :
+        draft.deadlinePrecision === 'date_only' ? '截止日期' + draft.deadlineDate + '，具体时刻未知。' : '截止待补充。';
+      const materials = (proposal.checklistItems || []).filter(item => item.taskId === change.taskId);
+      if (materials.length > 0) text += '新增材料：' + materials.map(item => item.label).join('、') + '。';
+      if (change.action === 'update') text += '已有材料要求保留，请查看任务详情。';
+    }
+    if (text.length > 500) {
+      text = text.slice(0, 480);
+      const last: number = text.charCodeAt(text.length - 1);
+      if (last >= 0xD800 && last <= 0xDBFF) text = text.slice(0, -1);
+      text += '。其余内容请看屏幕。';
+    }
+    await this.speech.speak(text);
+  }
+  private async readSavedDetails(): Promise<void> {
+    this.view.savedDetails = []; this.view.detailsPending = false;
+    if (this.view.receipt === null) return;
+    for (const task of this.view.receipt.tasks) {
+      try {
+        const result = await this.tasks.get(task.id);
+        if (!result.success || result.data === null) { this.view.detailsPending = true; continue; }
+        this.view.savedDetails.push(result.data);
+      } catch (_) { this.view.detailsPending = true; }
+    }
+  }
   async initialize(): Promise<void> {
     if (this.disposed) return;
     this.view.phase = 'initializing'; this.publish();
     try {
       await this.session.open(); this.view.sources = await this.session.sourceDetails(); this.sourceReady = true;
       this.view.receipt = await this.session.latestReceipt();
+      await this.readSavedDetails();
       const rows = this.session.snapshot().messages;
       const last = rows.length === 0 ? undefined : rows[rows.length - 1];
       if (last !== undefined && last.role === 'user' && last.phase !== 'done') this.view.input = last.text;
@@ -164,6 +240,7 @@ export class TaskAgentController {
       this.view.receipt = await this.session.confirm();
       this.prior = null;
       this.view.notice = '已正式保存，可在下方核对实际回执；用户声明不代表学校平台已收到。';
+      await this.readSavedDetails();
       try { await this.session.append('assistant', '已正式保存，任务编号：' + this.view.receipt.tasks.map(task => task.id).join('、') + '。这是本机回执，不代表学校平台已收到。'); }
       catch (_) { this.view.notice += ' 对话记录保存失败，请重试记录；任务不会重复提交。'; }
     } catch (error) { this.handle(error as Error); }
@@ -173,7 +250,8 @@ export class TaskAgentController {
     if (this.busy()) return;
     this.view.phase = 'recovering'; this.publish();
     try { await this.session.recover(); this.view.sources = await this.session.sourceDetails(); this.sourceReady = true;
-      this.view.receipt = await this.session.latestReceipt(); this.view.notice = '已读取实际方案和提交回执；没有自动确认。'; this.view.errorCode = ''; }
+      this.view.receipt = await this.session.latestReceipt(); await this.readSavedDetails();
+      this.view.notice = '已读取实际方案和提交回执；没有自动确认。'; this.view.errorCode = ''; }
     catch (error) { this.sourceReady = false; this.handle(error as Error); }
     finally { this.view.phase = 'idle'; this.publish(); }
   }
@@ -194,13 +272,15 @@ export class TaskAgentController {
   async fresh(): Promise<void> {
     if (this.busy()) return;
     this.view.phase = 'preparing'; this.publish();
-    try { await this.session.fresh(); this.prior = null; this.view = new TaskAgentView(); this.view.configured = validateConfig(this.config).length === 0; this.view.phase = 'idle'; }
+    try { await this.session.fresh(); this.prior = null; const speechEnabled: boolean = this.view.speechEnabled;
+      this.view = new TaskAgentView(); this.view.speechEnabled = speechEnabled; this.view.speech = this.speech.snapshot();
+      this.view.configured = validateConfig(this.config).length === 0; this.view.phase = 'idle'; }
     catch (error) { this.handle(error as Error); }
     finally { this.view.phase = 'idle'; this.publish(); }
   }
-  pause(): void { this.stop('BACKGROUND'); }
+  pause(): void { this.cancelVoice(); this.stop('BACKGROUND'); }
   dispose(): void {
-    this.pause(); this.disposed = true; this.observer = undefined;
+    this.pause(); this.disposed = true; this.observer = undefined; this.speech.dispose();
   }
   private fail(code: string): void {
     this.view.errorCode = code;

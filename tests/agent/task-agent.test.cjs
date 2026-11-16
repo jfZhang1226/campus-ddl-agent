@@ -30,7 +30,7 @@ function proposal(ctx,date='2026-12-04'){
  const draft=new TaskDraft();draft.title='合成数据库报告';draft.deadlinePrecision='date_only';draft.deadlineDate=date;draft.noticeIds=ctx.preparedSources.map(n=>n.id);
  return {sessionId:ctx.sessionId,expectedRevision:ctx.expectedRevision,notices:[],changes:[{action:'create',taskId:null,expectedVersion:null,draft,checklistCreates:[{label:'PDF报告',sourceNoticeId:draft.noticeIds[0]},{label:'人工自查',sourceNoticeId:null}]}]};
 }
-function controller(h,respond){const calls=[];const transport={start(config,body){const req=JSON.parse(body),call={req,cancelled:0,cancel(){this.cancelled++;}};call.result=new Promise((resolve,reject)=>{call.resolve=resolve;call.reject=reject;});calls.push(call);if(respond)Promise.resolve().then(()=>respond(req,calls.length,call)).then(reply=>{if(reply)call.resolve(new GatewayResponse(200,JSON.stringify(reply)));},call.reject);return call;}};const clock=new Clock();const c=new TaskAgentController(h.session,transport,h.tasks,h.store,clock);return {c,calls,clock};}
+function controller(h,respond,speech){const calls=[];const transport={start(config,body){const req=JSON.parse(body),call={req,cancelled:0,cancel(){this.cancelled++;}};call.result=new Promise((resolve,reject)=>{call.resolve=resolve;call.reject=reject;});calls.push(call);if(respond)Promise.resolve().then(()=>respond(req,calls.length,call)).then(reply=>{if(reply)call.resolve(new GatewayResponse(200,JSON.stringify(reply)));},call.reject);return call;}};const clock=new Clock();const c=new TaskAgentController(h.session,transport,h.tasks,h.store,clock,speech);return {c,calls,clock};}
 const send=async(c,text)=>{c.edit(text);await c.send();};
 
 test('integrated B schema admits actual null and malformed executor calls touch no ports',async()=>{
@@ -178,5 +178,59 @@ test('post-save date change looks up actual task and updates it once instead of 
  const original=ok(await h.store.read()).tasks[0];await send(s.c,'刚才的报告改为2026年12月6日');assert.equal(s.c.snapshot().proposal.changes[0].action,'update');
  assert.equal(ok(await h.store.read()).tasks.length,1);await s.c.confirm();const result=ok(await h.store.read());
  assert.equal(result.tasks.length,1);assert.equal(result.tasks[0].id,original.id);assert.equal(result.tasks[0].deadlineDate,'2026-12-06');assert.equal(result.tasks[0].version,2);
- assert.equal(result.checklistItems.length,2);assert.equal(result.operations.length,2);s.c.dispose();
+ assert.equal(result.checklistItems.length,2);assert.equal(result.operations.length,2);
+ assert.equal(s.c.snapshot().receipt.checklistItems.length,0);assert.equal(s.c.snapshot().savedDetails[0].checklistItems.length,2);
+ await s.c.recover();assert.equal(s.c.snapshot().savedDetails[0].checklistItems.length,2);s.c.dispose();
+});
+
+const {SpeechProbeController}=require('../../probes/harmony-speech/SpeechProbeController.ts');
+class SpeechPort {
+ asr=[];tts=[];microphones=0;stops=0;releases=0;finishes=0;cancels=0;
+ async microphone(){this.microphones++;return true;}
+ async listen(id,e){this.asr.push({id,e});e.started(id);}
+ finish(){this.finishes++;}cancel(){this.cancels++;}
+ async speak(id,text,e){this.tts.push({id,text,e});e.started(id);}
+ stop(){this.stops++;}release(){this.releases++;}
+}
+function voiceSetup(respond){const h=setup(),port=new SpeechPort(),speech=new SpeechProbeController(port,new Clock()),s=controller(h,respond,speech);return {...s,h,port};}
+function recognize(s,text){const {id,e}=s.port.asr.at(-1);e.result(id,text,true);e.completed(id);}
+test('task voice fills only current editable message; model, staging, confirm and playback remain manual',async()=>{
+ const s=voiceSetup(req=>({type:'tool_calls',calls:[{id:'p',action:'propose_task_changes',params:proposal(req.context)}]}));
+ await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));
+ await s.c.record();assert.equal(s.port.microphones,1);await s.c.send();assert.equal(s.calls.length,0);
+ s.c.finishRecording();recognize(s,'合成通知：交报告和PDF');
+ assert.equal(s.c.snapshot().input,'合成通知：交报告和PDF');assert.equal(s.calls.length,0);assert.equal(s.port.tts.length,0);
+ assert.equal(ok(await s.h.store.read()).proposals.length,0);
+ await s.c.send();assert.equal(s.calls.length,1);assert.notEqual(s.c.snapshot().proposal,null);assert.equal(ok(await s.h.store.read()).tasks.length,0);
+ await s.c.speakProposal();assert.match(s.port.tts[0].text,/^本次改动尚未保存/);assert.match(s.port.tts[0].text,/具体时刻未知/);
+ await s.c.confirm();assert.equal(ok(await s.h.store.read()).tasks.length,0);
+ s.c.cancelVoice();await s.c.confirm();assert.equal(ok(await s.h.store.read()).tasks.length,1);s.c.dispose();
+});
+test('task voice manual edit-back suppresses recognition and background invalidates late callbacks',async()=>{
+ const s=voiceSetup();await s.c.initialize();s.c.edit('保留文字');await s.c.record();
+ s.c.edit('改过文字');s.c.edit('保留文字');recognize(s,'不应覆盖的迟到转写');assert.equal(s.c.snapshot().input,'保留文字');
+ await s.c.record();const old=s.port.asr.at(-1);s.c.pause();old.e.result(old.id,'后台迟到转写',true);old.e.completed(old.id);
+ assert.equal(s.c.snapshot().input,'保留文字');assert.equal(s.c.snapshot().speech.busy,false);assert.equal(s.calls.length,0);
+ assert.ok(s.port.cancels>0);s.c.dispose();assert.equal(s.port.releases,1);
+});
+test('task voice playback is bounded, explicitly truncated, and background stops without saving',async()=>{
+ const s=voiceSetup();await s.c.initialize();const ctx=await prepared(s.h);const p=proposal(ctx);p.changes[0].draft.title='😀'.repeat(65);
+ p.changes[0].checklistCreates=Array.from({length:8},(_,i)=>({label:'合成材料'+i+'甲'.repeat(35),sourceNoticeId:p.changes[0].draft.noticeIds[0]}));
+ ok(await s.h.session.stage(p));await s.c.recover();await s.c.speakProposal();const text=s.port.tts[0].text;
+ assert.ok(text.length<=500);assert.match(text,/其余内容请看屏幕/);assert.equal(text.includes('\uFFFD'),false);
+ s.c.pause();assert.equal(s.c.snapshot().speech.busy,false);assert.ok(s.port.stops>0);
+ assert.equal(ok(await s.h.store.read()).tasks.length,0);assert.notEqual(s.c.snapshot().proposal,null);s.c.dispose();
+});
+test('native task dialogue fresh conversation keeps speech port and empty composer without automatic capture',async()=>{
+ const s=voiceSetup();await s.c.initialize();s.c.edit('合成未发送文字');await s.c.fresh();
+ assert.equal(s.c.snapshot().speechEnabled,true);assert.equal(s.c.snapshot().input,'');assert.equal(s.port.microphones,0);
+ await s.c.record();recognize(s,'新对话合成通知');assert.equal(s.c.snapshot().input,'新对话合成通知');s.c.dispose();
+});
+test('material detail read failure cannot turn a successful actual commit into failure or replay it',async()=>{
+ const h=setup(),s=controller(h,req=>({type:'tool_calls',calls:[{id:'p',action:'propose_task_changes',params:proposal(req.context)}]}));
+ await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));await send(s.c,'合成通知：报告');
+ const get=h.tasks.get.bind(h.tasks);h.tasks.get=async()=>{throw Error('synthetic read failure');};await s.c.confirm();
+ assert.equal(s.c.snapshot().detailsPending,true);assert.notEqual(s.c.snapshot().receipt,null);assert.equal(s.c.snapshot().errorCode,'');
+ assert.equal(ok(await h.store.read()).tasks.length,1);await s.c.confirm();assert.equal(ok(await h.store.read()).operations.length,1);
+ h.tasks.get=get;await s.c.recover();assert.equal(s.c.snapshot().detailsPending,false);assert.equal(s.c.snapshot().savedDetails[0].checklistItems.length,2);s.c.dispose();
 });

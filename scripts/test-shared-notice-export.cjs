@@ -84,7 +84,7 @@ check('task dialogue uses one application storage, actual history/stage and scre
  const page=read('entry/src/main/ets/pages/TaskAssistant.ets'),owner=read('entry/src/main/ets/agent/TaskAgentOwner.ets');
  assert.match(read('entry/src/main/ets/pages/Index.ets'),/task-agent-entry/);
  assert.ok(json('entry/src/main/resources/base/profile/main_pages.json').src.includes('pages/TaskAssistant'));
- assert.match(owner,/getClientStorage\(filesDir\)/);assert.match(owner,/storage.local, storage.commits, storage.sessions/);
+ assert.match(owner,/getClientStorage\(context.filesDir\)/);assert.match(owner,/storage.local, storage.commits, storage.sessions/);
  for(const id of ['task-agent-input','task-agent-send','task-agent-confirm','task-agent-sources','task-agent-recover'])assert.ok(page.includes(id));
  const session=read('entry/src/main/ets/agent/TaskAgentSession.ts');
  assert.match(session,/draft.notices.length !== 0/);assert.match(session,/sha256Hex/);assert.match(session,/publishedAt: null/);

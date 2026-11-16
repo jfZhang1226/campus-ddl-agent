@@ -12,6 +12,13 @@ function prepare(output) {
   const write=(f,s)=>fs.writeFileSync(path.join(result.output,f),s);
   const pages='entry/src/main/ets/pages/';
   write(pages+'NoticeSpeechOwner.ets',fs.readFileSync(path.join(root,'probes/harmony-noticechat/NoticeSpeechOwner.ets'),'utf8'));
+  write(pages+'TaskAgentSpeechOwner.ets',fs.readFileSync(path.join(root,'probes/harmony-noticechat/TaskAgentSpeechOwner.ets'),'utf8'));
+  let taskPage=fs.readFileSync(path.join(root,'client/entry/src/main/ets/pages/TaskAssistant.ets'),'utf8');
+  taskPage=replaceOnce(taskPage,"import { taskAgentOwner } from '../agent/TaskAgentOwner';",
+    "import { taskAgentSpeechOwner as taskAgentOwner } from './TaskAgentSpeechOwner';");
+  taskPage=replaceOnce(taskPage,"import { chatOwner } from '../chat/ChatOwner';", "import { voiceChatOwner } from './VoiceChatOwner';");
+  taskPage=replaceOnce(taskPage,'chatOwner.get(context.filesDir).configuration()', 'voiceChatOwner.get(context).configuration()');
+  write(pages+'TaskAssistant.ets',taskPage);
   let page=fs.readFileSync(path.join(root,'client/entry/src/main/ets/pages/NoticeImport.ets'),'utf8').replaceAll('\r\n','\n');
   for(const line of [
     "import { ArkNoticeExtractionTransport } from '../adapters/ArkNoticeExtractionTransport';\n",
@@ -75,12 +82,18 @@ function prepare(output) {
           this.controller?.pause();
           router.pushUrl({ url: 'pages/NoticeChat' }).catch(() => { this.view.notice = '无法打开通知草案页。'; });
         })
+      Button('任务对话联调').id('open-task-agent')
+        .enabled(!this.view.chat.busy && !this.view.speech.busy)
+        .onClick(() => {
+          this.controller?.pause();
+          router.pushUrl({ url: 'pages/TaskAssistant' }).catch(() => { this.view.notice = '无法打开任务对话页。'; });
+        })
       if (this.settingsOpen) { this.settings() }`);
   write(pages+'VoiceChat.ets',voicePage);
   let ability=fs.readFileSync(path.join(root,'probes/harmony-voicechat/EntryAbility.ets'),'utf8');
-  ability="import { noticeSpeechOwner } from '../pages/NoticeSpeechOwner';\n"+ability;
-  ability=ability.replaceAll('voiceChatOwner.pause();','noticeSpeechOwner.pause(); voiceChatOwner.pause();');
-  ability=ability.replaceAll('voiceChatOwner.destroy();','noticeSpeechOwner.destroy(); voiceChatOwner.destroy();');
+  ability="import { taskAgentSpeechOwner } from '../pages/TaskAgentSpeechOwner';\nimport { noticeSpeechOwner } from '../pages/NoticeSpeechOwner';\n"+ability;
+  ability=ability.replaceAll('voiceChatOwner.pause();','taskAgentSpeechOwner.pause(); noticeSpeechOwner.pause(); voiceChatOwner.pause();');
+  ability=ability.replaceAll('voiceChatOwner.destroy();','taskAgentSpeechOwner.destroy(); noticeSpeechOwner.destroy(); voiceChatOwner.destroy();');
   write('entry/src/main/ets/entryability/EntryAbility.ets',ability);
   const appFile=path.join(result.output,'AppScope/app.json5');
   const app=JSON.parse(fs.readFileSync(appFile,'utf8'));
@@ -91,7 +104,7 @@ function prepare(output) {
   for(const row of strings.string)if(row.name==='EntryAbility_label')row.value='课事清通知联调';
   fs.writeFileSync(stringsFile,JSON.stringify(strings,null,2)+'\n');
   write('entry/src/main/resources/base/profile/main_pages.json',JSON.stringify({src:[
-    'pages/VoiceChat','pages/NoticeChat','pages/SpeechProbe'
+    'pages/VoiceChat','pages/NoticeChat','pages/TaskAssistant','pages/SpeechProbe'
   ]},null,2)+'\n');
   for(const file of ['T15-VOICE-CHAT-ONLY.txt','T15-source-manifest.json'])fs.unlinkSync(path.join(result.output,file));
   write('T19-NOTICE-INTERACTION-ONLY.txt',
@@ -102,7 +115,9 @@ function prepare(output) {
     'entry/src/main/ets/notice/NoticeImportController.ts','entry/src/main/ets/notice/NoticeVoiceController.ts',
     'entry/src/main/ets/notice/NoticeConfirmedWriter.ts','entry/src/main/ets/notice/NoticeSaveController.ts',
     'entry/src/main/ets/notice/NoticeImportOwner.ts','entry/src/main/ets/speech/UnavailableSpeechSession.ts',
-    'entry/src/main/ets/notice/NoticeLeaveGuard.ts'])
+    'entry/src/main/ets/notice/NoticeLeaveGuard.ts', pages+'TaskAssistant.ets',pages+'TaskAgentSpeechOwner.ets',
+    'entry/src/main/ets/agent/TaskAgentController.ts','entry/src/main/ets/agent/TaskAgentSession.ts',
+    pages+'VoiceChat.ets','entry/src/main/ets/entryability/EntryAbility.ets',pages+'HarmonySpeechPort.ets',pages+'SpeechProbeController.ts'])
     hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
   const manifest={...result,scope:'T19-local-integration',bundleName:app.app.bundleName,versionCode:400,formalSaveEnabled:true,hashes};
   write('T19-source-manifest.json',JSON.stringify(manifest,null,2)+'\n');
