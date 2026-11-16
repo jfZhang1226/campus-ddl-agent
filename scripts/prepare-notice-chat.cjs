@@ -13,6 +13,12 @@ function prepare(output) {
   const pages='entry/src/main/ets/pages/';
   write(pages+'NoticeSpeechOwner.ets',fs.readFileSync(path.join(root,'probes/harmony-noticechat/NoticeSpeechOwner.ets'),'utf8'));
   write(pages+'TaskAgentSpeechOwner.ets',fs.readFileSync(path.join(root,'probes/harmony-noticechat/TaskAgentSpeechOwner.ets'),'utf8'));
+  for(const name of ['NativeReminderOwner.ets','HarmonyReminderPort.ets'])
+    write(pages+name,fs.readFileSync(path.join(root,'probes/harmony-noticechat',name),'utf8'));
+  let taskBoardPage=fs.readFileSync(path.join(root,'client/entry/src/main/ets/pages/Tasks.ets'),'utf8');
+  taskBoardPage=replaceOnce(taskBoardPage,"import { reminderOwner } from '../reminders/ReminderOwner';",
+    "import { nativeReminderOwner as reminderOwner } from './NativeReminderOwner';");
+  write(pages+'Tasks.ets',taskBoardPage);
   let taskPage=fs.readFileSync(path.join(root,'client/entry/src/main/ets/pages/TaskAssistant.ets'),'utf8');
   taskPage=replaceOnce(taskPage,"import { taskAgentOwner } from '../agent/TaskAgentOwner';",
     "import { taskAgentSpeechOwner as taskAgentOwner } from './TaskAgentSpeechOwner';");
@@ -97,10 +103,17 @@ function prepare(output) {
       if (this.settingsOpen) { this.settings() }`);
   write(pages+'VoiceChat.ets',voicePage);
   let ability=fs.readFileSync(path.join(root,'probes/harmony-voicechat/EntryAbility.ets'),'utf8');
-  ability="import { taskAgentSpeechOwner } from '../pages/TaskAgentSpeechOwner';\nimport { noticeSpeechOwner } from '../pages/NoticeSpeechOwner';\n"+ability;
+  ability="import { nativeReminderOwner } from '../pages/NativeReminderOwner';\nimport { taskAgentSpeechOwner } from '../pages/TaskAgentSpeechOwner';\nimport { noticeSpeechOwner } from '../pages/NoticeSpeechOwner';\n"+ability;
+  ability=replaceOnce(ability,"onWindowStageCreate(stage: window.WindowStage): void { stage.loadContent('pages/VoiceChat'); }",
+    "onWindowStageCreate(stage: window.WindowStage): void { nativeReminderOwner.get(this.context); stage.loadContent('pages/VoiceChat'); }");
+  ability=replaceOnce(ability,'  onDestroy(): void {','  onForeground(): void { nativeReminderOwner.refresh(); }\n  onDestroy(): void { nativeReminderOwner.destroy();');
   ability=ability.replaceAll('voiceChatOwner.pause();','taskAgentSpeechOwner.pause(); noticeSpeechOwner.pause(); voiceChatOwner.pause();');
   ability=ability.replaceAll('voiceChatOwner.destroy();','taskAgentSpeechOwner.destroy(); noticeSpeechOwner.destroy(); voiceChatOwner.destroy();');
   write('entry/src/main/ets/entryability/EntryAbility.ets',ability);
+  const nativeModulePath=path.join(result.output,'entry/src/main/module.json5');
+  const nativeModule=JSON.parse(fs.readFileSync(nativeModulePath,'utf8'));
+  nativeModule.module.requestPermissions.push({name:'ohos.permission.PUBLISH_AGENT_REMINDER'});
+  fs.writeFileSync(nativeModulePath,JSON.stringify(nativeModule,null,2)+'\n');
   const appFile=path.join(result.output,'AppScope/app.json5');
   const app=JSON.parse(fs.readFileSync(appFile,'utf8'));
   app.app.bundleName='com.campusddl.noticeprobe';app.app.versionName='0.4.0';app.app.versionCode=400;
@@ -124,7 +137,10 @@ function prepare(output) {
     'entry/src/main/ets/notice/NoticeLeaveGuard.ts', pages+'TaskAssistant.ets',pages+'TaskAgentSpeechOwner.ets',
     'entry/src/main/ets/agent/TaskAgentController.ts','entry/src/main/ets/agent/TaskAgentSession.ts',
     pages+'VoiceChat.ets','entry/src/main/ets/entryability/EntryAbility.ets',pages+'HarmonySpeechPort.ets',pages+'SpeechProbeController.ts',
-    pages+'Tasks.ets','entry/src/main/ets/tasks/TaskBoardController.ts'])
+    pages+'Tasks.ets','entry/src/main/ets/tasks/TaskBoardController.ts',pages+'NativeReminderOwner.ets',pages+'HarmonyReminderPort.ets',
+    'entry/src/main/ets/reminders/ReminderPlan.ts','entry/src/main/ets/reminders/ReminderService.ts',
+    'entry/src/main/ets/reminders/ReminderSettings.ts','entry/src/main/ets/reminders/TaskReminderController.ts',
+    'entry/src/main/ets/reminders/ReminderOwner.ets','entry/src/main/ets/data/ClientStorage.ets','entry/src/main/ets/data/LocalStore.ts'])
     hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
   const manifest={...result,scope:'T19-local-integration',bundleName:app.app.bundleName,versionCode:400,formalSaveEnabled:true,hashes};
   write('T19-source-manifest.json',JSON.stringify(manifest,null,2)+'\n');

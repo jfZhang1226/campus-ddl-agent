@@ -3,22 +3,88 @@ import common from '@ohos.app.ability.common';
 import { getClientStorage } from '../data/ClientStorage';
 import { TaskBoardController, TaskBoardRow, TaskBoardView } from '../tasks/TaskBoardController';
 import { ChecklistItem, Notice } from '../domain/StorageModels';
+import { TaskReminderController, TaskReminderView } from '../reminders/TaskReminderController';
+import { reminderOwner } from '../reminders/ReminderOwner';
+import { zonedDateTimeParts } from '../domain/DateRules';
 
 @Entry
 @Component
 struct TasksPage {
   @State view: TaskBoardView = new TaskBoardView();
+  @State reminder: TaskReminderView = new TaskReminderView();
+  @State leadMinutes: string = '60';
   private controller: TaskBoardController | null = null;
+  private reminderController: TaskReminderController | null = null;
   aboutToAppear(): void {
     const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+    this.reminderController = new TaskReminderController(reminderOwner.get(context));
+    this.reminderController.subscribe((view: TaskReminderView) => { this.reminder = view; });
     this.controller = new TaskBoardController(getClientStorage(context.filesDir).tasks);
-    this.controller.subscribe((view: TaskBoardView) => { this.view = view; });
+    this.controller.subscribe((view: TaskBoardView) => {
+      const changed: boolean = view.detail?.task.id !== this.view.detail?.task.id || view.detail?.task.version !== this.view.detail?.task.version;
+      this.view = view;
+      if (changed) this.reminderController?.select(view.detail === null ? null : view.detail.task);
+    });
     this.controller.reload();
   }
-  aboutToDisappear(): void { this.controller?.dispose(); this.controller = null; }
+  aboutToDisappear(): void { this.controller?.dispose(); this.controller = null; this.reminderController?.dispose(); this.reminderController = null; }
   onBackPress(): boolean {
+    if (this.reminder.busy) return true;
     if (this.view.detail !== null) { this.controller?.closeDetail(); return true; }
     return false;
+  }
+  private reminderTime(instant: string): string {
+    const parts = zonedDateTimeParts(instant, 'Asia/Shanghai');
+    return parts === null ? '时间待核对' : parts.date + ' ' + parts.time + '（北京时间）';
+  }
+  private reminderStatus(): string {
+    if (this.reminder.errorCode.length > 0) return '提醒状态尚未核实';
+    if (this.reminder.setting === null || this.reminder.setting.phase === 'disabled') return '尚未启用提醒';
+    return this.reminder.setting.phase === 'registered' ? '已登记到系统，尚不代表实际送达' :
+      this.reminder.setting.phase === 'needs_attention' ? '提醒需重新核对时间或权限' : '提醒登记或取消待核实，请重新读取';
+  }
+  @Builder
+  reminderPanel() {
+    Column({ space: 8 }) {
+      Text('截止前提醒').fontSize(17).fontWeight(FontWeight.Medium)
+      if (!this.reminder.supported) {
+        Text('当前入口暂不支持系统提醒，任务查看与保存仍可用。').fontSize(12).fontColor('#617589')
+      } else {
+        Text(this.reminderStatus()).id('task-reminder-status').fontSize(12).fontColor('#176766')
+        Text('通知提示音由系统设置控制；本页不会播放测试声音。').fontSize(11).fontColor('#617589')
+        if (!this.reminder.permission) {
+          Button('允许本应用通知').id('task-reminder-permission').fontSize(12).enabled(!this.reminder.busy)
+            .onClick(() => { this.reminderController?.requestPermission(); })
+        }
+        if (this.view.detail !== null && this.view.detail.task.deadlinePrecision !== 'exact') {
+          Text('缺少确切截止时刻，暂不生成精确提醒；不会擅自补成23:59。').fontSize(12).fontColor('#8A5A12')
+        }
+        TextInput({ text: this.leadMinutes, placeholder: '提前分钟数（1至10080）' }).id('task-reminder-lead')
+          .type(InputType.Number).enabled(!this.reminder.busy).maxLength(5)
+          .onChange((text: string) => { this.leadMinutes = text; this.reminderController?.cancelPreview(); })
+        Row({ space: 6 }) {
+          Button('核对提醒计划').id('task-reminder-prepare').fontSize(12).enabled(!this.reminder.busy && this.reminder.permission)
+            .onClick(() => { this.reminderController?.prepare(/^\d+$/.test(this.leadMinutes) ? Number(this.leadMinutes) : NaN); })
+          Button('重新读取').id('task-reminder-refresh').fontSize(12).enabled(!this.reminder.busy)
+            .onClick(() => { this.reminderController?.refresh(); })
+        }
+        if (this.reminder.preview !== null) {
+          Text('将于 ' + this.reminderTime(this.reminder.preview.fireAt) + ' 提醒').id('task-reminder-preview').fontSize(14)
+          Text('正式截止仍为 ' + this.reminderTime(this.reminder.preview.deadlineAt) + '，不会被提醒时间改写。').fontSize(12).fontColor('#617589')
+          Row({ space: 8 }) {
+            Button('取消').id('task-reminder-cancel-preview').fontSize(12).enabled(!this.reminder.busy)
+              .onClick(() => { this.reminderController?.cancelPreview(); })
+            Button('确认启用提醒').id('task-reminder-confirm').fontSize(12).enabled(!this.reminder.busy)
+              .onClick(() => { this.reminderController?.confirm(); })
+          }
+        }
+        Button('取消本任务提醒').id('task-reminder-disable').fontSize(12)
+          .enabled(!this.reminder.busy && ((this.reminder.setting !== null && this.reminder.setting.phase !== 'disabled') || this.reminder.errorCode.length > 0))
+          .onClick(() => { this.reminderController?.disable(); })
+        if (this.reminder.busy) { Text('正在核对系统提醒…').fontSize(12).fontColor('#617589') }
+        if (this.reminder.notice.length > 0) { Text(this.reminder.notice).id('task-reminder-notice').fontSize(12).fontColor('#8A5A12') }
+      }
+    }.width('100%').alignItems(HorizontalAlign.Start).padding(12).backgroundColor('#FFFFFF').borderRadius(10)
   }
   private status(value: string): string {
     return value === 'todo' ? '待办' : value === 'in_progress' ? '进行中' : value === 'ready' ? '准备完成' :
@@ -33,6 +99,7 @@ struct TasksPage {
         Text('课程：' + (this.view.detail.task.course || '未提供') + ' · ' + this.status(this.view.detail.task.status))
           .fontSize(13).fontColor('#617589')
         Text('提交渠道：' + (this.view.detail.task.submissionChannel || '未提供')).fontSize(13)
+        this.reminderPanel()
         Text('材料要求').fontSize(17).fontWeight(FontWeight.Medium)
         if (this.view.detail.checklistItems.length === 0) { Text('没有记录材料要求。').fontSize(13).fontColor('#617589') }
         ForEach(this.view.detail.checklistItems, (item: ChecklistItem) => {
@@ -55,11 +122,11 @@ struct TasksPage {
   build() {
     Column({ space: 10 }) {
       Row({ space: 10 }) {
-        Button('返回').id('task-board-back').fontSize(12).onClick(() => {
+        Button('返回').id('task-board-back').fontSize(12).enabled(!this.reminder.busy).onClick(() => {
           if (!this.onBackPress()) router.back();
         })
         Text(this.view.detail === null ? '我的任务' : '任务详情').fontSize(23).fontWeight(FontWeight.Bold).layoutWeight(1)
-        Button('刷新').id('task-board-refresh').fontSize(12).enabled(!this.view.loading).onClick(() => { this.controller?.reload(); })
+        Button('刷新').id('task-board-refresh').fontSize(12).enabled(!this.view.loading && !this.reminder.busy).onClick(() => { this.controller?.reload(); })
       }.width('100%').padding(14)
       if (this.view.error.length > 0) { Text(this.view.error).id('task-board-error').fontSize(13).fontColor('#9A541B').padding(12) }
       if (this.view.loading) { LoadingProgress().width(30).height(30) }

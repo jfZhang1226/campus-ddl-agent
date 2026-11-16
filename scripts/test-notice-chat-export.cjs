@@ -15,11 +15,11 @@ const before = cp.execFileSync('git',['status','--porcelain','--','client/'],{cw
 const manifest = prepare(output);
 let count=0;
 function check(name,run) {run();count++;console.log('PASS '+name);}
-check('independent bundle, empty signing, and only microphone/internet permissions',()=>{
+check('independent bundle, empty signing and explicit mic/internet/reminder permissions',()=>{
   assert.equal(json('AppScope/app.json5').app.bundleName,'com.campusddl.noticeprobe');
   assert.deepEqual(json('build-profile.json5').app.signingConfigs,[]);
   assert.deepEqual(json('entry/src/main/module.json5').module.requestPermissions.map(x=>x.name).sort(),
-    ['ohos.permission.INTERNET','ohos.permission.MICROPHONE']);
+    ['ohos.permission.INTERNET','ohos.permission.MICROPHONE','ohos.permission.PUBLISH_AGENT_REMINDER']);
 });
 check('actual page assembly wires trusted confirmation, recovery and readback without base CRUD',()=>{
   const page=read('entry/src/main/ets/pages/NoticeChat.ets');
@@ -60,20 +60,27 @@ check('production pages and client files are preserved except explicit export co
   const changed=new Set(['build-profile.json5','.arkui-x/arkui-x-config.json5','AppScope/app.json5',
     'entry/src/main/module.json5','entry/src/main/resources/base/element/string.json',
     'entry/src/main/ets/entryability/EntryAbility.ets','entry/src/main/resources/base/profile/main_pages.json',
-    'entry/src/main/ets/pages/TaskAssistant.ets']);
+    'entry/src/main/ets/pages/TaskAssistant.ets','entry/src/main/ets/pages/Tasks.ets']);
   const files=cp.execFileSync('git',['ls-files','-z','client/'],{cwd:root,encoding:'utf8'}).split('\0').filter(Boolean);
   for(const file of files)if(!changed.has(file.slice(7)))
     assert.equal(hash(path.join(root,file)),hash(path.join(output,file.slice(7))),file);
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
-check('manifest matches nineteen actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,19);
+check('manifest matches twenty-eight actual source outputs and existing export is refused without overwrite',()=>{
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,28);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
   assert.equal(hash(path.join(output,'T19-source-manifest.json')),prior);
   assert.equal(fs.existsSync(path.join(output,'T15-source-manifest.json')),false);
   assert.match(read('T19-NOTICE-INTERACTION-ONLY.txt'),/Explicit client confirmation uses T16 v2/);
+});
+check('reminder capability stays native while default shared page and journal use existing storage',()=>{
+  assert.match(read('entry/src/main/ets/pages/Tasks.ets'),/nativeReminderOwner as reminderOwner/);
+  const port=read('entry/src/main/ets/pages/HarmonyReminderPort.ets');
+  assert.match(port,/getAllValidReminders/);assert.match(port,/TimeZoneType.FIXED_TIME_ZONE/);
+  assert.doesNotMatch(port,/cancelAllReminders/);
+  assert.match(read('entry/src/main/ets/entryability/EntryAbility.ets'),/onForeground.*nativeReminderOwner.refresh/);
 });
 check('task dialogue native owner supplies speech while shared business, validation and explicit confirmation stay identical',()=>{
   const page=read('entry/src/main/ets/pages/TaskAssistant.ets'),owner=read('entry/src/main/ets/pages/TaskAgentSpeechOwner.ets');
