@@ -162,6 +162,7 @@ export class TaskAgentController {
     this.view.phase = 'saving'; this.view.errorCode = ''; this.publish();
     try {
       this.view.receipt = await this.session.confirm();
+      this.prior = null;
       this.view.notice = '已正式保存，可在下方核对实际回执；用户声明不代表学校平台已收到。';
       try { await this.session.append('assistant', '已正式保存，任务编号：' + this.view.receipt.tasks.map(task => task.id).join('、') + '。这是本机回执，不代表学校平台已收到。'); }
       catch (_) { this.view.notice += ' 对话记录保存失败，请重试记录；任务不会重复提交。'; }

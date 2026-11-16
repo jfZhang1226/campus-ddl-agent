@@ -17,18 +17,26 @@ struct TaskAssistantPage {
   @State sourcesOpen: boolean = false;
   private controller: TaskAgentController | null = null;
   private previousKeyboardMode: KeyboardAvoidMode = KeyboardAvoidMode.OFFSET;
+  private scroller: Scroller = new Scroller();
+  private scrollTimer: number = -1;
   aboutToAppear(): void {
     this.previousKeyboardMode = this.getUIContext().getKeyboardAvoidMode();
     this.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
     const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
     this.controller = taskAgentOwner.get(context.filesDir);
     this.controller.configure(chatOwner.get(context.filesDir).configuration());
-    this.controller.subscribe((state: TaskAgentView) => { this.view = state; });
+    this.controller.subscribe((state: TaskAgentView) => {
+      const shouldScroll: boolean = state.messages.length !== this.view.messages.length ||
+        (state.proposal !== null && state.proposal.id !== this.view.proposal?.id);
+      this.view = state;
+      if (shouldScroll) { clearTimeout(this.scrollTimer); this.scrollTimer = setTimeout(() => { this.scroller.scrollEdge(Edge.Bottom); }, 100); }
+    });
   }
   onPageHide(): void { taskAgentOwner.pause(); }
   aboutToDisappear(): void {
     this.getUIContext().setKeyboardAvoidMode(this.previousKeyboardMode);
     taskAgentOwner.pause(); this.controller?.unsubscribe();
+    clearTimeout(this.scrollTimer);
   }
   private idle(): boolean { return this.view.phase === 'idle'; }
   onBackPress(): boolean {
@@ -48,6 +56,11 @@ struct TaskAssistantPage {
   private statusLabel(status: string): string {
     return status === 'todo' ? '待办' : status === 'in_progress' ? '进行中' : status === 'ready' ? '已准备' :
       status === 'submitted' ? '用户标记已提交' : status === 'done' ? '工作已完成' : status === 'cancelled' ? '已取消' : '待核对';
+  }
+  private details(task: TaskDraft): string {
+    const kind: string = task.kind === 'assignment' ? '作业' : task.kind === 'report' ? '报告' : task.kind === 'registration' ? '报名' : task.kind === 'other' ? '其他' : '未分类';
+    const priority: string = task.priority === 'high' ? '高' : task.priority === 'normal' ? '普通' : task.priority === 'low' ? '低' : '未设置';
+    return '分类：' + kind + '；优先级：' + priority + '；剩余工时：' + (task.remainingMinutes === null ? '未知' : String(task.remainingMinutes) + '分钟');
   }
   @Builder
   header() {
@@ -77,18 +90,27 @@ struct TaskAssistantPage {
     if (this.view.proposal !== null) {
       Column({ space: 11 }) {
         Text('待确认方案 · 尚未保存任务').id('task-agent-proposal').fontSize(18).fontWeight(FontWeight.Bold).fontColor('#176766')
+        Text('新增 ' + String(this.view.proposal.changes.filter((change: ProposedTaskChange) => change.action === 'create').length) +
+          ' 项，更新 ' + String(this.view.proposal.changes.filter((change: ProposedTaskChange) => change.action === 'update').length) + ' 项。')
+          .fontSize(12).fontColor('#617589')
         ForEach(this.view.proposal.changes, (change: ProposedTaskChange) => {
           Column({ space: 6 }) {
             Text((change.action === 'create' ? '新增 · ' : '更新 · ') + change.draft.title)
               .fontSize(16).fontWeight(FontWeight.Medium).fontColor('#142C43')
             Text('课程：' + (change.draft.course === null ? '待补充' : change.draft.course)).fontSize(12).fontColor('#617589')
             if (change.before !== null) {
+              Text('原任务：' + change.before.title + '；课程：' + (change.before.course === null ? '未知' : change.before.course))
+                .fontSize(12).fontColor('#8A5A12')
               Text('原截止：' + this.deadline(change.before)).fontSize(12).fontColor('#8A5A12')
+              Text('原渠道：' + (change.before.submissionChannel === null ? '未知' : change.before.submissionChannel) +
+                '；原状态：' + this.statusLabel(change.before.status)).fontSize(12).fontColor('#8A5A12')
+              Text('原' + this.details(change.before)).fontSize(11).fontColor('#8A5A12')
             }
             Text('截止：' + this.deadline(change.draft)).fontSize(13).fontColor('#142C43')
             Text('提交渠道：' + (change.draft.submissionChannel === null ? '未知' : change.draft.submissionChannel))
               .fontSize(12).fontColor('#617589')
             Text('任务状态：' + this.statusLabel(change.draft.status) + '（用户声明，不代表平台已收到）').fontSize(11).fontColor('#617589')
+            Text(this.details(change.draft)).fontSize(11).fontColor('#617589')
             if (this.view.proposal !== null && this.view.proposal.checklistItems !== undefined) {
               ForEach(this.view.proposal.checklistItems.filter((item: ChecklistItem) => item.taskId === change.taskId), (item: ChecklistItem) => {
                 Text('• ' + item.label + ' · ' + (item.sourceNoticeId === null ? '未绑定通知来源' : '通知提取待核对') + ' · 待准备')
@@ -96,7 +118,7 @@ struct TaskAssistantPage {
               }, (item: ChecklistItem) => item.id)
             }
           }.width('100%').alignItems(HorizontalAlign.Start).padding(10).backgroundColor('#F3F7F5').borderRadius(9)
-        }, (change: ProposedTaskChange) => change.taskId)
+        }, (change: ProposedTaskChange) => change.taskId + ':' + (this.view.proposal === null ? '' : this.view.proposal.id))
         Button(this.sourcesOpen ? '收起原文' : '查看本次来源原文（' + String(this.view.sources.length) + '段）')
           .id('task-agent-sources').fontSize(12).onClick(() => { this.sourcesOpen = !this.sourcesOpen; })
         if (this.sourcesOpen) {
@@ -126,7 +148,7 @@ struct TaskAssistantPage {
         Text('最近本机保存结果').fontSize(15).fontWeight(FontWeight.Bold).fontColor('#176766')
         ForEach(this.view.receipt.tasks, (task: Task) => {
           Text(task.title + ' · ' + this.deadline(task)).id('task-agent-saved-' + task.id).fontSize(13).fontColor('#142C43')
-        }, (task: Task) => task.id)
+        }, (task: Task) => task.id + ':' + String(task.version))
         if (this.view.receipt.checklistItems !== undefined) {
           ForEach(this.view.receipt.checklistItems, (item: ChecklistItem) => {
             Text(item.label + ' · ' + (item.state === 'pending' ? '待准备' : item.state)).fontSize(12).fontColor('#617589')
@@ -152,7 +174,7 @@ struct TaskAssistantPage {
             })
         }.layoutWeight(1).width('100%').padding(20)
       } else {
-        Scroll() {
+        Scroll(this.scroller) {
           Column({ space: 12 }) {
             if (this.view.notice.length > 0) { Text(this.view.notice).id('task-agent-notice').fontSize(13).fontColor('#617589') }
             if (!this.view.configured) { Text('请先返回主页填写团队网关设置，再进入任务助手。').fontSize(13).fontColor('#8A5A12') }
@@ -164,7 +186,7 @@ struct TaskAssistantPage {
                 if (row.phase !== 'done') { Text(row.phase === 'pending' ? '处理中' : '本轮未完成，可手动重试').fontSize(10).fontColor('#8A5A12') }
               }.width('100%').alignItems(HorizontalAlign.Start).padding(12)
                 .backgroundColor(row.role === 'user' ? '#E6F1EC' : '#FFFFFF').borderRadius(11)
-            }, (row: ChatMessage) => row.id)
+            }, (row: ChatMessage) => row.id + ':' + row.phase)
             if (this.view.toolActions.length > 0) { Text(this.view.toolActions.map((action: string) => this.actionLabel(action)).join(' → ')).fontSize(11).fontColor('#617589') }
             this.proposalCard()
             this.receiptCard()

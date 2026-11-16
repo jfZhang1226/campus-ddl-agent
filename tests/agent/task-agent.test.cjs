@@ -69,6 +69,7 @@ test('query loop uses actual repository data, returns answer and persists real c
  const h=setup(),s=controller(h,(req,n)=>n===1?{type:'tool_calls',calls:[{id:'q1',action:'get_tasks',params:{}}]}:{type:'answer',text:'实际查询：当前没有任务。'});
  await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));await send(s.c,'查询我的任务');
  assert.equal(s.calls.length,2);assert.equal(s.calls[1].req.message,'查询我的任务');assert.deepEqual(s.calls[1].req.results[0].data.tasks,[]);
+ assert.equal(s.c.snapshot().messages[0].phase,'done');
  assert.equal(s.c.snapshot().messages.at(-1).text,'实际查询：当前没有任务。');assert.equal(ok(await h.store.read()).proposals.length,0);
  const cold=setup(h.files);await cold.session.open();assert.equal(cold.session.snapshot().messages.length,2);s.c.dispose();
 });
@@ -87,7 +88,10 @@ test('natural revision explicitly cancels only old pending and stages one new va
  await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));await send(s.c,'合成通知：数据库实验报告12月4日交PDF');
  const first=s.c.snapshot().proposal;await send(s.c,'截止改为2026年12月5日，其他不变');
  const second=s.c.snapshot().proposal,store=ok(await h.store.read());assert.notEqual(first.id,second.id);
- assert.equal(s.calls[1].req.context.priorProposal.id,first.id);assert.equal(store.proposals.find(p=>p.id===first.id).state,'cancelled');
+ const prior=s.calls[1].req.context.priorProposal;
+ assert.equal(prior.changes[0].taskId,null);assert.equal(prior.changes[0].expectedVersion,null);
+ assert.equal(tools.validateCall({id:'prior',action:'propose_task_changes',params:prior}),'');
+ assert.equal(store.proposals.find(p=>p.id===first.id).state,'cancelled');
  assert.equal(store.tasks.length,0);assert.equal(store.proposals.filter(p=>p.state==='pending').length,1);
  assert.equal(second.changes[0].draft.deadlineDate,'2026-12-05');await s.c.confirm();assert.equal(ok(await h.store.read()).tasks.length,1);s.c.dispose();
 });
@@ -137,4 +141,42 @@ test('a business revision change blocks confirmation and explicit cancellation p
  const d=new TaskDraft();d.title='合成独立控制任务';ok(await h.tasks.create(d,1));await s.c.confirm();
  assert.equal(s.c.snapshot().errorCode,'VERSION_CONFLICT');assert.equal(s.c.snapshot().receipt,null);assert.equal(ok(await h.store.read()).tasks.length,1);
  await s.c.cancelProposal();const snapshot=ok(await h.store.read());assert.equal(snapshot.tasks[0].title,'合成独立控制任务');assert.equal(snapshot.proposals[0].state,'cancelled');s.c.dispose();
+});
+test('follow-up projects real reserved proposal into valid input without leaking reserved create IDs or dropping materials',async()=>{
+ const h=setup(),ctx=await prepared(h),original=proposal(ctx);const staged=ok(await h.session.stage(original));
+ assert.ok(staged.changes[0].taskId);const before=clone(staged);
+ const next=await h.session.context(staged),prior=next.priorProposal;
+ assert.equal(prior.changes[0].taskId,null);assert.equal(prior.changes[0].expectedVersion,null);assert.equal(prior.notices.length,0);
+ assert.equal(prior.changes[0].checklistCreates.length,2);assert.equal(prior.changes[0].checklistCreates[1].sourceNoticeId,null);
+ assert.equal(tools.validateCall({id:'valid-prior',action:'propose_task_changes',params:prior}),'');
+ assert.deepEqual(h.session.proposal(),before);assert.equal(prior.expectedRevision,staged.expectedRevision);
+ const observedWrong=clone(prior);observedWrong.changes[0].taskId=staged.changes[0].taskId;
+ assert.equal(tools.validateCall({id:'observed-model-shape',action:'propose_task_changes',params:observedWrong}),'INVALID_ARGUMENT');
+});
+test('older required source survives bounded recent context and source removal on update is refused',async()=>{
+ const h=setup(),ctx=await prepared(h,'合成最初原文：交报告'),staged=ok(await h.session.stage(proposal(ctx)));
+ for(let i=0;i<14;i++){await h.session.append('user','合成补充'+i);await h.session.append('assistant','已记录合成补充');}
+ const next=await h.session.context(staged);assert.ok(next.preparedSources.some(n=>n.id===ctx.preparedSources[0].id));
+ await h.session.confirm();await h.session.append('user','合成：将截止改为12月6日');const current=await h.session.context();
+ const task=ok(await h.store.read()).tasks[0],update=proposal(current,'2026-12-06');update.changes[0].action='update';
+ update.changes[0].taskId=task.id;update.changes[0].expectedVersion=task.version;update.changes[0].checklistCreates=[];
+ update.changes[0].draft.noticeIds=[current.preparedSources.at(-1).id];
+ assert.equal((await h.session.stage(update)).errorCode,'INVALID_ARGUMENT');assert.equal(ok(await h.store.read()).tasks.length,1);
+});
+test('post-save date change looks up actual task and updates it once instead of copying old create proposal',async()=>{
+ const h=setup();let round=0;
+ const s=controller(h,req=>{
+  round++;
+  if(round===1)return {type:'tool_calls',calls:[{id:'create',action:'propose_task_changes',params:proposal(req.context)}]};
+  if(round===2){assert.equal(req.context.priorProposal,null);const saved=req.context.lastCommittedTasksForLookupOnly[0];return {type:'tool_calls',calls:[{id:'detail',action:'get_task_detail',params:{taskId:saved.id}}]};}
+  const detail=req.results[0].data,p=proposal(req.context,'2026-12-06'),task=detail.task;
+  p.changes[0].action='update';p.changes[0].taskId=task.id;p.changes[0].expectedVersion=task.version;p.changes[0].checklistCreates=[];
+  p.changes[0].draft.noticeIds=[...new Set(task.noticeIds.concat(req.context.preparedSources.map(n=>n.id)))];
+  return {type:'tool_calls',calls:[{id:'update',action:'propose_task_changes',params:p}]};
+ });
+ await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.example','synthetic-token',5000));await send(s.c,'合成：交数据库报告');await s.c.confirm();
+ const original=ok(await h.store.read()).tasks[0];await send(s.c,'刚才的报告改为2026年12月6日');assert.equal(s.c.snapshot().proposal.changes[0].action,'update');
+ assert.equal(ok(await h.store.read()).tasks.length,1);await s.c.confirm();const result=ok(await h.store.read());
+ assert.equal(result.tasks.length,1);assert.equal(result.tasks[0].id,original.id);assert.equal(result.tasks[0].deadlineDate,'2026-12-06');assert.equal(result.tasks[0].version,2);
+ assert.equal(result.checklistItems.length,2);assert.equal(result.operations.length,2);s.c.dispose();
 });
