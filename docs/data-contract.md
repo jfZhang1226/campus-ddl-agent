@@ -165,3 +165,13 @@ T03 资料交付：三类字段表、两条关联样例、本地保存方案均�
 T08/T14/T11已合入main。T16在业务schemaVersion=1的保留集合中继续读取`t16.proposal.v1`/`t16.operation.v1`；2026-11-12创建型材料增量的新方案/操作使用对应v2 tag，防止旧客户端静默忽略材料。旧/未知JSON保留，已知记录须通过结构、关联和回执内容校验，未知T16版本拒绝执行。方案保存与取消也增加全局revision；正式提交将任务/新来源/新材料、applied状态和operationId回执一次保存。create的checklistCreates仅接受label/sourceNoticeId，客户端预留ID并绑定任务，默认pending/confirmedAt=null；v2回执包含本次notices、createdChecklistItemIds及checklistItems，重复/重启返回原结果。当前仅任务create/update，材料只随新任务创建，不扩展已有清单编辑、删除、勾选/完整状态转换或计划。客户端确认能力与草案/读取分开，不能将其注册为模型确认工具；重启不恢复未提交授权。完整参数、重试/不确定失败、版本、工具适配与保留边界见[T16说明](setup/T16-幂等提交与业务快照.md)。
 
 2026-11-02 T14接续：同源鸿蒙真机任务流程、停止进程后冷启动、离线读回及人工文件比较通过，与Android排除ID/审计时间后的业务字段一致，详见 [鸿蒙与双端比较证据](setup/evidence/t14-harmony-device-20261102.json)。运行源码仍8f964ff，本轮未改字段/接口或模型工具。技术证据已齐，仍待A/B独立接口评审和最终验收；暂不合并。
+
+## 14. PR18材料状态与提交声明增量（2026-11-17）
+
+本候选保留旧v1/v2，新增`t16.proposal.v3`/`t16.operation.v3`，仍由同一CommitServices、同一业务快照与明确确认事件提交；不改变Task和ChecklistItem已有字段。已写入v3后旧客户端应拒绝未知协议，不能直接降级或清库。此增量尚待组员协议评审及v3实际手机保存/冷读，源码/验证见[无声收尾进度](setup/SILENT_MVP_STATUS.md)。
+
+TaskChangeDraft可选`checklistUpdates:[{itemId,state}]`与`confirmSubmission:boolean`，省略兼容旧调用；state仍只有pending/prepared。update可用已有checklistCreates追加材料，默认pending，来源绑定本任务的通知或手动null。材料状态修改/追加实质变化会增加Task.version，prepared的confirmedAt取实际确认时钟；无操作不改第一次准备时间。
+
+v3方案保存`checklistBefore`和每条更新的before，正式写入前复查版本及前状态；回执增加`updatedChecklistItems`及`submissionSnapshots`。每条用户提交声明含id、taskId、taskVersion、confirmedSubmittedAt、submissionChannel、sourceNoticeIds和当时materials快照，与正式变化一次保存。旧回执不被后续勾选覆盖。准备完成需要所有材料prepared；用户声明提交须先ready，后续要求变化保留submitted与旧声明并提示重新核对，重新声明产生新快照。done仅用于无提交要求的普通任务，done/cancelled材料不再改写。
+
+模型白名单只增加update中原checklistCreates的使用，不提供checklistUpdates或confirmSubmission；准备状态与提交声明由任务详情页人工核对并明确确认。新增材料不得复制已有清单，材料删除/重命名仍不支持。用户标记已提交始终不代表平台已收到。材料/操作记录若损坏，保留原文件并报错，不通过删除历史绕过绑定。
