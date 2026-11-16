@@ -45,6 +45,15 @@ test('schema 数组只含白名单动作', () => {
   assert.deepEqual(tools.AGENT_TOOL_SCHEMAS.map(s => s.function.name), tools.ALLOWED_ACTIONS);
 });
 
+test('kind/priority enum 含实际 null，不含字符串 "null"', () => {
+  const propose = tools.AGENT_TOOL_SCHEMAS.find(s => s.function.name === 'propose_task_changes');
+  const draft = propose.function.parameters.properties.changes.items.properties.draft;
+  assert.ok(draft.properties.kind.enum.includes(null), 'kind enum 应含 null');
+  assert.ok(!draft.properties.kind.enum.includes('null'), 'kind enum 不应含字符串 "null"');
+  assert.ok(draft.properties.priority.enum.includes(null), 'priority enum 应含 null');
+  assert.ok(!draft.properties.priority.enum.includes('null'), 'priority enum 不应含字符串 "null"');
+});
+
 test('validateCall / validateParams 逐动作校验', () => {
   assert.equal(tools.validateCall({ id: 'c1', action: 'get_tasks', params: {} }), '');
   assert.equal(tools.validateCall({ id: 'c1', action: 'apply_confirmed_proposal', params: {} }),
@@ -205,6 +214,11 @@ test('执行器 入口校验：非法请求不访问端口', async () => {
     const r = await ex.execute(c);
     assert.equal(r.success, false, JSON.stringify(c));
     assert.equal(r.errorCode, tools.TOOL_ERRORS.INVALID_ARGUMENT, JSON.stringify(c));
+  }
+  for (const c of [null, undefined]) {
+    const r = await ex.execute(c);
+    assert.equal(r.success, false, 'null/undefined 应拒绝');
+    assert.equal(r.errorCode, tools.TOOL_ERRORS.INVALID_ARGUMENT);
   }
   assert.equal(reads, 0);
 });

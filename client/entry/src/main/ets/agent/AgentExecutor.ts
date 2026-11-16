@@ -31,7 +31,10 @@ export class AgentExecutor {
     private proposals: ProposalStagePort) {}
 
   async execute(call: ToolCall): Promise<ToolResult> {
-    // 入口先校验：非法请求不访问任何读写端口（独立可注入执行器必须满足自身错误契约）。
+    // 入口先拒绝 null/非对象，再校验：非法请求不访问任何读写端口（独立可注入执行器必须满足自身错误契约）。
+    if (call === null || call === undefined || typeof call !== 'object') {
+      return normalizeResult('', '', {}, false, null, TOOL_ERRORS.INVALID_ARGUMENT, '非法工具调用');
+    }
     const invalid: string = validateCall(call);
     if (invalid.length > 0) return normalizeResult(typeof call.id === 'string' ? call.id : '',
       typeof call.action === 'string' ? call.action : '', call.params === null || call.params === undefined ? {} : call.params,
