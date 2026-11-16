@@ -2,10 +2,10 @@
 //
 // 客户端驱动的多轮循环：用户消息 → 模型 → 工具调用 → 执行真实查询/草案 → 结果回传 → 继续，
 // 直到得到回答/澄清/待确认方案。落实 T02 状态机边界：每次输入最多 MAX_AGENT_STEPS 步，
-// 连续两次相同且无新增结果的查询终止并提示补充；apply 永远不在本循环内发生。
+// 连续两次「相同只读查询且结果无新增」终止；apply 永远不在本循环内发生。
 
 import { AGENT_TOOL_SCHEMAS, MAX_AGENT_STEPS, ToolCall, ToolResult, TOOL_ERRORS,
-  isAllowedAction, isRecord, normalizeResult, validateCall } from './AgentTools';
+  isReadOnlyAction, isRecord, validateCall } from './AgentTools';
 
 // 单轮网关回包（answer / tool_calls / clarification / error 的统一形态）。
 export interface TurnReply {
@@ -32,15 +32,22 @@ export class AgentOutcome {
   proposalId: string = '';
 }
 
+/** 只读查询批次的完整签名：包含真实结果数据与错误码，用于「连续重复且无新增」判断。 */
+function readOnlySignature(results: ToolResult[]): string {
+  return JSON.stringify(results.filter((result: ToolResult) => isReadOnlyAction(result.action))
+    .map((result: ToolResult) => [result.action, result.params, result.success, result.errorCode, result.data]));
+}
+
 export class AgentLoop {
   constructor(private turn: AgentTurn, private executor: ToolExecutor) {}
 
   async run(message: string, context: Object): Promise<AgentOutcome> {
     let results: ToolResult[] = [];
-    let pending: string = message;
-    const seen: string[] = [];
+    let previousReadOnly: string = '';
     for (let step: number = 0; step < MAX_AGENT_STEPS; step++) {
-      const reply: TurnReply = await this.turn.turn(pending, context, AGENT_TOOL_SCHEMAS, results);
+      // 每轮都回传原始用户消息：网关 _build_messages 无服务端会话，续轮只有 assistant/tool/空 user，
+      // 不保留原消息就无法让模型记住原目标与「只查询」等限制。
+      const reply: TurnReply = await this.turn.turn(message, context, AGENT_TOOL_SCHEMAS, results);
       if (reply.type === 'error') return this.outcome('error', '', reply.errorCode);
       if (reply.type === 'answer') return this.outcome('answer', reply.text, '');
       if (reply.type === 'clarification') return this.outcome('clarification', reply.text, '');
@@ -49,23 +56,23 @@ export class AgentLoop {
       const executed: ToolResult[] = [];
       for (const call of reply.calls) {
         if (validateCall(call).length > 0) return this.outcome('error', '', TOOL_ERRORS.INVALID_ARGUMENT);
-        executed.push(await this.executor.execute(call.action, call.params));
+        const result: ToolResult = await this.executor.execute(call.action, call.params);
+        executed.push(result);
+        // 首个成功 propose 立即交还客户端展示确认卡，停止本批次后续工具，避免隐藏追加/过期方案。
+        if (call.action === 'propose_task_changes' && result.success && isRecord(result.data)) {
+          const proposalId: string = (result.data as Record<string, Object>).id as string;
+          return this.outcome('proposal', '已生成待确认方案，等待客户端确认。', '', proposalId);
+        }
       }
-      // 连续两次相同且无新增结果的查询终止（对齐 T02 状态机边界）。
-      const key: string = JSON.stringify(executed.map((result: ToolResult) => result.action + ':' +
-        JSON.stringify(result.params) + ':' + String(result.success)));
-      if (seen.includes(key)) return this.outcome('limit', '连续重复查询未得到新增结果，请补充信息。', '');
-      seen.push(key);
       results = results.concat(executed);
 
-      // 模型只负责生成草案；一旦 propose 成功，立即交还客户端展示确认卡，不再继续循环。
-      const proposed: ToolResult | undefined = executed.find((result: ToolResult) =>
-        result.action === 'propose_task_changes' && result.success);
-      if (proposed !== undefined && isRecord(proposed.data)) {
-        const proposalId: string = (proposed.data as Record<string, Object>).id as string;
-        return this.outcome('proposal', '已生成待确认方案，等待客户端确认。', '', proposalId);
+      // 连续两次「相同只读查询且结果无新增」终止；propose/写入不参与，非连续查询不计。
+      const signature: string = readOnlySignature(executed);
+      if (executed.some((result: ToolResult) => isReadOnlyAction(result.action)) &&
+        signature === previousReadOnly) {
+        return this.outcome('limit', '连续重复查询未得到新增结果，请补充信息。', '');
       }
-      pending = '';
+      previousReadOnly = signature;
     }
     return this.outcome('limit', '已达到单次输入的最大处理步数，请补充信息后重试。', '');
   }
