@@ -24,7 +24,17 @@ $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $process = $null
 $mapped = $false
 try {
-  $process = Start-Process -FilePath $python -ArgumentList @('-m','uvicorn','main:app','--host','127.0.0.1','--port','8000','--no-access-log') -WorkingDirectory $gateway -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logDirectory "$stamp-out.log") -RedirectStandardError (Join-Path $logDirectory "$stamp-error.log")
+  $proxyBackup = @{}
+  try {
+    foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY')) {
+      $proxyBackup[$name] = [Environment]::GetEnvironmentVariable($name,'Process')
+      [Environment]::SetEnvironmentVariable($name,$null,'Process')
+    }
+    $process = Start-Process -FilePath $python -ArgumentList @('-m','uvicorn','main:app','--host','127.0.0.1','--port','8000','--no-access-log') -WorkingDirectory $gateway -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logDirectory "$stamp-out.log") -RedirectStandardError (Join-Path $logDirectory "$stamp-error.log")
+  }
+  finally {
+    foreach ($name in $proxyBackup.Keys) { [Environment]::SetEnvironmentVariable($name,$proxyBackup[$name],'Process') }
+  }
   $ready = $false
   for ($i=0; $i -lt 30; $i++) {
     Start-Sleep -Milliseconds 300

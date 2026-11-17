@@ -93,6 +93,10 @@ struct TaskAssistantPage {
         Button('安排').id('open-schedule').fontSize(12).enabled(this.idle()).onClick(() => this.openPage('pages/Schedule'))
         Button('设置').id('open-gateway-settings').fontSize(12).enabled(this.idle()).onClick(() => this.openPage('pages/GatewaySettings'))
       }.width('100%')
+      if (!this.view.configured) {
+        Text('模型尚未配置，请打开“设置”。已有任务和草案可离线查看、核对保存。')
+          .id('task-agent-offline-hint').fontSize(12).fontColor('#8A5A12').width('100%')
+      }
       if (this.view.phase !== 'idle') {
         Row({ space: 9 }) {
           LoadingProgress().width(20).height(20).color('#176766')
@@ -274,10 +278,6 @@ struct TaskAssistantPage {
         Scroll(this.scroller) {
           Column({ space: 12 }) {
             if (this.view.notice.length > 0) { Text(this.view.notice).id('task-agent-notice').fontSize(13).fontColor('#617589') }
-            if (!this.view.configured) {
-              Text('模型尚未配置。已有任务和草案可离线查看、核对保存；发送新通知前请先设置模型连接。').id('task-agent-offline-hint').fontSize(13).fontColor('#8A5A12')
-              Button('去设置模型连接').id('task-agent-configure').onClick(() => this.openPage('pages/GatewaySettings'))
-            }
             if (this.view.messages.length === 0) { Text('把一段通知直接发进来；缺信息时我会追问，也可以查询已保存任务。').fontSize(15).fontColor('#617589') }
             ForEach(this.view.messages.slice(-30), (row: ChatMessage) => {
               Column({ space: 4 }) {
