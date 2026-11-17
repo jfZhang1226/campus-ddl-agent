@@ -136,7 +136,7 @@ test('uncommitted authorization is lost on restart and never auto-executes', asy
   bad(await reopened.confirmation.apply(request), 'CONFIRMATION_REQUIRED');
   assert.equal(ok(await reopened.proposals.get(p.id)).state, 'pending'); assert.equal(await bytes(h), before);
   const newlyConfirmed = ok(await reopened.confirmation.confirm(p.id, 1));
-  assert.notEqual(newlyConfirmed.operationId, request.operationId); ok(await reopened.confirmation.apply(newlyConfirmed));
+  assert.equal(newlyConfirmed.operationId, request.operationId); ok(await reopened.confirmation.apply(newlyConfirmed));
 });
 test('cancelled proposal never creates tasks; cancel is idempotent and revokes old grant', async t => {
   const h = await harness(t), p = await staged(h), request = await confirmed(h, p);
@@ -334,9 +334,20 @@ test('same operation with appended new changes is rejected rather than silently 
   assert.equal(await bytes(h), before);
 });
 test('ID generation collisions cannot replace a saved operation or proposal', async t => {
-  const h = await harness(t), { receipt } = await applied(h); h.clock.nextId = () => receipt.operationId.slice('operation-'.length);
-  const p = await staged(h, draft(2)); const before = await bytes(h);
-  bad(await h.services.confirmation.confirm(p.id, 3), 'INVALID_ARGUMENT'); assert.equal(await bytes(h), before);
+  const h = await harness(t); await applied(h);
+  // A valid legacy stored ID may equal the stable key of a future proposal.
+  const reserved = require('../../client/entry/src/main/ets/domain/OperationIdentity.ts').taskProposalOperationId('proposal-collision');
+  const snapshot = ok(await h.store.read());snapshot.proposals[0].operationId=reserved;snapshot.operations[0].operationId=reserved;ok(await h.store.save(snapshot,2));
+  h.clock.nextId=()=> 'collision';const before=await bytes(h);bad(await h.services.proposals.stage(draft(3)),'INVALID_ARGUMENT');assert.equal(await bytes(h),before);
+  h.clock.nextId=()=> snapshot.proposals[0].id.slice('proposal-'.length);bad(await h.services.proposals.stage(draft(3)),'INVALID_ARGUMENT');assert.equal(await bytes(h),before);
+});
+test('legacy pending proposal with a colliding stable key is readable but cannot take another stored receipt',async t=>{
+ const h=await harness(t);await applied(h);const snapshot=ok(await h.store.read()),id='proposal-legacy-pending';
+ const key=require('../../client/entry/src/main/ets/domain/OperationIdentity.ts').taskProposalOperationId(id);
+ snapshot.proposals[0].operationId=key;snapshot.operations[0].operationId=key;
+ const pending=structuredClone(snapshot.proposals[0]);pending.id=id;pending.state='pending';pending.operationId=null;pending.expectedRevision=3;pending.changes[0].taskId='task-legacy-pending';snapshot.proposals.push(pending);
+ ok(await h.store.save(snapshot,2));const before=await bytes(h);assert.equal(ok(await h.services.proposals.get(id)).state,'pending');bad(await h.services.confirmation.confirm(id,3),'INVALID_ARGUMENT');assert.equal(await bytes(h),before);
+ assert.equal(ok(await h.services.confirmation.receipt(key)).proposalId,snapshot.proposals[0].id);
 });
 
 test('material stage reserves stable client IDs but creates no formal task/source/material', async t => {
@@ -386,7 +397,7 @@ test('material authorization lost before commit requires confirmation again but 
   const h = await harness(t), p = await staged(h, materialDraft()), request = await confirmed(h, p), reopened = h.reopen();
   h.files.fail = 'replace:task-store.json'; bad(await h.services.confirmation.apply(request), 'STORAGE_FAILED');
   bad(await reopened.confirmation.apply(request), 'CONFIRMATION_REQUIRED'); const before = await bytes(h);
-  const next = ok(await reopened.confirmation.confirm(p.id, 1)); assert.notEqual(next.operationId, request.operationId);
+  const next = ok(await reopened.confirmation.confirm(p.id, 1)); assert.equal(next.operationId, request.operationId);
   const receipt = ok(await reopened.confirmation.apply(next)); assert.deepEqual(receipt.checklistItems, p.checklistItems);
   assert.equal(JSON.parse(before).checklistItems.length, 0); assert.equal(ok(await h.store.read()).checklistItems.length, 2);
 });
@@ -448,11 +459,17 @@ test('manual source-free materials and existing Unicode source IDs are supported
   const result = await applied(h, existing); assert.deepEqual(result.receipt.notices, []);
   assert.equal(ok(await h.store.read()).notices.length, 1);
 });
-test('existing task material changes are explicitly deferred to T22; normal task edits remain supported', async t => {
+test('existing task material addition uses v3 without early writes; ordinary no-op task edits remain v2', async t => {
   const h = await harness(t), task = (await applied(h, materialDraft())).receipt.tasks[0], change = edit(task, {});
   change.checklistCreates = [{ label: 'new on existing', sourceNoticeId: null }]; const before = await bytes(h);
-  bad(await h.services.proposals.stage(draft(2, { changes: [change] })), 'INVALID_ARGUMENT'); assert.equal(await bytes(h), before);
-  change.checklistCreates = []; const { receipt } = await applied(h, draft(2, { changes: [change] }));
+  const proposal = ok(await h.services.proposals.stage(draft(2, { changes: [change] })));
+  assert.equal(proposal.recordType, 't16.proposal.v3');
+  assert.deepEqual(JSON.parse(await bytes(h)).checklistItems, JSON.parse(before).checklistItems);
+  const request = ok(await h.services.confirmation.confirm(proposal.id, proposal.expectedRevision));
+  const added = ok(await h.services.confirmation.apply(request));
+  assert.equal(added.checklistItems.length, 1); assert.deepEqual(added.changedTaskIds, [task.id]);
+  const { receipt } = await applied(h, draft(added.committedRevision, { changes: [edit(added.tasks[0], {})] }));
+  assert.equal(receipt.recordType, 't16.operation.v2');
   assert.deepEqual(receipt.checklistItems, []); assert.deepEqual(receipt.changedTaskIds, []);
 });
 function legacy(snapshot) {

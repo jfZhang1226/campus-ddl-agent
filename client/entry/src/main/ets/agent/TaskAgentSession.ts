@@ -95,7 +95,7 @@ export class TaskAgentSession {
         input.taskId = change.action === 'create' ? null : change.taskId;
         input.expectedVersion = change.action === 'create' ? null : change.expectedVersion;
         input.draft = clone(change.draft);
-        input.checklistCreates = change.action !== 'create' || previous.checklistItems === undefined ? [] :
+        input.checklistCreates = previous.checklistItems === undefined ? [] :
           previous.checklistItems.filter(item => item.taskId === change.taskId)
             .map(item => ({ label: item.label, sourceNoticeId: item.sourceNoticeId }));
         return input;
@@ -112,10 +112,15 @@ export class TaskAgentSession {
       '创建或更新时调用propose_task_changes；sessionId用本上下文真实值，expectedRevision用最新查询revision或本上下文expectedRevision。' +
       '查询若有truncated=true需收窄条件，不能声称列出全部任务。notices必须是空数组，由客户端附上可信来源。' +
       'draft必须含schema全部字段；未知可空字段填null。新任务action=create时taskId和expectedVersion必须为null，status=todo；' +
+      '截止三种互斥：exact时deadlineDate必须null，只填dueAt带偏移时刻；date_only只填deadlineDate且dueAt=null；unknown两者都null。' +
       'noticeIds引用preparedSources中的真实ID，不能编造。priorProposal是可重新提交的草案，只按用户新消息修改必要字段。' +
-      '材料sourceNoticeId引用支持该要求的来源ID；人工材料填null。材料只能随新任务创建。对不支持材料更新要说明，不能伪造成功。' +
+      '材料sourceNoticeId引用支持该要求的来源ID；人工材料填null。创建或更新可用checklistCreates追加本次新增材料，更新前读取真实已有清单，不要复制或重复已有项。' +
+      '材料勾选状态与用户提交声明只能由用户在详情页操作。暂不支持删除或重命名材料，要明确说明，不能伪造取消要求成功。' +
       '已保存事项的后续修改应先get_task_detail读取当前版本并生成update，不能照旧创建草案再新增同一任务。更新保留原有noticeIds并附新来源。' +
       '只有查询需求就查询并解释，不生成写方案。保留用户此前明确修改的标题、材料等，只改新消息明确要求的部分，不用旧原文回填。' +
+      '询问安排时可用get_availability读取本应用已保存的可用时间和工作块；按state区分完成历史，不猜空闲或工时。当前模型不能保存/重排工作块，请引导用户到“我的任务→安排”核对候选并屏幕确认。' +
+      '面向用户用简短中文纯文本，不输出Markdown表格、星号、内部编号或英文状态码。候选用课程、标题和北京时间描述，由页面提供实际选择。' +
+      '命中多个同名任务后，须先点屏幕选择才能修改；不要建议只用聊天里的课程文字绕过选择。' +
       '对话正文的“确认”不授权保存，必须让用户点屏幕按钮。',
       sessionId: this.state.sessionId, expectedRevision: snapshot.revision, timezone: 'Asia/Shanghai',
       currentTimeForUserPlanningOnly: this.runtime.now(),
@@ -145,6 +150,10 @@ export class TaskAgentSession {
       if (draft.changes.some(change => change.action === 'update' && current.tasks.some(task => task.id === change.taskId &&
         task.noticeIds.some(id => !change.draft.noticeIds.includes(id))))) {
         throw new StorageFailure('INVALID_ARGUMENT', '更新任务必须保留原有通知来源，并可附上新来源。');
+      }
+      if (draft.changes.some(change => change.action === 'update' && change.checklistCreates.some(item =>
+        current.checklistItems.some(old => old.taskId === change.taskId && old.label.trim().toLowerCase() === item.label.trim().toLowerCase())))) {
+        throw new StorageFailure('INVALID_ARGUMENT', '本次新增材料与已有清单重复，请读取任务详情，只提出实际新增的要求。');
       }
       const referenced: string[] = [];
       draft.changes.forEach(change => change.draft.noticeIds.forEach(id => { if (!referenced.includes(id)) referenced.push(id); }));

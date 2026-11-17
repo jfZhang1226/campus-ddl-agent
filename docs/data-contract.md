@@ -165,3 +165,25 @@ T03 资料交付：三类字段表、两条关联样例、本地保存方案均�
 T08/T14/T11已合入main。T16在业务schemaVersion=1的保留集合中继续读取`t16.proposal.v1`/`t16.operation.v1`；2026-11-12创建型材料增量的新方案/操作使用对应v2 tag，防止旧客户端静默忽略材料。旧/未知JSON保留，已知记录须通过结构、关联和回执内容校验，未知T16版本拒绝执行。方案保存与取消也增加全局revision；正式提交将任务/新来源/新材料、applied状态和operationId回执一次保存。create的checklistCreates仅接受label/sourceNoticeId，客户端预留ID并绑定任务，默认pending/confirmedAt=null；v2回执包含本次notices、createdChecklistItemIds及checklistItems，重复/重启返回原结果。当前仅任务create/update，材料只随新任务创建，不扩展已有清单编辑、删除、勾选/完整状态转换或计划。客户端确认能力与草案/读取分开，不能将其注册为模型确认工具；重启不恢复未提交授权。完整参数、重试/不确定失败、版本、工具适配与保留边界见[T16说明](setup/T16-幂等提交与业务快照.md)。
 
 2026-11-02 T14接续：同源鸿蒙真机任务流程、停止进程后冷启动、离线读回及人工文件比较通过，与Android排除ID/审计时间后的业务字段一致，详见 [鸿蒙与双端比较证据](setup/evidence/t14-harmony-device-20261102.json)。运行源码仍8f964ff，本轮未改字段/接口或模型工具。技术证据已齐，仍待A/B独立接口评审和最终验收；暂不合并。
+
+## 14. PR18材料状态与提交声明增量（2026-11-17）
+
+本候选保留旧v1/v2，新增`t16.proposal.v3`/`t16.operation.v3`，仍由同一CommitServices、同一业务快照与明确确认事件提交；不改变Task和ChecklistItem已有字段。已写入v3后旧客户端应拒绝未知协议，不能直接降级或清库。协议仍需组员评审；v3材料/工时手机保存与冷读已通过，提交声明历史按独立实测记录，源码/验证见[无声收尾进度](setup/SILENT_MVP_STATUS.md)。
+
+TaskChangeDraft可选`checklistUpdates:[{itemId,state}]`与`confirmSubmission:boolean`，省略兼容旧调用；state仍只有pending/prepared。update可用已有checklistCreates追加材料，默认pending，来源绑定本任务的通知或手动null。材料状态修改/追加实质变化会增加Task.version，prepared的confirmedAt取实际确认时钟；无操作不改第一次准备时间。
+
+v3方案保存`checklistBefore`和每条更新的before，正式写入前复查版本及前状态；回执增加`updatedChecklistItems`及`submissionSnapshots`。每条用户提交声明含id、taskId、taskVersion、confirmedSubmittedAt、submissionChannel、sourceNoticeIds和当时materials快照，与正式变化一次保存。旧回执不被后续勾选覆盖。准备完成需要所有材料prepared；用户声明提交须先ready，后续要求变化保留submitted与旧声明并提示重新核对，重新声明产生新快照。done仅用于无提交要求的普通任务，done/cancelled材料不再改写。
+
+模型白名单只增加update中原checklistCreates的使用，不提供checklistUpdates或confirmSubmission；准备状态与提交声明由任务详情页人工核对并明确确认。新增材料不得复制已有清单，材料删除/重命名仍不支持。用户标记已提交始终不代表平台已收到。材料/操作记录若损坏，保留原文件并报错，不通过删除历史绕过绑定。
+
+## 15. v4 安排确认增量（2026-11-17）
+
+`t16.proposal.v4`/`t16.operation.v4`只用于`kind=plan_changes`，旧v1/v2/v3继续读取，旧客户端拒绝未知v4，不能降级后忽略安排。ProposalDraft.planning接完整PlanningIntent：availability、replan、lock、done。入口禁止同时传新通知、材料或任意任务changes；可信C规则重读同一快照，产生before/after与候选。availability/replan/lock可零任务changes；done只增加同一任务明确剩余分钟的更新，不自动扣工时、不修改任务状态/DDL。字段定义见PlanningContracts.ts。
+
+v4方案暂存即持久化预留operationId，冷重试沿用；这不是确认授权或保存成功。屏幕确认仍在内存授权，重启后未提交必须重新核对确认。正式集合、任务工时、方案终态、回执在原CommitEngine/LocalStore同一次快照提交；取消保留预留ID归属，历史成功回执可在后续版本后重放，不重新排量。v4与已知待确认方案互斥，过期/版本冲突不自动重排。
+
+已使用的计划集合必须结构/引用有效且与最新计划回执一致。历史方案按冻结v4规则验证，不因后续任务改期就删除历史；旧opaque保留集合规划入口拒绝解释。JsonSnapshotFile候选验证允许有匹配回执的下一提交版本，正式C读取仍拒绝超前回执。当前确定性集成/控制器23项通过；原生构建与手机安排需各自证据，不由这些主机检查替代。
+
+## 16. 任务与材料重试编号（2026-11-17增量）
+
+既有v1/v2/v3格式保持pending.operationId=null，未提交方案的幂等编号由持久化proposalId及冻结`t16.screen-confirm.v1`命名空间派生（OperationIdentity.ts），confirm不另增快照版本。跨重启明确重新确认沿用相同编号；可预测编号不是授权，内存确认权仍丢失，未经重新确认的apply失败。v4继续原显式预留。旧applied仍返回原存储编号/回执，不重算迁移；新写入前及确认时检查与历史/预留冲突，取消编号也不被其他操作再用。完整复现、兼容与测试调整见[T16稳定编号决策](decisions/T16-stable-task-operation-identity.md)。

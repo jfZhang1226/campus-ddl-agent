@@ -4,13 +4,21 @@ import { CommitProposal, CommitReceipt, ProposedTaskChange } from './CommitModel
 import { validateDraft, validateTask } from './TaskValidation';
 import { isOffsetTimestamp, isTaskTimezone, timestampMillis } from './DateRules';
 import { isStorageId, requireStorage, StorageFailure } from '../data/storage/StorageTypes';
+import { MATERIAL_PROPOSAL_RECORD, MATERIAL_OPERATION_RECORD, materialChangeForTask, validateMaterialProposal,
+  validateMaterialReceipt, validateMaterialPair } from './MaterialCommitValidation';
+import { PLAN_PROPOSAL_RECORD, PLAN_OPERATION_RECORD } from '../planning/PlanningContracts';
+import { validatePlanningProposal, validatePlanningReceipt, validatePlanningPair } from '../planning/PlanningValidation';
+import { planningCollections } from '../planning/PlanningRules';
 
 export const LEGACY_PROPOSAL_RECORD: string = 't16.proposal.v1';
 export const LEGACY_OPERATION_RECORD: string = 't16.operation.v1';
 export const PROPOSAL_RECORD: string = 't16.proposal.v2';
 export const OPERATION_RECORD: string = 't16.operation.v2';
-export function isProposalRecord(type: string): boolean { return type === PROPOSAL_RECORD || type === LEGACY_PROPOSAL_RECORD; }
-export function isOperationRecord(type: string): boolean { return type === OPERATION_RECORD || type === LEGACY_OPERATION_RECORD; }
+export function isProposalRecord(type: string): boolean { return type === PROPOSAL_RECORD || type === LEGACY_PROPOSAL_RECORD || type === MATERIAL_PROPOSAL_RECORD || type === PLAN_PROPOSAL_RECORD; }
+export function isOperationRecord(type: string): boolean { return type === OPERATION_RECORD || type === LEGACY_OPERATION_RECORD || type === MATERIAL_OPERATION_RECORD || type === PLAN_OPERATION_RECORD; }
+export function hasChecklistData(type: string): boolean {
+  return [PROPOSAL_RECORD, OPERATION_RECORD, MATERIAL_PROPOSAL_RECORD, MATERIAL_OPERATION_RECORD, PLAN_PROPOSAL_RECORD, PLAN_OPERATION_RECORD].includes(type);
+}
 
 function initialChecklist(items: ChecklistItem[]): void {
   requireStorage(Array.isArray(items) && items.length <= 200 && unique(items.map((item: ChecklistItem) => item.id)),
@@ -49,11 +57,12 @@ export function validatePreparedNotice(notice: Notice): void {
 }
 
 export function validateProposal(proposal: CommitProposal): void {
+  const planning: boolean = proposal.recordType === PLAN_PROPOSAL_RECORD;
   requireStorage(isProposalRecord(proposal.recordType) && isStorageId(proposal.id) && isStorageId(proposal.sessionId) &&
-    proposal.kind === 'task_changes' && Number.isSafeInteger(proposal.expectedRevision) && proposal.expectedRevision > 0 &&
+    proposal.kind === (planning ? 'plan_changes' : 'task_changes') && Number.isSafeInteger(proposal.expectedRevision) && proposal.expectedRevision > 0 &&
     ['pending', 'cancelled', 'applied'].includes(proposal.state) && isOffsetTimestamp(proposal.createdAt) &&
-    (proposal.state === 'applied' ? isStorageId(proposal.operationId as string) : proposal.operationId === null), '方案元数据无效。');
-  requireStorage(Array.isArray(proposal.changes) && proposal.changes.length > 0 && proposal.changes.length <= 50 &&
+    (proposal.state === 'applied' || planning ? isStorageId(proposal.operationId as string) : proposal.operationId === null), '方案元数据无效。');
+  requireStorage(Array.isArray(proposal.changes) && proposal.changes.length >= (planning ? 0 : 1) && proposal.changes.length <= 50 &&
     unique(proposal.changes.map((change: ProposedTaskChange) => change.taskId)) && unique(proposal.sourceNoticeIds) &&
     Array.isArray(proposal.notices), '方案变更或来源集合无效。');
   proposal.notices.forEach((notice: Notice) => validatePreparedNotice(notice));
@@ -75,33 +84,38 @@ export function validateProposal(proposal: CommitProposal): void {
   requireStorage(proposal.sourceNoticeIds.every((id: string) => proposal.changes.some((change: ProposedTaskChange) =>
     change.draft.noticeIds.includes(id))), '方案含未使用的来源。');
   requireStorage(proposal.notices.every((notice: Notice) => proposal.sourceNoticeIds.includes(notice.id)), '方案含未关联的新通知。');
-  if (proposal.recordType === PROPOSAL_RECORD) {
+  if (hasChecklistData(proposal.recordType)) {
     const items: ChecklistItem[] = proposal.checklistItems as ChecklistItem[];
     initialChecklist(items);
     items.forEach((item: ChecklistItem) => requireStorage(proposal.changes.some((change: ProposedTaskChange) =>
-      change.action === 'create' && change.taskId === item.taskId &&
+      (change.action === 'create' || proposal.recordType === MATERIAL_PROPOSAL_RECORD) && change.taskId === item.taskId &&
       (item.sourceNoticeId === null || change.draft.noticeIds.includes(item.sourceNoticeId))), '材料没有绑定本次新建任务或其来源。'));
   } else {
     requireStorage(!Object.keys(proposal).includes('checklistItems'), 'v1 方案不能携带 v2 材料。');
   }
+  if (proposal.recordType === MATERIAL_PROPOSAL_RECORD) validateMaterialProposal(proposal);
+  else requireStorage(!Object.keys(proposal).some(key => ['checklistUpdates', 'checklistBefore'].includes(key)), '旧版本方案不能携带材料状态扩展。');
+  if (planning) validatePlanningProposal(proposal);
+  else requireStorage(!Object.keys(proposal).includes('planning'), '旧方案版本不能忽略安排扩展。');
   proposal.changes.forEach((change: ProposedTaskChange) => requireStorage(Object.keys(change).every((key: string) =>
-    ['action', 'taskId', 'expectedVersion', 'before', 'draft'].includes(key)), '方案变更含未支持的字段。'));
+    ['action', 'taskId', 'expectedVersion', 'before', 'draft'].concat(proposal.recordType === MATERIAL_PROPOSAL_RECORD ? ['confirmSubmission'] : []).includes(key)), '方案变更含未支持的字段。'));
 }
 
 export function validateReceipt(receipt: CommitReceipt): void {
+  const planning: boolean = receipt.recordType === PLAN_OPERATION_RECORD;
   requireStorage(isOperationRecord(receipt.recordType) && isStorageId(receipt.operationId) && isStorageId(receipt.proposalId) &&
     receipt.resultStatus === 'committed' && Number.isSafeInteger(receipt.expectedRevision) && receipt.expectedRevision > 0 &&
     Number.isSafeInteger(receipt.committedRevision) && receipt.committedRevision === receipt.expectedRevision + 1 &&
     isOffsetTimestamp(receipt.confirmedAt) && isOffsetTimestamp(receipt.createdAt) &&
     timestampMillis(receipt.confirmedAt) <= timestampMillis(receipt.createdAt) &&
-    unique(receipt.affectedTaskIds) && receipt.affectedTaskIds.length > 0 && unique(receipt.changedTaskIds) &&
+    unique(receipt.affectedTaskIds) && receipt.affectedTaskIds.length >= (planning ? 0 : 1) && unique(receipt.changedTaskIds) &&
     receipt.changedTaskIds.every((id: string) => receipt.affectedTaskIds.includes(id)) && Array.isArray(receipt.tasks) &&
     receipt.tasks.length === receipt.affectedTaskIds.length, '操作回执无效。');
   receipt.tasks.forEach((task: Task, index: number) => {
     validateTask(task);
     requireStorage(task.id === receipt.affectedTaskIds[index], '操作回执任务顺序或 ID 无效。');
   });
-  if (receipt.recordType === OPERATION_RECORD) {
+  if (hasChecklistData(receipt.recordType)) {
     initialChecklist(receipt.checklistItems as ChecklistItem[]);
     requireStorage(unique(receipt.createdChecklistItemIds as string[]) &&
       JSON.stringify(receipt.createdChecklistItemIds) === JSON.stringify((receipt.checklistItems as ChecklistItem[]).map((item: ChecklistItem) => item.id)) &&
@@ -113,6 +127,10 @@ export function validateReceipt(receipt: CommitReceipt): void {
     requireStorage(!Object.keys(receipt).some((key: string) => ['checklistItems', 'createdChecklistItemIds', 'notices'].includes(key)),
       'v1 回执不能携带 v2 结果。');
   }
+  if (receipt.recordType === MATERIAL_OPERATION_RECORD) validateMaterialReceipt(receipt);
+  else requireStorage(!Object.keys(receipt).some(key => ['updatedChecklistItems', 'submissionSnapshots'].includes(key)), '旧版本回执不能携带材料/提交快照扩展。');
+  if (planning) validatePlanningReceipt(receipt);
+  else requireStorage(!Object.keys(receipt).includes('planning'), '旧回执版本不能忽略安排结果。');
 }
 
 /** Additive tagged records; legacy/future untagged JSON remains untouched. */
@@ -143,11 +161,13 @@ export function validateCommitRecords(snapshot: BusinessSnapshot): void {
       matching.length === 0, '方案与操作回执关联不一致。');
     if (proposal.state === 'applied') {
       const receipt: CommitReceipt = matching[0];
-      requireStorage((proposal.recordType === PROPOSAL_RECORD) === (receipt.recordType === OPERATION_RECORD), '方案与回执版本不一致。');
-      if (proposal.recordType === PROPOSAL_RECORD) {
+      requireStorage(proposal.recordType.replace('proposal', 'operation') === receipt.recordType, '方案与回执版本不一致。');
+      if (hasChecklistData(proposal.recordType)) {
         requireStorage(checklistText(proposal.checklistItems as ChecklistItem[]) === checklistText(receipt.checklistItems as ChecklistItem[]) &&
           JSON.stringify(proposal.notices) === JSON.stringify(receipt.notices), '材料或来源结果与确认方案不一致。');
       }
+      if (proposal.recordType === MATERIAL_PROPOSAL_RECORD) validateMaterialPair(proposal, receipt);
+      if (proposal.recordType === PLAN_PROPOSAL_RECORD) validatePlanningPair(proposal, receipt);
       requireStorage(timestampMillis(receipt.confirmedAt) >= timestampMillis(proposal.createdAt), '确认时间早于方案。');
       proposal.changes.forEach((change: ProposedTaskChange, index: number) => {
         const task: Task = receipt.tasks[index];
@@ -157,7 +177,7 @@ export function validateCommitRecords(snapshot: BusinessSnapshot): void {
             receipt.changedTaskIds.includes(task.id), '创建回执的版本或审计信息无效。');
         } else {
           const before: Task = change.before as Task;
-          const changed: boolean = editableText(before) !== editableText(change.draft);
+          const changed: boolean = editableText(before) !== editableText(change.draft) || materialChangeForTask(proposal, change.taskId);
           requireStorage(task.createdAt === before.createdAt && task.version === before.version + (changed ? 1 : 0) &&
             task.updatedAt === (changed ? receipt.createdAt : before.updatedAt) &&
             receipt.changedTaskIds.includes(task.id) === changed, '编辑回执的版本、变更标志或审计信息无效。');
@@ -168,7 +188,7 @@ export function validateCommitRecords(snapshot: BusinessSnapshot): void {
   requireStorage(operations.every((operation: CommitReceipt) => proposals.some((proposal: CommitProposal) => proposal.id === operation.proposalId)),
     '操作回执缺少方案。');
   const reserved: string[] = [];
-  proposals.filter((proposal: CommitProposal) => proposal.recordType === PROPOSAL_RECORD).forEach((proposal: CommitProposal) => {
+  proposals.filter((proposal: CommitProposal) => hasChecklistData(proposal.recordType)).forEach((proposal: CommitProposal) => {
     (proposal.checklistItems as ChecklistItem[]).forEach((item: ChecklistItem) => {
       requireStorage(!reserved.includes(item.id), '方案材料 ID 重复预留。'); reserved.push(item.id);
       const current: ChecklistItem | undefined = snapshot.checklistItems.find((entry: ChecklistItem) => entry.id === item.id);
@@ -176,4 +196,27 @@ export function validateCommitRecords(snapshot: BusinessSnapshot): void {
         current.sourceNoticeId === item.sourceNoticeId : current === undefined, '方案材料与正式业务的绑定不一致。');
     });
   });
+  if (proposals.some(proposal => proposal.recordType === PLAN_PROPOSAL_RECORD)) {
+    const planOperations = operations.filter(operation => operation.recordType === PLAN_OPERATION_RECORD);
+    const latest = planOperations.reduce<CommitReceipt | null>((found, operation) => found === null || operation.committedRevision > found.committedRevision ? operation : found, null);
+    // JsonSnapshotFile validates both the candidate at R and its committed copy
+    // at R+1. Only a matching new receipt may account for that single next step.
+    const collections = new BusinessSnapshot(); collections.tasks = snapshot.tasks;
+    collections.revision = snapshot.revision;
+    collections.availabilityBlocks = snapshot.availabilityBlocks; collections.planBlocks = snapshot.planBlocks;
+    if (latest !== null) {
+      requireStorage(latest.committedRevision <= snapshot.revision + 1 &&
+        JSON.stringify(latest.planning?.availability) === JSON.stringify(snapshot.availabilityBlocks) &&
+        JSON.stringify(latest.planning?.blocks) === JSON.stringify(snapshot.planBlocks), '正式安排与最新原子回执不一致。');
+      collections.revision = Math.max(snapshot.revision, latest.committedRevision);
+    }
+    planningCollections(collections);
+    const planProposals = proposals.filter(proposal => proposal.recordType === PLAN_PROPOSAL_RECORD);
+    requireStorage(unique(planProposals.map(proposal => proposal.operationId as string)), '安排幂等标识重复预留。');
+    planProposals.forEach(proposal => requireStorage(operations.filter(operation => operation.operationId === proposal.operationId)
+      .every(operation => operation.proposalId === proposal.id), '安排预留标识被其他操作占用。'));
+    proposals.filter(proposal => proposal.recordType === PLAN_PROPOSAL_RECORD).forEach(proposal =>
+      requireStorage(planOperations.filter(operation => operation.committedRevision < proposal.expectedRevision)
+        .every(operation => timestampMillis(operation.createdAt) <= timestampMillis(proposal.createdAt)), '安排时钟早于已有安排提交，原数据已保留。'));
+  }
 }

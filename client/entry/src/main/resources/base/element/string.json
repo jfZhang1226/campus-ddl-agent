@@ -10,7 +10,11 @@
     },
     {
       "name": "EntryAbility_label",
-      "value": "label"
+      "value": "课事清"
+    },
+    {
+      "name": "app_name",
+      "value": "课事清"
     }
   ]
 }

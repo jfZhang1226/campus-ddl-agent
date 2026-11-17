@@ -4,7 +4,7 @@
 // - TaskReadPort = TaskRepository（list/get）
 // - NoticeReadPort = 只读读取正式快照的 notices+revision（LocalStore.read() 的适配，只读不写）
 // - ProposalStagePort = ProposalRepository.stage（保存草案，不改正式任务）
-// apply/confirm/cancel 不在此；get_availability 在 T24 前返回 NOT_IMPLEMENTED。
+// apply/confirm/cancel 不在此；get_availability 仅显式注入本应用的只读安排端口。
 
 import { ToolCall, ToolResult, TOOL_ERRORS, normalizeResult, validateCall } from './AgentTools';
 import { StorageFailure, StorageResult } from '../data/storage/StorageTypes';
@@ -21,6 +21,9 @@ export interface NoticeReadPort {
 export interface ProposalStagePort {
   stage(input: Object): Promise<StorageResult<Object>>;  // data: CommitProposal
 }
+export interface AvailabilityReadPort {
+  read(dateFrom: string, dateTo: string): Promise<StorageResult<Object>>;
+}
 
 function record(value: Object): Record<string, Object | null> {
   return value as Record<string, Object | null>;
@@ -28,7 +31,7 @@ function record(value: Object): Record<string, Object | null> {
 
 export class AgentExecutor {
   constructor(private tasks: TaskReadPort, private notices: NoticeReadPort,
-    private proposals: ProposalStagePort) {}
+    private proposals: ProposalStagePort, private availability?: AvailabilityReadPort) {}
 
   async execute(call: ToolCall): Promise<ToolResult> {
     if (call === null || typeof call !== 'object') {
@@ -43,7 +46,10 @@ export class AgentExecutor {
       if (call.action === 'get_tasks') return this.ok(call, await this.tasks.list(this.taskQuery(call.params)));
       if (call.action === 'get_task_detail') return this.ok(call, await this.tasks.get(record(call.params).taskId as string));
       if (call.action === 'get_notice') return await this.getNotice(call);
-      if (call.action === 'get_availability') return this.fail(call, TOOL_ERRORS.NOT_IMPLEMENTED, 'T24 排程尚未实现');
+      if (call.action === 'get_availability') {
+        if (this.availability === undefined) return this.fail(call, TOOL_ERRORS.NOT_IMPLEMENTED, '当前入口未提供课事清安排读取能力');
+        return this.ok(call, await this.availability.read(record(call.params).dateFrom as string, record(call.params).dateTo as string));
+      }
       if (call.action === 'propose_task_changes') return this.ok(call, await this.proposals.stage(call.params));
       return this.fail(call, TOOL_ERRORS.INVALID_ARGUMENT, '不支持的动作');
     } catch (error) {

@@ -46,7 +46,7 @@ check('shared and native entry exports contain the exact same confirmation imple
   const f='entry/src/main/ets/'+file;assert.equal(hash(path.join(output,f)),hash(path.join(nativeOutput,f)),file);
  }
  assert.equal(fs.existsSync(path.join(nativeOutput,'entry/src/main/ets/pages/NoticeConfirmedWriter.ts')),false);
- assert.equal(native.versionCode,400);
+ assert.equal(native.versionCode,500);
 });
 check('recovery diagnostics remain isolated and do not import production application storage',()=>{
  const page=read('entry/src/main/ets/pages/CommitCheck.ets'),probe=read('entry/src/main/ets/data/diagnostics/NoticeRecoveryProbe.ts');
@@ -93,7 +93,7 @@ check('task dialogue uses one application storage, actual history/stage and scre
  assert.match(read('entry/src/main/ets/entryability/EntryAbility.ets'),/taskAgentOwner.pause\(\)/);
 });
 check('manifest matches sources and existing output cannot be overwritten',()=>{
- assert.equal(manifest.signed,false);assert.equal(manifest.deviceValidated,false);assert.equal(Object.keys(manifest.hashes).length,21);
+ assert.equal(manifest.signed,false);assert.equal(manifest.deviceValidated,false);assert.equal(Object.keys(manifest.hashes).length,46);
  for(const [f,value]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,f)),value);
  assert.throws(()=>prepare(output),/new output directory/);
 });

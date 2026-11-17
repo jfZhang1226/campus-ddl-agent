@@ -4,6 +4,8 @@
 // 模型可见 schema 与 validateParams 保持一致：schema 里声明的必填/类型/null 规则就是运行时校验规则。
 // 边界：模型只能 propose/查询；apply/confirm 由客户端确认事件触发（T16 ClientConfirmation）。
 
+import { validAvailabilityDates } from '../planning/PlanningQuery';
+
 export const MAX_AGENT_STEPS: number = 8;
 
 export const ALLOWED_ACTIONS: string[] = [
@@ -114,19 +116,18 @@ function validateChange(change: Object): string {
   if (draftError.length > 0) return draftError;
   if (!hasKey(change, 'checklistCreates') || !Array.isArray(c.checklistCreates)) return TOOL_ERRORS.INVALID_ARGUMENT;
   const creates: Object[] = c.checklistCreates as Object[];
+  for (const item of creates) {
+    if (!isRecord(item) || !hasOnlyKeys(item, MATERIAL_KEYS)) return TOOL_ERRORS.INVALID_ARGUMENT;
+    const m = item as Record<string, Object | null>;
+    if (!nonEmpty(m.label)) return TOOL_ERRORS.INVALID_ARGUMENT;
+    if (!hasKey(item, 'sourceNoticeId')) return TOOL_ERRORS.INVALID_ARGUMENT;
+    if (m.sourceNoticeId !== null && !nonEmpty(m.sourceNoticeId)) return TOOL_ERRORS.INVALID_ARGUMENT;
+  }
   if (c.action === 'create') {
     if (c.taskId !== null || c.expectedVersion !== null) return TOOL_ERRORS.INVALID_ARGUMENT;
-    for (const item of creates) {
-      if (!isRecord(item) || !hasOnlyKeys(item, MATERIAL_KEYS)) return TOOL_ERRORS.INVALID_ARGUMENT;
-      const m = item as Record<string, Object | null>;
-      if (!nonEmpty(m.label)) return TOOL_ERRORS.INVALID_ARGUMENT;
-      if (!hasKey(item, 'sourceNoticeId')) return TOOL_ERRORS.INVALID_ARGUMENT;
-      if (m.sourceNoticeId !== null && !nonEmpty(m.sourceNoticeId)) return TOOL_ERRORS.INVALID_ARGUMENT;
-    }
   } else {
     if (!nonEmpty(c.taskId) || typeof c.expectedVersion !== 'number' ||
       !Number.isSafeInteger(c.expectedVersion as number) || (c.expectedVersion as number) <= 0) return TOOL_ERRORS.INVALID_ARGUMENT;
-    if (creates.length > 0) return TOOL_ERRORS.INVALID_ARGUMENT; // 材料仅随新任务创建，T22 变化不支持
   }
   return '';
 }
@@ -155,7 +156,7 @@ export function validateParams(action: string, params: Object): string {
     return hasOnlyKeys(p, ['noticeId']) && nonEmpty(p.noticeId) ? '' : TOOL_ERRORS.INVALID_ARGUMENT;
   }
   if (action === 'get_availability') {
-    return hasOnlyKeys(p, ['dateFrom', 'dateTo']) && nonEmpty(p.dateFrom) && nonEmpty(p.dateTo) ?
+    return hasOnlyKeys(p, ['dateFrom', 'dateTo']) && validAvailabilityDates(p.dateFrom as string, p.dateTo as string) ?
       '' : TOOL_ERRORS.INVALID_ARGUMENT;
   }
   if (action === 'get_tasks') {
@@ -212,8 +213,8 @@ const taskDraftSchema: Object = { type: 'object', properties: {
   course: { type: ['string', 'null'] },
   kind: { type: ['string', 'null'], enum: ['assignment', 'report', 'registration', 'other', null] },
   deadlinePrecision: { type: 'string', enum: PRECISIONS },
-  deadlineDate: { type: ['string', 'null'] },
-  dueAt: { type: ['string', 'null'] },
+  deadlineDate: { type: ['string', 'null'], description: '仅date_only填YYYY-MM-DD；exact或unknown必须null，不能与dueAt同时填写。' },
+  dueAt: { type: ['string', 'null'], description: '仅exact填带明确偏移的ISO8601完整时刻；date_only或unknown必须null。' },
   timezone: { type: 'string' },
   priority: { type: ['string', 'null'], enum: ['low', 'normal', 'high', null] },
   status: { type: 'string', enum: STATUSES },
@@ -244,9 +245,9 @@ export const AGENT_TOOL_SCHEMAS: Object[] = [
     { taskId: { type: 'string' } }, ['taskId']),
   schema('get_notice', '按 noticeId 读取已正式保存的通知原文、发布时间与来源；不含待确认方案里的新来源。',
     { noticeId: { type: 'string' } }, ['noticeId']),
-  schema('get_availability', '读取指定日期区间的可用时间与已占用区间（T24 排程前为占位）。',
+  schema('get_availability', '读取课事清已保存的可用时间与工作块（含状态）。日期YYYY-MM-DD，含首尾最多七天，北京时间；只读本应用数据，不读系统其他日历。返回相交原区间，不裁剪边界；done是历史，不当待做量。',
     { dateFrom: { type: 'string' }, dateTo: { type: 'string' } }, ['dateFrom', 'dateTo']),
-  schema('propose_task_changes', '生成任务创建/修改草案与关联新通知；创建型可随附材料（checklistCreates），仅保存草案、不改正式任务，等待用户确认。',
+  schema('propose_task_changes', '生成任务创建/修改草案与关联新通知；可随附本次新增材料（checklistCreates），不得重复已有清单、改写准备状态或声明提交；仅保存草案、不改正式任务，等待用户确认。',
     { sessionId: { type: 'string' }, expectedRevision: { type: 'integer' },
       notices: { type: 'array' }, changes: { type: 'array', items: changeSchema } },
     ['sessionId', 'expectedRevision', 'notices', 'changes'])

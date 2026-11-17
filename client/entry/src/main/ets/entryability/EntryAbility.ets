@@ -6,14 +6,17 @@ import window from '@ohos.window';
 import { chatOwner } from '../chat/ChatOwner';
 import { noticeImportOwner } from '../notice/NoticeImportOwner';
 import { taskAgentOwner } from '../agent/TaskAgentOwner';
+import { reminderOwner } from '../reminders/ReminderOwner';
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam) {
     chatOwner.get(this.context.filesDir);
+    reminderOwner.get(this.context);
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
   }
 
   onDestroy() {
+    reminderOwner.destroy();
     taskAgentOwner.destroy();
     noticeImportOwner.destroy();
     chatOwner.destroy();
@@ -42,6 +45,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   onForeground() {
+    reminderOwner.refresh();
     // Ability has brought to foreground
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onForeground');
   }

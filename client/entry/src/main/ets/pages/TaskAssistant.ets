@@ -20,12 +20,22 @@ struct TaskAssistantPage {
   private previousKeyboardMode: KeyboardAvoidMode = KeyboardAvoidMode.OFFSET;
   private scroller: Scroller = new Scroller();
   private scrollTimer: number = -1;
+  private syncGateway(): void {
+    const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+    this.controller?.configure(chatOwner.get(context.filesDir).configuration());
+  }
+  onPageShow(): void { this.syncGateway(); }
+  private openPage(page: string): void {
+    if (!this.idle()) return;
+    taskAgentOwner.pause();
+    router.pushUrl({ url: page }).catch(() => { this.view.notice = '无法打开页面，请稍后重试。'; });
+  }
   aboutToAppear(): void {
     this.previousKeyboardMode = this.getUIContext().getKeyboardAvoidMode();
     this.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
     const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
     this.controller = taskAgentOwner.get(context);
-    this.controller.configure(chatOwner.get(context.filesDir).configuration());
+    this.syncGateway();
     this.controller.subscribe((state: TaskAgentView) => {
       const shouldScroll: boolean = state.messages.length !== this.view.messages.length ||
         (state.proposal !== null && state.proposal.id !== this.view.proposal?.id);
@@ -68,7 +78,9 @@ struct TaskAssistantPage {
   header() {
     Column({ space: 10 }) {
       Row({ space: 10 }) {
-        Button('返回').id('task-agent-back').fontSize(12).enabled(this.view.phase === 'idle').onClick(() => this.back())
+        if (Number(router.getLength()) > 1) {
+          Button('返回').id('task-agent-back').fontSize(12).enabled(this.view.phase === 'idle').onClick(() => this.back())
+        }
         Column({ space: 3 }) {
           Text('任务助手').fontSize(23).fontWeight(FontWeight.Bold).fontColor('#142C43')
           Text('贴通知、继续补充，核对后保存').fontSize(12).fontColor('#617589')
@@ -76,6 +88,15 @@ struct TaskAssistantPage {
         Button('新对话').id('task-agent-new').fontSize(12).enabled(this.idle() && !this.view.historyPending)
           .onClick(() => { this.prompt = 'fresh'; })
       }.width('100%')
+      Row({ space: 8 }) {
+        Button('我的任务').id('open-task-board').fontSize(12).enabled(this.idle()).onClick(() => this.openPage('pages/Tasks'))
+        Button('安排').id('open-schedule').fontSize(12).enabled(this.idle()).onClick(() => this.openPage('pages/Schedule'))
+        Button('设置').id('open-gateway-settings').fontSize(12).enabled(this.idle()).onClick(() => this.openPage('pages/GatewaySettings'))
+      }.width('100%')
+      if (!this.view.configured) {
+        Text('模型尚未配置，请打开“设置”。已有任务和草案可离线查看、核对保存。')
+          .id('task-agent-offline-hint').fontSize(12).fontColor('#8A5A12').width('100%')
+      }
       if (this.view.phase !== 'idle') {
         Row({ space: 9 }) {
           LoadingProgress().width(20).height(20).color('#176766')
@@ -146,7 +167,7 @@ struct TaskAssistantPage {
   }
   @Builder
   receiptCard() {
-    if (this.view.receipt !== null) {
+    if (this.view.receipt !== null && this.view.proposal === null) {
       Column({ space: 7 }) {
         Text('最近本机保存结果').fontSize(15).fontWeight(FontWeight.Bold).fontColor('#176766')
         ForEach(this.view.receipt.tasks, (task: Task) => {
@@ -179,8 +200,37 @@ struct TaskAssistantPage {
           Text('任务已保存，当前材料详情暂未读全，请重新读取；不要重复保存。').fontSize(12).fontColor('#8A5A12')
         }
         Text('回执版本：' + String(this.view.receipt.committedRevision) + '；不代表学校平台已收到作业。').fontSize(11).fontColor('#617589')
-        Text('任务保存在本机；此页尚未接入系统到期提醒。').fontSize(11).fontColor('#617589')
+        Text('任务保存在本机；到期提醒请在“我的任务”详情核对启用，工作安排从“安排”进入。').fontSize(11).fontColor('#617589')
       }.width('100%').alignItems(HorizontalAlign.Start).padding(12).backgroundColor('#EAF4F0').borderRadius(11)
+    }
+  }
+  @Builder
+  candidatesCard() {
+    if (this.view.candidates.length > 1 && this.view.proposal === null) {
+      Column({ space: 8 }) {
+        Text('候选任务 · 需要修改时可选择').fontSize(17).fontWeight(FontWeight.Medium)
+        Text('下列来自本机查询。选择后仍需点发送，模型只生成待确认方案。').fontSize(12).fontColor('#617589')
+        if (this.view.candidatesTruncated) { Text('候选较多，仅显示前30项，请补充课程或标题缩小范围。').fontSize(12).fontColor('#8A5A12') }
+        ForEach(this.view.candidates, (task: Task) => {
+          Column({ space: 5 }) {
+            Text(task.title + ' · ' + (task.course || '课程未知')).fontSize(14)
+            Text(this.deadline(task) + ' · ' + this.statusLabel(task.status)).fontSize(12).fontColor('#617589')
+            Text('编号：' + task.id).fontSize(10).fontColor('#617589')
+            Button('选择此任务').id('task-agent-choose-' + task.id).fontSize(12).enabled(this.idle() && !this.view.historyPending && !this.view.recoveryRequired)
+              .onClick(() => { this.controller?.chooseTask(task.id); })
+          }.width('100%').alignItems(HorizontalAlign.Start).padding(10).backgroundColor('#FFFFFF').borderRadius(9)
+        }, (task: Task) => task.id + ':' + String(task.version))
+      }.width('100%').alignItems(HorizontalAlign.Start)
+    }
+    if (this.view.selectedTask !== null) {
+      Column({ space: 7 }) {
+        Text('本轮已选择：' + this.view.selectedTask.task.title + ' · ' + (this.view.selectedTask.task.course || '课程未知')).fontSize(14).fontColor('#176766')
+        Text(this.deadline(this.view.selectedTask.task) + ' · 当前版本' + String(this.view.selectedTask.task.version)).fontSize(12)
+        ForEach(this.view.selectedTask.notices, (notice: Notice) => {
+          Text((notice.sourceLabel || '来源未知') + '\n' + notice.rawText).fontSize(12).copyOption(CopyOptions.InApp)
+        }, (notice: Notice) => notice.id)
+        Button('解除本轮选择').id('task-agent-clear-choice').fontSize(12).enabled(this.idle()).onClick(() => { this.controller?.clearTaskChoice(); })
+      }.width('100%').alignItems(HorizontalAlign.Start).padding(12).backgroundColor('#E6F1EC').borderRadius(9)
     }
   }
   @Builder
@@ -228,7 +278,6 @@ struct TaskAssistantPage {
         Scroll(this.scroller) {
           Column({ space: 12 }) {
             if (this.view.notice.length > 0) { Text(this.view.notice).id('task-agent-notice').fontSize(13).fontColor('#617589') }
-            if (!this.view.configured) { Text('请先返回主页填写团队网关设置，再进入任务助手。').fontSize(13).fontColor('#8A5A12') }
             if (this.view.messages.length === 0) { Text('把一段通知直接发进来；缺信息时我会追问，也可以查询已保存任务。').fontSize(15).fontColor('#617589') }
             ForEach(this.view.messages.slice(-30), (row: ChatMessage) => {
               Column({ space: 4 }) {
@@ -239,6 +288,7 @@ struct TaskAssistantPage {
                 .backgroundColor(row.role === 'user' ? '#E6F1EC' : '#FFFFFF').borderRadius(11)
             }, (row: ChatMessage) => row.id + ':' + row.phase)
             if (this.view.toolActions.length > 0) { Text(this.view.toolActions.map((action: string) => this.actionLabel(action)).join(' → ')).fontSize(11).fontColor('#617589') }
+            this.candidatesCard()
             this.proposalCard()
             this.receiptCard()
             if (this.view.historyPending) {

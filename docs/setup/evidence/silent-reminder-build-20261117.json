@@ -1,0 +1,30 @@
+{
+  "runtimeCommit": "ce293922763da5e5bd8d008a1d7d903ec6099889",
+  "sourceHashesUnchanged": 28,
+  "copiedClientFiles": 137,
+  "unsignedBytes": 1344820,
+  "unsignedSha256": "bbaaf88eff524035139d186ca5f003b50128f4f5c090049e151e43fd3faaa9cf",
+  "abcSha256": "aff53d4d4b5db092255bb7c7c6521346ad6bc1c4b79f9ad497eb99ab56d6adb1",
+  "buildTime": "17 s 595 ms",
+  "tests": {
+    "reminders": 20,
+    "taskBoard": 8,
+    "taskAgent": 24,
+    "noticeSave": 51,
+    "sharedExport": 12,
+    "nativeExport": 9
+  },
+  "earlierNativeFailure": "cddd5f3: ArkTS constructor property declarations, fixed before this successful export",
+  "signedBytes": 1391679,
+  "signedSha256": "a72d508974bf43915e7c08d19e40786f9fd77e540897fc5d3d5030dc7550ce84",
+  "signedAbcMatches": true,
+  "signedBuildTime": "15 s 655 ms",
+  "device": {
+    "installed": true,
+    "oldTaskKept": true,
+    "reminderPanelVisible": true,
+    "permissionButtonVisible": true,
+    "realRegistrationVerified": false,
+    "audioOperations": 0
+  }
+}
