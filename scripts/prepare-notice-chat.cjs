@@ -147,6 +147,7 @@ function prepare(output) {
     'entry/src/main/ets/domain/CommitModels.ts','entry/src/main/ets/domain/CommitValidation.ts','entry/src/main/ets/domain/MaterialCommitValidation.ts',
     'entry/src/main/ets/domain/TaskStateRules.ts','entry/src/main/ets/data/CommitServices.ts','entry/src/main/ets/tasks/TaskActionsController.ts',
     'entry/src/main/ets/agent/AgentTools.ts','entry/src/main/ets/planning/WeekPlanner.ts',
+    'entry/src/main/ets/planning/PlanningContracts.ts','entry/src/main/ets/planning/PlanningRules.ts','entry/src/main/ets/planning/PlanningValidation.ts',
     'entry/src/main/ets/reminders/CalendarReminderPort.ts',pages+'HarmonyCalendarAccess.ets',
     'entry/src/main/module.json5','entry/src/main/resources/base/element/string.json'])
     hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');

@@ -1,5 +1,6 @@
 import { ChecklistItem, Notice, Task } from './StorageModels';
 import { TaskDraft } from './TaskContracts';
+import { PlanningChange, PlanningIntent, PlanningResult } from '../planning/PlanningContracts';
 
 /** Creation only: IDs, task binding and initial state are owned by the client. */
 export class ChecklistCreateDraft {
@@ -46,6 +47,7 @@ export class ProposalDraft {
   // Prepared by the trusted notice importer, not raw model metadata.
   notices: Notice[] = [];
   changes: TaskChangeDraft[] = [];
+  planning?: PlanningIntent;
 }
 
 export interface ProposedTaskChange {
@@ -74,6 +76,7 @@ export interface CommitProposal {
   // v3 only: original material state is immutable evidence, not a live pointer.
   checklistUpdates?: ProposedChecklistState[];
   checklistBefore?: ChecklistItem[];
+  planning?: PlanningChange;
 }
 
 export class ConfirmedCommitRequest {
@@ -103,4 +106,5 @@ export interface CommitReceipt {
   checklistItems?: ChecklistItem[];
   updatedChecklistItems?: ChecklistItem[];
   submissionSnapshots?: UserSubmissionSnapshot[];
+  planning?: PlanningResult;
 }

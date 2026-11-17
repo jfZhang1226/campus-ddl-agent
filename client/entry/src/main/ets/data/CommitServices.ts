@@ -9,6 +9,9 @@ import { requireArgument, validateDraft, validateTask } from '../domain/TaskVali
 import { LocalStore } from './LocalStore';
 import { requireJsonValue } from './storage/JsonValues';
 import { isStorageId, StorageFailure, StorageResult, storageError, storageSuccess } from './storage/StorageTypes';
+import { PLAN_PROPOSAL_RECORD, PLAN_OPERATION_RECORD, PlanningChange, PlanningIntent } from '../planning/PlanningContracts';
+import { planningResult, planningTaskChanges, preparePlanningChange } from '../planning/PlanningRules';
+import { assertPlanningBefore, assertPlanningNotExpired } from '../planning/PlanningValidation';
 
 function value<T>(result: StorageResult<T>): T {
   if (!result.success || result.data === null) throw new StorageFailure(result.errorCode === null ? 'STORAGE_FAILED' : result.errorCode, result.message);
@@ -110,11 +113,45 @@ class CommitEngine {
     return proposal;
   }
 
+  private usedOperationIds(snapshot: BusinessSnapshot): string[] {
+    return snapshot.operations.map(entry => (entry as CommitReceipt).operationId).concat(
+      snapshot.proposals.filter(entry => (entry as CommitProposal).recordType === PLAN_PROPOSAL_RECORD)
+        .map(entry => (entry as CommitProposal).operationId as string),
+      this.confirmations.map(record => record.request.operationId));
+  }
+  private async stagePlanning(draft: ProposalDraft): Promise<CommitProposal> {
+    requireArgument(isStorageId(draft.sessionId) && Array.isArray(draft.notices) && draft.notices.length === 0 &&
+      Array.isArray(draft.changes) && draft.changes.length === 0, '安排意图不能混入新通知、材料或外部任务草案。');
+    revision(draft.expectedRevision);
+    const snapshot = await this.read(); this.checkRevision(snapshot, draft.expectedRevision);
+    if (snapshot.proposals.some(entry => isProposalRecord((entry as CommitProposal).recordType) && (entry as CommitProposal).state === 'pending')) {
+      throw new StorageFailure('CONFIRMATION_REQUIRED', '请先处理现有待确认方案，再生成安排，避免使其他方案过期。');
+    }
+    const now = this.now();
+    requireArgument(snapshot.operations.filter(entry => (entry as CommitReceipt).recordType === PLAN_OPERATION_RECORD)
+      .every(entry => timestampMillis((entry as CommitReceipt).createdAt) <= timestampMillis(now)), '当前时钟早于已有安排提交，请校正后再安排。');
+    const planning = preparePlanningChange(snapshot, draft.planning as PlanningIntent, now);
+    const changes: ProposedTaskChange[] = planningTaskChanges(planning).map((change: TaskChangeDraft): ProposedTaskChange => {
+      const before = snapshot.tasks.find(task => task.id === change.taskId) as Task;
+      return { action: 'update', taskId: before.id, expectedVersion: before.version, before: copy(before), draft: fields(change.draft) };
+    });
+    const sources: string[] = [];
+    changes.forEach(change => change.draft.noticeIds.forEach(id => { if (!sources.includes(id)) sources.push(id); }));
+    const proposal: CommitProposal = { recordType: PLAN_PROPOSAL_RECORD,
+      id: this.id('proposal-', snapshot.proposals.map(entry => (entry as CommitProposal).id)),
+      sessionId: draft.sessionId, kind: 'plan_changes', changes: changes, notices: [], sourceNoticeIds: sources,
+      expectedRevision: snapshot.revision + 1, state: 'pending', createdAt: now,
+      operationId: this.id('operation-', this.usedOperationIds(snapshot)), checklistItems: [], planning: planning };
+    validateProposal(proposal); snapshot.proposals.push(proposal);
+    value(await this.store.save(snapshot, draft.expectedRevision)); return copy(proposal);
+  }
+
   stage(input: ProposalDraft): Promise<StorageResult<CommitProposal>> {
     return guard(async () => {
       const draft: ProposalDraft = copy(input);
-      requireArgument(Object.keys(draft).every((key: string) => ['sessionId', 'expectedRevision', 'notices', 'changes'].includes(key)),
+      requireArgument(Object.keys(draft).every((key: string) => ['sessionId', 'expectedRevision', 'notices', 'changes', 'planning'].includes(key)),
         '方案含未支持的字段，不能忽略后保存。');
+      if (draft.planning !== undefined) return this.stagePlanning(draft);
       requireArgument(isStorageId(draft.sessionId) && Array.isArray(draft.notices) && Array.isArray(draft.changes) &&
         draft.changes.length > 0 && draft.changes.length <= 50, '方案会话或变更数量无效。');
       revision(draft.expectedRevision);
@@ -147,6 +184,9 @@ class CommitEngine {
       catch (error) { throw new StorageFailure('INVALID_ARGUMENT', '待导入的通知字段无效。'); }
       const snapshot: BusinessSnapshot = await this.read();
       this.checkRevision(snapshot, draft.expectedRevision);
+      if (snapshot.proposals.some(entry => (entry as CommitProposal).recordType === PLAN_PROPOSAL_RECORD && (entry as CommitProposal).state === 'pending')) {
+        throw new StorageFailure('CONFIRMATION_REQUIRED', '已有待确认安排，请先核对保存或放弃，不能用另一方案使其过期。');
+      }
       requireArgument(Number.isSafeInteger(snapshot.revision + 2), '快照版本已超出支持范围。');
       requireArgument(new Set<string>(draft.notices.map((notice: Notice) => notice.id)).size === draft.notices.length &&
         draft.notices.every((notice: Notice) => !snapshot.notices.some((old: Notice) => old.id === notice.id)),
@@ -249,9 +289,10 @@ class CommitEngine {
       const existing: ConfirmationRecord | undefined = this.confirmations.find((record: ConfirmationRecord) =>
         record.request.proposalId === id && record.proposalText === text);
       if (existing !== undefined) return copy(existing.request);
-      const used: string[] = snapshot.operations.map((entry: Object) => (entry as CommitReceipt).operationId).concat(
-        this.confirmations.map((record: ConfirmationRecord) => record.request.operationId));
-      const request: ConfirmedCommitRequest = new ConfirmedCommitRequest(id, this.id('operation-', used), expected);
+      const used: string[] = this.usedOperationIds(snapshot);
+      const operationId: string = proposal.recordType === PLAN_PROPOSAL_RECORD ? proposal.operationId as string : this.id('operation-', used);
+      requireArgument(this.operation(snapshot, operationId) === null, '预留操作标识已被使用，请读取实际结果。');
+      const request: ConfirmedCommitRequest = new ConfirmedCommitRequest(id, operationId, expected);
       this.confirmations.push(new ConfirmationRecord(request, proposal, this.now(proposal.createdAt)));
       return copy(request);
     });
@@ -274,6 +315,11 @@ class CommitEngine {
         record.request.expectedRevision === request.expectedRevision && record.proposalText === JSON.stringify(proposal));
       if (authorization === undefined) throw new StorageFailure('CONFIRMATION_REQUIRED', '需要由客户端重新展示方案并明确确认。');
       const now: string = this.now(authorization.confirmedAt);
+      if (proposal.recordType === PLAN_PROPOSAL_RECORD) {
+        requireArgument(proposal.operationId === request.operationId, '安排提交必须沿用原预留幂等标识。');
+        assertPlanningBefore(snapshot, proposal.planning as PlanningChange);
+        assertPlanningNotExpired(proposal.planning as PlanningChange, now);
+      }
       const tasks: Task[] = [];
       const changed: string[] = [];
       if (proposal.recordType === MATERIAL_PROPOSAL_RECORD) {
@@ -345,6 +391,10 @@ class CommitEngine {
           confirmedSubmittedAt: authorization.confirmedAt, submissionChannel: task.submissionChannel,
           sourceNoticeIds: task.noticeIds.slice(), materials: copy(snapshot.checklistItems.filter(item => item.taskId === task.id))
         }));
+      }
+      if (proposal.recordType === PLAN_PROPOSAL_RECORD) {
+        receipt.planning = planningResult(proposal.planning as PlanningChange);
+        snapshot.availabilityBlocks = copy(receipt.planning.availability); snapshot.planBlocks = copy(receipt.planning.blocks);
       }
       proposal.state = 'applied'; proposal.operationId = request.operationId;
       snapshot.operations.push(receipt);

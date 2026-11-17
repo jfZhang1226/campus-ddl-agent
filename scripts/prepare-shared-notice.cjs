@@ -23,7 +23,8 @@ function prepare(output) {
     'reminders/ReminderPlan.ts','reminders/ReminderService.ts','reminders/ReminderSettings.ts',
     'reminders/TaskReminderController.ts','reminders/ReminderOwner.ets','data/ClientStorage.ets','data/LocalStore.ts',
     'domain/CommitModels.ts','domain/CommitValidation.ts','domain/MaterialCommitValidation.ts','domain/TaskStateRules.ts',
-    'data/CommitServices.ts','tasks/TaskActionsController.ts','planning/WeekPlanner.ts','reminders/CalendarReminderPort.ts']) {
+    'data/CommitServices.ts','tasks/TaskActionsController.ts','planning/WeekPlanner.ts','reminders/CalendarReminderPort.ts',
+    'planning/PlanningContracts.ts','planning/PlanningRules.ts','planning/PlanningValidation.ts']) {
     const file='entry/src/main/ets/'+f;hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
   }
   const manifest={...result,scope:'T19-shared-notice-entry',bundleName:app.app.bundleName,versionCode:300,hashes,

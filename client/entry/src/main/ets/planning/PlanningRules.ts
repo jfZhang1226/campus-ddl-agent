@@ -43,7 +43,7 @@ export function validatePlanningIntent(intent: PlanningIntent): void {
   }
 }
 /** Older opaque reserved objects remain readable elsewhere; planning refuses to interpret/drop them. */
-export function planningCollections(snapshot: BusinessSnapshot): void {
+export function planningCollections(snapshot: BusinessSnapshot, verifyTaskReferences: boolean = true): void {
   if (!Array.isArray(snapshot.availabilityBlocks) || !Array.isArray(snapshot.planBlocks) || snapshot.availabilityBlocks.length > 200 || snapshot.planBlocks.length > 1000) {
     throw new StorageFailure('UNSUPPORTED_SCHEMA', '已有时间集合超出当前安排接口支持范围，原数据已保留。');
   }
@@ -56,7 +56,7 @@ export function planningCollections(snapshot: BusinessSnapshot): void {
     available.forEach(row => { requireArgument(text(row.id), '可用区间标识无效。'); span(row); });
     blocks.forEach(row => {
       span(row);
-      requireArgument(text(row.id) && text(row.taskId) && snapshot.tasks.some(task => task.id === row.taskId) && ['pending', 'done'].includes(row.state) && typeof row.locked === 'boolean' &&
+      requireArgument(text(row.id) && text(row.taskId) && (!verifyTaskReferences || snapshot.tasks.some(task => task.id === row.taskId)) && ['pending', 'done'].includes(row.state) && typeof row.locked === 'boolean' &&
         Number.isSafeInteger(row.planRevision) && row.planRevision >= 0 && row.planRevision <= snapshot.revision, '已有安排引用、状态或版本无效。');
     });
     requireArgument(new Set(available.map(row => row.id)).size === available.length && new Set(blocks.map(row => row.id)).size === blocks.length, '时间集合ID重复。');
