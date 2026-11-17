@@ -1,4 +1,5 @@
 import { ReminderOwner } from '../reminders/ReminderOwner';
-import { HarmonyReminderPort } from './HarmonyReminderPort';
+import { HarmonyCalendarAccess } from './HarmonyCalendarAccess';
+import { CalendarReminderPort } from '../reminders/CalendarReminderPort';
 
-export const nativeReminderOwner = new ReminderOwner(context => new HarmonyReminderPort(context));
+export const nativeReminderOwner = new ReminderOwner(context => new CalendarReminderPort(new HarmonyCalendarAccess(context)));

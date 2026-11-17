@@ -12,6 +12,8 @@ export class TaskReminderView {
   preview: ReminderPlan | null = null;
   notice: string = '';
   errorCode: string = '';
+  permissionAction: string = '允许本应用通知';
+  permissionNotice: string = '';
 }
 /** Reminder preview and screen-only confirmation are separate from model/task confirmation. */
 export class TaskReminderController {
@@ -22,6 +24,7 @@ export class TaskReminderController {
   private observer: ((view: TaskReminderView) => void) | undefined;
   constructor(private service: ReminderService, private now: () => string = () => new Date().toISOString()) {
     this.view.supported = service.supported();
+    this.view.permissionAction = service.permissionAction(); this.view.permissionNotice = service.permissionNotice();
   }
   snapshot(): TaskReminderView { return JSON.parse(JSON.stringify(this.view)) as TaskReminderView; }
   subscribe(observer: (view: TaskReminderView) => void): void { this.observer = observer; this.publish(); }
@@ -29,7 +32,8 @@ export class TaskReminderController {
   select(task: Task | null): void {
     if (this.disposed) return;
     ++this.generation; this.task = task === null ? null : JSON.parse(JSON.stringify(task)) as Task;
-    this.view = new TaskReminderView(); this.view.supported = this.service.supported(); this.publish();
+    this.view = new TaskReminderView(); this.view.supported = this.service.supported();
+    this.view.permissionAction = this.service.permissionAction(); this.view.permissionNotice = this.service.permissionNotice(); this.publish();
     if (task !== null) this.refresh();
   }
   private error(error: Error): void {
@@ -42,8 +46,10 @@ export class TaskReminderController {
     const id: string = this.task.id;
     this.view.busy = true; this.view.preview = null; this.publish();
     try {
-      const settings = await this.service.reconcile();
       const permission = await this.service.permission();
+      if (generation !== this.generation || this.disposed) return;
+      this.view.permission = permission;
+      const settings = await this.service.reconcile();
       if (generation !== this.generation || this.disposed) return;
       this.view.setting = settings.find(entry => entry.taskId === id) || null;
       this.view.permission = permission; this.view.errorCode = ''; this.view.notice = '';
@@ -56,7 +62,7 @@ export class TaskReminderController {
     this.view.busy = true; this.publish();
     try {
       const allowed = await this.service.requestPermission();
-      if (generation === this.generation) { this.view.permission = allowed; this.view.notice = allowed ? '通知权限已允许，请核对提醒计划后再启用。' : '未允许通知，任务查看与保存仍可用。'; }
+      if (generation === this.generation) { this.view.permission = allowed; this.view.notice = allowed ? '提醒所需权限已允许，请核对提醒计划后再启用。' : '未允许提醒所需权限，任务查看与保存仍可用。'; }
     } catch (error) { if (generation === this.generation) this.error(error as Error); }
     finally { if (generation === this.generation) { this.view.busy = false; this.publish(); } }
   }
@@ -64,7 +70,7 @@ export class TaskReminderController {
     if (this.disposed || this.view.busy || this.task === null || !this.view.supported) return;
     this.view.preview = null;
     try {
-      if (!this.view.permission) throw new StorageFailure('NOTIFICATION_PERMISSION_REQUIRED', '请先允许通知，再核对并启用提醒。');
+      if (!this.view.permission) throw new StorageFailure('NOTIFICATION_PERMISSION_REQUIRED', '请先允许提醒所需权限，再核对并启用。');
       this.view.preview = deadlineReminderPlan(this.task, leadMinutes, this.now()); this.view.errorCode = ''; this.view.notice = '';
     } catch (error) { this.error(error as Error); }
     this.publish();

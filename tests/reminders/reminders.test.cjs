@@ -3,6 +3,7 @@ const {deadlineReminderPlan,UnavailableReminderPort}=require('../../client/entry
 const {ReminderSettingsRepository}=require('../../client/entry/src/main/ets/reminders/ReminderSettings.ts');
 const {ReminderService}=require('../../client/entry/src/main/ets/reminders/ReminderService.ts');
 const {StorageCoordinator}=require('../../client/entry/src/main/ets/data/storage/StorageCoordinator.ts');
+const {CalendarReminderPort}=require('../../client/entry/src/main/ets/reminders/CalendarReminderPort.ts');
 const clone=x=>structuredClone(x),now=()=> '2026-11-17T10:00:00+08:00';
 class Files {
  files=new Map();commits=0;failCommit=0;loseAck=0;
@@ -24,6 +25,43 @@ function setup(files=new Files(),port=new Port()){
  const settings=new ReminderSettingsRepository(new StorageCoordinator(files));const service=new ReminderService(tasks,settings,port,now);
  return {state,tasks,settings,service,files,port};
 }
+class CalendarAccess {
+ id=null;allowed=true;enabled=true;legacy=false;records=[];creates=0;inserts=0;removed=[];next=0;loseInsert=false;loseCreate=false;
+ supported(){return true;}async permission(){return this.allowed;}async requestPermission(){return this.allowed;}
+ async ensureLegacyClear(){if(this.legacy)throw Error('synthetic outstanding old reminder');}
+ async find(){return this.id;}async create(){this.creates++;this.id=0;if(this.loseCreate){this.loseCreate=false;throw Error('synthetic calendar create acknowledgement loss');}return this.id;}
+ async reminderEnabled(id){assert.equal(id,this.id);return this.enabled;}
+ async events(id){assert.equal(id,this.id);return clone(this.records);}
+ async insert(id,event){assert.equal(id,this.id);this.inserts++;const eventId=this.next++;this.records.push({id:eventId,key:event.key,startTime:event.startTime,endTime:event.endTime,reminderMinutes:[event.leadMinutes],allDay:false});if(this.loseInsert){this.loseInsert=false;throw Error('synthetic event insert acknowledgement loss');}return eventId;}
+ async remove(id,eventId){assert.equal(id,this.id);this.removed.push(eventId);this.records=this.records.filter(e=>e.id!==eventId);}
+}
+function calendarSetup(){const access=new CalendarAccess(),port=new CalendarReminderPort(access,()=>Date.parse(now())),s=setup(new Files(),port);return {...s,access};}
+test('calendar read/preview and denied access never create a calendar or event',async()=>{
+ const s=calendarSetup();assert.deepEqual(await s.port.list(),[]);assert.equal(s.access.creates,0);s.access.allowed=false;await assert.rejects(s.port.publish(deadlineReminderPlan(s.state.task,60,now())),e=>e.code==='CALENDAR_PERMISSION_REQUIRED');assert.equal(s.access.inserts,0);assert.equal(s.access.creates,0);
+});
+test('calendar explicit enable uses original deadline and lead, reads exact point and accepts calendar/event ID zero',async()=>{
+ const s=calendarSetup(),entry=await s.service.enable(s.state.task.id,1,60);assert.equal(entry.phase,'registered');assert.equal(s.access.creates,1);assert.equal(s.access.records[0].startTime,Date.parse(s.state.task.dueAt));assert.deepEqual(s.access.records[0].reminderMinutes,[60]);assert.equal(s.access.records[0].endTime-s.access.records[0].startTime,60000);
+ const actual=(await s.port.list())[0];assert.equal(actual.id,0);assert.equal(actual.fireAt,entry.plan.fireAt);assert.equal(actual.enabled,true);await s.service.enable(s.state.task.id,1,60);assert.equal(s.access.inserts,1);
+});
+test('lost calendar creation or event acknowledgement recovers existing own account/key without duplication',async()=>{
+ for(const kind of ['loseCreate','loseInsert']){const s=calendarSetup();s.access[kind]=true;await assert.rejects(s.service.enable(s.state.task.id,1,60));await setup(s.files,s.port).service.reconcile();assert.equal(s.access.creates,1);assert.equal(s.access.inserts,1);assert.equal(s.access.records.length,1);assert.equal((await s.settings.read()).data.entries[0].phase,'registered');}
+});
+test('calendar foreign events are neither returned as reminders nor deleted on task cancellation',async()=>{
+ const s=calendarSetup();await s.service.enable(s.state.task.id,1,60);s.access.records.push({id:99,key:'user-created-event',startTime:0,endTime:100,reminderMinutes:[],allDay:false});await s.port.cancel(99);assert.deepEqual(s.access.removed,[]);await s.service.disable(s.state.task.id);assert.deepEqual(s.access.removed,[0]);assert.deepEqual(s.access.records.map(e=>e.id),[99]);
+});
+test('external calendar time edit or disabled reminder account is reported, never silently repaired',async()=>{
+ for(const edit of [s=>s.access.records[0].startTime+=60000,s=>s.access.enabled=false,s=>s.access.records[0].reminderMinutes=[],s=>s.access.records[0].allDay=true]){const s=calendarSetup();await s.service.enable(s.state.task.id,1,60);edit(s);const enabled=s.access.enabled;await s.service.reconcile();assert.equal((await s.settings.read()).data.entries[0].phase,'needs_attention');assert.equal(s.access.inserts,1);await assert.rejects(s.service.enable(s.state.task.id,1,60),e=>e.code==='REMINDER_EXTERNALLY_CHANGED');assert.equal(s.access.enabled,enabled);await s.service.disable(s.state.task.id);assert.equal(s.access.records.length,0);}
+});
+test('system-side calendar deletion does not recreate account/event on cold reconcile',async()=>{
+ const s=calendarSetup();await s.service.enable(s.state.task.id,1,60);s.access.id=null;s.access.records=[];await setup(s.files,s.port).service.reconcile();const entry=(await s.settings.read()).data.entries[0];assert.equal(entry.phase,'disabled');assert.equal(entry.enabled,false);assert.equal(s.access.creates,1);assert.equal(s.access.inserts,1);
+});
+test('legacy native registrations block backend switch before reading or creating calendar data',async()=>{
+ const s=calendarSetup();s.access.legacy=true;await assert.rejects(s.port.list());await assert.rejects(s.service.enable(s.state.task.id,1,60));assert.equal(s.access.creates,0);assert.equal(s.access.inserts,0);assert.equal(s.access.records.length,0);
+});
+test('disabled existing dedicated calendar is not re-enabled and invalid/elapsed event intent makes no writes',async()=>{
+ const s=calendarSetup();s.access.id=5;s.access.enabled=false;await assert.rejects(s.service.enable(s.state.task.id,1,60),e=>e.code==='CALENDAR_REMINDERS_DISABLED');assert.equal(s.access.inserts,0);assert.equal(s.access.creates,0);assert.equal(s.access.enabled,false);
+ const p=deadlineReminderPlan(s.state.task,60,now());p.fireAt='2026-11-17T00:00:00Z';await assert.rejects(s.port.publish(p),e=>e.code==='INVALID_ARGUMENT');assert.equal(s.access.inserts,0);
+});
 test('exact deadline reminder is deterministic across restarts and never edits the task',()=>{
  const t=task(),before=clone(t);const a=deadlineReminderPlan(t,60,now()),b=deadlineReminderPlan(clone(t),60,now());
  assert.equal(a.key,b.key);assert.equal(a.fireAt,'2026-12-10T09:00:00.000Z');assert.equal(a.deadlineAt,t.dueAt);assert.deepEqual(t,before);
@@ -109,6 +147,10 @@ test('permission denial keeps task flow independent and cannot prepare a hidden 
  const s=setup();s.port.allowed=false;const c=new TaskReminderController(s.service,now);c.select(s.state.task);await tick();c.prepare(60);
  assert.equal(c.snapshot().preview,null);assert.equal(c.snapshot().errorCode,'NOTIFICATION_PERMISSION_REQUIRED');await c.requestPermission();assert.equal(c.snapshot().permission,false);
  assert.equal(s.port.published,0);s.port.allowed=true;await c.requestPermission();c.prepare(60);assert.notEqual(c.snapshot().preview,null);assert.equal(s.port.published,0);c.dispose();
+});
+test('failed OS reconciliation does not misreport already granted notification permission as denied',async()=>{
+ const s=setup();await s.service.enable(s.state.task.id,1,60);s.port.list=async()=>{throw Error('synthetic OS query failure');};
+ const c=new TaskReminderController(s.service,now);c.select(s.state.task);await tick();assert.equal(c.snapshot().permission,true);assert.equal(c.snapshot().errorCode,'REMINDER_UNCERTAIN');assert.equal(c.snapshot().setting,null);c.dispose();
 });
 test('leaving after explicit reminder confirmation suppresses late UI while durable authorized work completes',async()=>{
  const s=setup(),c=new TaskReminderController(s.service,now);c.select(s.state.task);await tick();c.prepare(60);let release;

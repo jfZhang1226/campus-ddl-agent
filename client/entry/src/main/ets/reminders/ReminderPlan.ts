@@ -9,7 +9,7 @@ export class ReminderPlan {
     public fireAt: string, public leadMinutes: number, public key: string, public title: string, public content: string) {}
 }
 export class ReminderRegistration {
-  constructor(public id: number, public key: string) {}
+  constructor(public id: number, public key: string, public fireAt?: string, public deadlineAt?: string, public enabled?: boolean) {}
 }
 /** Only native owners supply OS registration; the shared core never plays sounds. */
 export interface ReminderPort {
@@ -19,6 +19,8 @@ export interface ReminderPort {
   list(): Promise<ReminderRegistration[]>;
   publish(plan: ReminderPlan): Promise<number>;
   cancel(id: number): Promise<void>;
+  permissionAction?(): string;
+  permissionNotice?(): string;
 }
 export class UnavailableReminderPort implements ReminderPort {
   supported(): boolean { return false; }

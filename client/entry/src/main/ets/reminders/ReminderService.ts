@@ -2,6 +2,7 @@ import { TaskReadPort } from '../tasks/TaskBoardController';
 import { StorageFailure, StorageResult } from '../data/storage/StorageTypes';
 import { ReminderPlan, ReminderPort, ReminderRegistration, deadlineReminderPlan } from './ReminderPlan';
 import { ReminderSetting, ReminderSettingsDocument, ReminderSettingsPort } from './ReminderSettings';
+import { timestampMillis } from '../domain/DateRules';
 
 function value<T>(result: StorageResult<T>): T {
   if (!result.success || result.data === null) throw new StorageFailure(result.errorCode || 'STORAGE_FAILED', result.message || '提醒操作未完成。');
@@ -13,6 +14,8 @@ export class ReminderService {
   constructor(private tasks: TaskReadPort, private settings: ReminderSettingsPort,
     private port: ReminderPort, private now: () => string = () => new Date().toISOString()) {}
   supported(): boolean { return this.port.supported(); }
+  permissionAction(): string { return this.port.permissionAction?.() || '允许本应用通知'; }
+  permissionNotice(): string { return this.port.permissionNotice?.() || '通知提示音由系统设置控制；本页不会播放测试声音。'; }
   permission(): Promise<boolean> { return this.port.permission(); }
   requestPermission(): Promise<boolean> { return this.port.requestPermission(); }
   private serial<T>(work: () => Promise<T>): Promise<T> {
@@ -28,6 +31,11 @@ export class ReminderService {
   private keys(entry: ReminderSetting): string[] {
     return entry.retiredKeys.concat(entry.plan === null ? [] : [entry.plan.key]);
   }
+  private matches(record: ReminderRegistration, plan: ReminderPlan): boolean {
+    return record.key === plan.key && record.enabled !== false &&
+      (record.fireAt === undefined || timestampMillis(record.fireAt) === timestampMillis(plan.fireAt)) &&
+      (record.deadlineAt === undefined || timestampMillis(record.deadlineAt) === timestampMillis(plan.deadlineAt));
+  }
   private async cleanup(keys: string[], keep: string = ''): Promise<void> {
     const records: ReminderRegistration[] = await this.port.list();
     for (const record of records) if (record.key !== keep && keys.includes(record.key)) await this.port.cancel(record.id);
@@ -40,7 +48,7 @@ export class ReminderService {
   enable(taskId: string, expectedVersion: number, leadMinutes: number): Promise<ReminderSetting> {
     return this.serial(async () => {
       if (!this.supported()) throw new StorageFailure('UNSUPPORTED_PLATFORM', '当前入口不支持系统提醒。');
-      if (!await this.port.permission()) throw new StorageFailure('NOTIFICATION_PERMISSION_REQUIRED', '请先允许本应用通知，再明确启用提醒。');
+      if (!await this.port.permission()) throw new StorageFailure('NOTIFICATION_PERMISSION_REQUIRED', '请先允许提醒所需权限，再明确启用提醒。');
       const detail = value(await this.tasks.get(taskId));
       if (detail.task.version !== expectedVersion) throw new StorageFailure('VERSION_CONFLICT', '任务已变化，请重新读取后设置提醒。');
       const plan = deadlineReminderPlan(detail.task, leadMinutes, this.now());
@@ -60,15 +68,16 @@ export class ReminderService {
   private async register(document: ReminderSettingsDocument, entry: ReminderSetting, plan: ReminderPlan): Promise<ReminderSetting> {
     await this.cleanup(entry.retiredKeys, plan.key);
     let records = (await this.port.list()).filter(record => record.key === plan.key);
+    if (records.some(record => !this.matches(record, plan))) throw new StorageFailure('REMINDER_EXTERNALLY_CHANGED', '系统中的提醒时间、提前量或开关已变化；请先核对或明确取消，不会自动覆盖。');
     if (records.length === 0) {
       const id = await this.port.publish(plan);
       if (!Number.isSafeInteger(id) || id < 0) throw new StorageFailure('REMINDER_UNCERTAIN', '系统未返回有效提醒编号，请重新读取。');
       records = (await this.port.list()).filter(record => record.key === plan.key);
-      if (!records.some(record => record.id === id)) throw new StorageFailure('REMINDER_UNCERTAIN', '提醒登记结果未读到，请重新读取，勿重复启用。');
+      if (!records.some(record => record.id === id && this.matches(record, plan))) throw new StorageFailure('REMINDER_UNCERTAIN', '提醒登记时刻或编号未读到，请重新读取，勿重复启用。');
     }
     for (const duplicate of records.slice(1)) await this.port.cancel(duplicate.id);
     const actual = (await this.port.list()).filter(record => record.key === plan.key);
-    if (actual.length !== 1) throw new StorageFailure('REMINDER_UNCERTAIN', '提醒登记数量不一致，请重新读取。');
+    if (actual.length !== 1 || !this.matches(actual[0], plan)) throw new StorageFailure('REMINDER_UNCERTAIN', '提醒登记数量或时刻不一致，请重新读取。');
     const result = await this.tasks.get(entry.taskId);
     if (!result.success && result.errorCode === 'NOT_FOUND') {
       await this.cleanup([plan.key]); entry.enabled = false; entry.phase = 'disabled'; entry.plan = null; entry.retiredKeys = [];
@@ -118,6 +127,10 @@ export class ReminderService {
           // A system-side deletion/expiry is not permission to resurrect a reminder on app launch.
           await this.cleanup(entry.retiredKeys); entry.enabled = false; entry.phase = 'disabled'; entry.plan = null; entry.retiredKeys = [];
           document = await this.save(document, entry); continue;
+        }
+        if (entry.plan !== null && registered.some(record => record.key === entry.plan?.key && !this.matches(record, entry.plan as ReminderPlan))) {
+          if (entry.phase !== 'needs_attention') { entry.phase = 'needs_attention'; document = await this.save(document, entry); }
+          continue; // User calendar edits/disabled account never silently turn back on.
         }
         const detailResult = await this.tasks.get(entry.taskId);
         if (!detailResult.success && detailResult.errorCode !== 'NOT_FOUND') {

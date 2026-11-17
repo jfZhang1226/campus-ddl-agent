@@ -106,9 +106,9 @@ struct TasksPage {
           Checkbox({ name: item.itemId }).id('task-material-' + item.itemId).select(item.state === 'prepared')
             .enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired && this.view.detail?.task.status !== 'done' && this.view.detail?.task.status !== 'cancelled')
             .onChange((checked: boolean) => { if (checked !== (item.state === 'prepared')) this.actionsController?.toggle(item.itemId); })
-          Text(item.label + (item.state !== item.originalState ? '（未保存）' : '')).fontSize(14).layoutWeight(1)
+          Text((item.state === 'prepared' ? '已准备 · ' : '待准备 · ') + item.label + (item.state !== item.originalState ? '（未保存）' : '')).fontSize(14).layoutWeight(1)
         }.width('100%')
-      }, (item: MaterialChoice) => item.itemId)
+      }, (item: MaterialChoice) => item.itemId + ':' + item.state + ':' + item.originalState)
       if (this.actions.materials.length === 0) { Text('没有记录材料要求。').fontSize(13).fontColor('#617589') }
       Button('核对准备情况').id('task-material-prepare').fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
         .onClick(() => { if (this.readyForAction('materials')) this.actionsController?.prepareMaterials(); })
@@ -171,9 +171,9 @@ struct TasksPage {
         Text('当前入口暂不支持系统提醒，任务查看与保存仍可用。').fontSize(12).fontColor('#617589')
       } else {
         Text(this.reminderStatus()).id('task-reminder-status').fontSize(12).fontColor('#176766')
-        Text('通知提示音由系统设置控制；本页不会播放测试声音。').fontSize(11).fontColor('#617589')
+        Text(this.reminder.permissionNotice).fontSize(11).fontColor('#617589')
         if (!this.reminder.permission) {
-          Button('允许本应用通知').id('task-reminder-permission').fontSize(12).enabled(!this.reminder.busy)
+          Button(this.reminder.permissionAction).id('task-reminder-permission').fontSize(12).enabled(!this.reminder.busy)
             .onClick(() => { this.reminderController?.requestPermission(); })
         }
         if (this.view.detail !== null && this.view.detail.task.deadlinePrecision !== 'exact') {

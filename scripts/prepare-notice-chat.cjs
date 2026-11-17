@@ -13,7 +13,7 @@ function prepare(output) {
   const pages='entry/src/main/ets/pages/';
   write(pages+'NoticeSpeechOwner.ets',fs.readFileSync(path.join(root,'probes/harmony-noticechat/NoticeSpeechOwner.ets'),'utf8'));
   write(pages+'TaskAgentSpeechOwner.ets',fs.readFileSync(path.join(root,'probes/harmony-noticechat/TaskAgentSpeechOwner.ets'),'utf8'));
-  for(const name of ['NativeReminderOwner.ets','HarmonyReminderPort.ets'])
+  for(const name of ['NativeReminderOwner.ets','HarmonyReminderPort.ets','HarmonyCalendarAccess.ets'])
     write(pages+name,fs.readFileSync(path.join(root,'probes/harmony-noticechat',name),'utf8'));
   let taskBoardPage=fs.readFileSync(path.join(root,'client/entry/src/main/ets/pages/Tasks.ets'),'utf8');
   taskBoardPage=replaceOnce(taskBoardPage,"import { reminderOwner } from '../reminders/ReminderOwner';",
@@ -113,6 +113,8 @@ function prepare(output) {
   const nativeModulePath=path.join(result.output,'entry/src/main/module.json5');
   const nativeModule=JSON.parse(fs.readFileSync(nativeModulePath,'utf8'));
   nativeModule.module.requestPermissions.push({name:'ohos.permission.PUBLISH_AGENT_REMINDER'});
+  for(const permission of ['ohos.permission.READ_CALENDAR','ohos.permission.WRITE_CALENDAR'])
+    nativeModule.module.requestPermissions.push({name:permission,reason:'$string:calendar_reminder_permission_reason',usedScene:{abilities:['EntryAbility'],when:'inuse'}});
   fs.writeFileSync(nativeModulePath,JSON.stringify(nativeModule,null,2)+'\n');
   const appFile=path.join(result.output,'AppScope/app.json5');
   const app=JSON.parse(fs.readFileSync(appFile,'utf8'));
@@ -121,6 +123,7 @@ function prepare(output) {
   const stringsFile=path.join(result.output,'entry/src/main/resources/base/element/string.json');
   const strings=JSON.parse(fs.readFileSync(stringsFile,'utf8'));
   for(const row of strings.string)if(row.name==='EntryAbility_label')row.value='课事清通知联调';
+  strings.string.push({name:'calendar_reminder_permission_reason',value:'用于管理课事清专用任务日历及到期提醒'});
   fs.writeFileSync(stringsFile,JSON.stringify(strings,null,2)+'\n');
   write('entry/src/main/resources/base/profile/main_pages.json',JSON.stringify({src:[
     'pages/VoiceChat','pages/NoticeChat','pages/TaskAssistant','pages/Tasks','pages/SpeechProbe'
@@ -143,7 +146,9 @@ function prepare(output) {
     'entry/src/main/ets/reminders/ReminderOwner.ets','entry/src/main/ets/data/ClientStorage.ets','entry/src/main/ets/data/LocalStore.ts',
     'entry/src/main/ets/domain/CommitModels.ts','entry/src/main/ets/domain/CommitValidation.ts','entry/src/main/ets/domain/MaterialCommitValidation.ts',
     'entry/src/main/ets/domain/TaskStateRules.ts','entry/src/main/ets/data/CommitServices.ts','entry/src/main/ets/tasks/TaskActionsController.ts',
-    'entry/src/main/ets/agent/AgentTools.ts','entry/src/main/ets/planning/WeekPlanner.ts'])
+    'entry/src/main/ets/agent/AgentTools.ts','entry/src/main/ets/planning/WeekPlanner.ts',
+    'entry/src/main/ets/reminders/CalendarReminderPort.ts',pages+'HarmonyCalendarAccess.ets',
+    'entry/src/main/module.json5','entry/src/main/resources/base/element/string.json'])
     hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
   const manifest={...result,scope:'T19-local-integration',bundleName:app.app.bundleName,versionCode:400,formalSaveEnabled:true,hashes};
   write('T19-source-manifest.json',JSON.stringify(manifest,null,2)+'\n');

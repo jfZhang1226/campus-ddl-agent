@@ -19,7 +19,7 @@ check('independent bundle, empty signing and explicit mic/internet/reminder perm
   assert.equal(json('AppScope/app.json5').app.bundleName,'com.campusddl.noticeprobe');
   assert.deepEqual(json('build-profile.json5').app.signingConfigs,[]);
   assert.deepEqual(json('entry/src/main/module.json5').module.requestPermissions.map(x=>x.name).sort(),
-    ['ohos.permission.INTERNET','ohos.permission.MICROPHONE','ohos.permission.PUBLISH_AGENT_REMINDER']);
+    ['ohos.permission.INTERNET','ohos.permission.MICROPHONE','ohos.permission.PUBLISH_AGENT_REMINDER','ohos.permission.READ_CALENDAR','ohos.permission.WRITE_CALENDAR']);
 });
 check('actual page assembly wires trusted confirmation, recovery and readback without base CRUD',()=>{
   const page=read('entry/src/main/ets/pages/NoticeChat.ets');
@@ -67,7 +67,7 @@ check('production pages and client files are preserved except explicit export co
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
 check('manifest matches actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,36);
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,40);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
@@ -98,5 +98,15 @@ check('task detail and candidate choices call actual controllers without bypassi
   assert.match(page,/hasLocalChanges/);assert.match(page,/submissionChannel/);assert.match(page,/entry.materials/);
   assert.match(dialogue,/task-agent-choose-/);assert.match(dialogue,/this.controller\?\.chooseTask\(task.id\)/);
   assert.match(dialogue,/selectedTask.notices/);
+  assert.match(page,/item.itemId \+ ':' \+ item.state \+ ':' \+ item.originalState/);
+});
+check('calendar access uses explicit app account and narrow permissions; shared owner remains unavailable by default',()=>{
+  const access=read('entry/src/main/ets/pages/HarmonyCalendarAccess.ets');
+  assert.match(access,/getCalendar\(this.account\)/);assert.match(access,/EventFilter.filterById/);assert.match(access,/ensureLegacyClear/);
+  assert.doesNotMatch(access,/getAllCalendars|getCalendar\(\)|getCalendar\(undefined/);
+  assert.match(read('entry/src/main/ets/pages/NativeReminderOwner.ets'),/new CalendarReminderPort\(new HarmonyCalendarAccess\(context\)\)/);
+  assert.doesNotMatch(JSON.stringify(json('entry/src/main/module.json5')),/WHOLE_CALENDAR/);
+  const permissions=json('entry/src/main/module.json5').module.requestPermissions;
+  assert.ok(permissions.filter(p=>/READ_CALENDAR|WRITE_CALENDAR/.test(p.name)).every(p=>p.reason==='$string:calendar_reminder_permission_reason'&&p.usedScene.when==='inuse'));
 });
 console.log(`${count} T19 source-export checks passed. No signing, network, microphone or device calls.`);
