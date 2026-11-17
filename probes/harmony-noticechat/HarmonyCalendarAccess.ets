@@ -76,7 +76,10 @@ export class HarmonyCalendarAccess implements CalendarReminderAccess {
   async events(id: number): Promise<CalendarReminderEvent[]> {
     try {
       const calendar = await this.calendar(id);
-      const metadata = await calendar.getEvents(undefined, ['id', 'identifier']);
+      // API26 devices reject an explicit undefined first argument with 401.
+      // The Calendar port limits its events to this declared query range.
+      const filter = calendarManager.EventFilter.filterByTime(0, 4102444800000);
+      const metadata = await calendar.getEvents(filter, ['id', 'identifier']);
       if (metadata.length > 2000) throw new StorageFailure('CALENDAR_LIMIT', '专用日历项目较多，请先核对后再试。');
       const ids: number[] = metadata.filter(event => /^campusddl1-[a-f0-9]{32}$/.test(event.identifier || '')).map(event => event.id as number);
       if (ids.length === 0) return [];

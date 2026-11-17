@@ -62,6 +62,12 @@ test('disabled existing dedicated calendar is not re-enabled and invalid/elapsed
  const s=calendarSetup();s.access.id=5;s.access.enabled=false;await assert.rejects(s.service.enable(s.state.task.id,1,60),e=>e.code==='CALENDAR_REMINDERS_DISABLED');assert.equal(s.access.inserts,0);assert.equal(s.access.creates,0);assert.equal(s.access.enabled,false);
  const p=deadlineReminderPlan(s.state.task,60,now());p.fireAt='2026-11-17T00:00:00Z';await assert.rejects(s.port.publish(p),e=>e.code==='INVALID_ARGUMENT');assert.equal(s.access.inserts,0);
 });
+test('calendar refuses events outside its discoverable range before creating an account or event',async()=>{
+ const s=calendarSetup(),t=clone(s.state.task);t.dueAt='2100-01-01T00:00:00Z';
+ const plan=deadlineReminderPlan(t,60,now());await assert.rejects(s.port.publish(plan),e=>e.code==='CALENDAR_TIME_OUT_OF_RANGE');
+ assert.equal(s.access.creates,0);assert.equal(s.access.inserts,0);assert.deepEqual(s.access.records,[]);
+});
+
 test('exact deadline reminder is deterministic across restarts and never edits the task',()=>{
  const t=task(),before=clone(t);const a=deadlineReminderPlan(t,60,now()),b=deadlineReminderPlan(clone(t),60,now());
  assert.equal(a.key,b.key);assert.equal(a.fireAt,'2026-12-10T09:00:00.000Z');assert.equal(a.deadlineAt,t.dueAt);assert.deepEqual(t,before);

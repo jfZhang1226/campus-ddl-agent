@@ -67,7 +67,7 @@ check('production pages and client files are preserved except explicit export co
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
 check('manifest matches actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,40);
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,43);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
@@ -104,6 +104,8 @@ check('calendar access uses explicit app account and narrow permissions; shared 
   const access=read('entry/src/main/ets/pages/HarmonyCalendarAccess.ets');
   assert.match(access,/getCalendar\(this.account\)/);assert.match(access,/EventFilter.filterById/);assert.match(access,/ensureLegacyClear/);
   assert.doesNotMatch(access,/getAllCalendars|getCalendar\(\)|getCalendar\(undefined/);
+  assert.doesNotMatch(access,/getEvents\(undefined/);
+  assert.match(access,/EventFilter.filterByTime\(0, 4102444800000\)/);
   assert.match(read('entry/src/main/ets/pages/NativeReminderOwner.ets'),/new CalendarReminderPort\(new HarmonyCalendarAccess\(context\)\)/);
   assert.doesNotMatch(JSON.stringify(json('entry/src/main/module.json5')),/WHOLE_CALENDAR/);
   const permissions=json('entry/src/main/module.json5').module.requestPermissions;

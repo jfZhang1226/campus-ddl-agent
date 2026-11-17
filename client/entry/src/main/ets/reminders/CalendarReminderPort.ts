@@ -58,6 +58,11 @@ export class CalendarReminderPort implements ReminderPort {
   async publish(plan: ReminderPlan): Promise<number> {
     await this.guard();
     const deadline: number = timestampMillis(plan.deadlineAt), fire: number = timestampMillis(plan.fireAt);
+    // Match the explicit native metadata query. Never create an event outside
+    // the range we can subsequently discover, deduplicate and cancel.
+    if (deadline < 0 || deadline + 60000 >= 4102444800000) {
+      throw new StorageFailure('CALENDAR_TIME_OUT_OF_RANGE', '当前日历提醒支持1970年至2100年前的时刻；任务截止保持不变，请核对提醒时间。');
+    }
     if (!ours(plan.key) || !Number.isSafeInteger(plan.leadMinutes) || plan.leadMinutes < 1 || plan.leadMinutes > 10080 ||
       !Number.isFinite(deadline) || !Number.isFinite(fire) || deadline - fire !== plan.leadMinutes * 60000 || fire < this.now() + 60000 ||
       plan.title.length < 1 || plan.title.length > 80 || plan.content.length < 1 || plan.content.length > 200) {
