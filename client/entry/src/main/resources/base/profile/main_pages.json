@@ -4,6 +4,7 @@
     "pages/NoticeImport",
     "pages/TaskAssistant",
     "pages/Tasks",
+    "pages/Schedule",
     "pages/StorageCheck",
     "pages/TaskCheck",
     "pages/HistoryCheck",

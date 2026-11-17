@@ -175,3 +175,11 @@ TaskChangeDraft可选`checklistUpdates:[{itemId,state}]`与`confirmSubmission:bo
 v3方案保存`checklistBefore`和每条更新的before，正式写入前复查版本及前状态；回执增加`updatedChecklistItems`及`submissionSnapshots`。每条用户提交声明含id、taskId、taskVersion、confirmedSubmittedAt、submissionChannel、sourceNoticeIds和当时materials快照，与正式变化一次保存。旧回执不被后续勾选覆盖。准备完成需要所有材料prepared；用户声明提交须先ready，后续要求变化保留submitted与旧声明并提示重新核对，重新声明产生新快照。done仅用于无提交要求的普通任务，done/cancelled材料不再改写。
 
 模型白名单只增加update中原checklistCreates的使用，不提供checklistUpdates或confirmSubmission；准备状态与提交声明由任务详情页人工核对并明确确认。新增材料不得复制已有清单，材料删除/重命名仍不支持。用户标记已提交始终不代表平台已收到。材料/操作记录若损坏，保留原文件并报错，不通过删除历史绕过绑定。
+# v4 安排确认增量（2026-11-17）
+
+`t16.proposal.v4`/`t16.operation.v4`只用于`kind=plan_changes`，旧v1/v2/v3继续读取，旧客户端拒绝未知v4，不能降级后忽略安排。ProposalDraft.planning接完整PlanningIntent：availability、replan、lock、done。入口禁止同时传新通知、材料或任意任务changes；可信C规则重读同一快照，产生before/after与候选。availability/replan/lock可零任务changes；done只增加同一任务明确剩余分钟的更新，不自动扣工时、不修改任务状态/DDL。字段定义见PlanningContracts.ts。
+
+v4方案暂存即持久化预留operationId，冷重试沿用；这不是确认授权或保存成功。屏幕确认仍在内存授权，重启后未提交必须重新核对确认。正式集合、任务工时、方案终态、回执在原CommitEngine/LocalStore同一次快照提交；取消保留预留ID归属，历史成功回执可在后续版本后重放，不重新排量。v4与已知待确认方案互斥，过期/版本冲突不自动重排。
+
+已使用的计划集合必须结构/引用有效且与最新计划回执一致。历史方案按冻结v4规则验证，不因后续任务改期就删除历史；旧opaque保留集合规划入口拒绝解释。JsonSnapshotFile候选验证允许有匹配回执的下一提交版本，正式C读取仍拒绝超前回执。当前确定性集成/控制器23项通过；原生构建与手机安排需各自证据，不由这些主机检查替代。
+

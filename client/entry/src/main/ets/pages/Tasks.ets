@@ -50,7 +50,7 @@ struct TasksPage {
     return false;
   }
   private originalEffort(): string { return this.view.detail === null || this.view.detail.task.remainingMinutes === null ? '' : String(this.view.detail.task.remainingMinutes); }
-  private hasLocalChanges(): boolean { return (this.actionsController?.hasLocalChanges() || false) || this.materialLabel.trim().length > 0 || this.effortMinutes !== this.originalEffort(); }
+  private hasLocalChanges(): boolean { return this.actions.pending === null && ((this.actionsController?.hasLocalChanges() || false) || this.materialLabel.trim().length > 0 || this.effortMinutes !== this.originalEffort()); }
   private readyForAction(mode: string): boolean {
     if ((mode !== 'add' && this.materialLabel.trim().length > 0) || (mode !== 'effort' && this.effortMinutes !== this.originalEffort())) {
       this.localHint = '材料名称或剩余工时尚未整理进方案，请先用对应的核对按钮处理，或放弃未保存内容。'; return false;
@@ -171,6 +171,9 @@ struct TasksPage {
         Text('当前入口暂不支持系统提醒，任务查看与保存仍可用。').fontSize(12).fontColor('#617589')
       } else {
         Text(this.reminderStatus()).id('task-reminder-status').fontSize(12).fontColor('#176766')
+        if (this.reminder.setting?.phase === 'registered' && this.reminder.setting.plan !== null) {
+          Text('登记提醒时刻：' + this.reminderTime(this.reminder.setting.plan.fireAt)).id('task-reminder-registered-time').fontSize(12)
+        }
         Text(this.reminder.permissionNotice).fontSize(11).fontColor('#617589')
         if (!this.reminder.permission) {
           Button(this.reminder.permissionAction).id('task-reminder-permission').fontSize(12).enabled(!this.reminder.busy)
@@ -243,6 +246,10 @@ struct TasksPage {
           if (!this.onBackPress()) router.back();
         })
         Text(this.view.detail === null ? '我的任务' : '任务详情').fontSize(23).fontWeight(FontWeight.Bold).layoutWeight(1)
+        Button('安排').id('task-open-schedule').fontSize(12).enabled(!this.reminder.busy && !this.actions.busy).onClick(() => {
+          if (this.actions.pending !== null || this.actions.recoveryRequired || this.hasLocalChanges()) { this.localHint = '请先处理本页待确认修改或未保存输入，再打开安排。'; return; }
+          router.pushUrl({ url: 'pages/Schedule' }).catch(() => { this.localHint = '无法打开工作安排。'; });
+        })
         Button('刷新').id('task-board-refresh').fontSize(12).enabled(!this.view.loading && !this.reminder.busy && !this.actions.busy).onClick(() => { this.refreshTask(this.view.detail?.task.id || null); })
       }.width('100%').padding(14)
       if (this.actions.notice.length > 0) { Text(this.actions.notice).id('task-action-notice').fontSize(12).fontColor('#176766').padding(8) }

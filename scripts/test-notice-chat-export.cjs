@@ -67,7 +67,7 @@ check('production pages and client files are preserved except explicit export co
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
 check('manifest matches actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,43);
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,46);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
@@ -110,5 +110,13 @@ check('calendar access uses explicit app account and narrow permissions; shared 
   assert.doesNotMatch(JSON.stringify(json('entry/src/main/module.json5')),/WHOLE_CALENDAR/);
   const permissions=json('entry/src/main/module.json5').module.requestPermissions;
   assert.ok(permissions.filter(p=>/READ_CALENDAR|WRITE_CALENDAR/.test(p.name)).every(p=>p.reason==='$string:calendar_reminder_permission_reason'&&p.usedScene.when==='inuse'));
+});
+check('work schedule route shares original storage and screen confirmation without model or direct writes',()=>{
+  assert.ok(json('entry/src/main/resources/base/profile/main_pages.json').src.includes('pages/Schedule'));
+  const page=read('entry/src/main/ets/pages/Schedule.ets');
+  assert.match(page,/new PlanningController\(storage.local, storage.commits\)/);
+  assert.match(page,/id\('plan-confirm'\)/);assert.match(page,/this.controller\?\.confirm\(\)/);
+  assert.match(read('entry/src/main/ets/pages/Tasks.ets'),/url: 'pages\/Schedule'/);
+  assert.doesNotMatch(page,/\.local.save\(|\.tasks.update\(|fetch\(/);
 });
 console.log(`${count} T19 source-export checks passed. No signing, network, microphone or device calls.`);

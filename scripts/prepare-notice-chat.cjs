@@ -126,7 +126,7 @@ function prepare(output) {
   strings.string.push({name:'calendar_reminder_permission_reason',value:'用于管理课事清专用任务日历及到期提醒'});
   fs.writeFileSync(stringsFile,JSON.stringify(strings,null,2)+'\n');
   write('entry/src/main/resources/base/profile/main_pages.json',JSON.stringify({src:[
-    'pages/VoiceChat','pages/NoticeChat','pages/TaskAssistant','pages/Tasks','pages/SpeechProbe'
+    'pages/VoiceChat','pages/NoticeChat','pages/TaskAssistant','pages/Tasks','pages/Schedule','pages/SpeechProbe'
   ]},null,2)+'\n');
   for(const file of ['T15-VOICE-CHAT-ONLY.txt','T15-source-manifest.json'])fs.unlinkSync(path.join(result.output,file));
   write('T19-NOTICE-INTERACTION-ONLY.txt',
@@ -148,6 +148,7 @@ function prepare(output) {
     'entry/src/main/ets/domain/TaskStateRules.ts','entry/src/main/ets/data/CommitServices.ts','entry/src/main/ets/tasks/TaskActionsController.ts',
     'entry/src/main/ets/agent/AgentTools.ts','entry/src/main/ets/planning/WeekPlanner.ts',
     'entry/src/main/ets/planning/PlanningContracts.ts','entry/src/main/ets/planning/PlanningRules.ts','entry/src/main/ets/planning/PlanningValidation.ts',
+    'entry/src/main/ets/planning/PlanningController.ts','entry/src/main/ets/planning/PlanningForm.ts',pages+'Schedule.ets',
     'entry/src/main/ets/reminders/CalendarReminderPort.ts',pages+'HarmonyCalendarAccess.ets',
     'entry/src/main/module.json5','entry/src/main/resources/base/element/string.json'])
     hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');

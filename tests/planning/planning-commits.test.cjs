@@ -4,6 +4,8 @@ const {LocalStore}=require(root+'data/LocalStore.ts'),{CommitServices}=require(r
 const {StorageCoordinator}=require(root+'data/storage/StorageCoordinator.ts'),{TaskRepository}=require(root+'data/TaskRepository.ts');
 const {TaskDraft}=require(root+'domain/TaskContracts.ts'),{BusinessSnapshot}=require(root+'domain/StorageModels.ts');
 const {PlanningIntent}=require(root+'planning/PlanningContracts.ts');
+const {PlanningController}=require(root+'planning/PlanningController.ts');
+const {parseAvailability,planningTimestamp,planningTimeLabel}=require(root+'planning/PlanningForm.ts');
 const clone=x=>structuredClone(x),ok=r=>{assert.equal(r.success,true,r.errorCode+': '+r.message);return r.data;};
 const at=t=>'2026-11-17T'+t+':00+08:00';
 class Files {
@@ -82,4 +84,25 @@ for(const mutate of [s=>{s.operations.at(-1).planning.blocks[0].startAt=at('17:0
 test('arbitrary candidate blocks, mixed task changes and model confirmation cannot enter planning intent',async()=>{
  const s=setup(),base=intent('availability',{availability:[]});for(const i of [{...base,blocks:[]},{...base,confirmed:true},intent('done',{blockId:'unknown'})]){assert.equal((await stage(s,i)).success,false);}assert.equal(s.files.writes,0);
  const input={sessionId:'manual-week-plan',expectedRevision:0,notices:[],changes:[{}],planning:base};assert.equal((await s.commits.proposals.stage(input)).success,false);assert.equal(s.files.writes,0);
+});
+test('planning screen stages only, cold restores without applying and explicitly confirms same ID',async()=>{
+ const s=setup(),c=new PlanningController(s.store,s.commits);await c.recover();await c.stage(intent('availability',{availability:[]}));const p=c.snapshot().pending;assert.ok(p);assert.equal(ok(await s.store.read()).operations.length,0);c.dispose();
+ const cold=setup(s.files,s.runtime),again=new PlanningController(cold.store,cold.commits);await again.recover();assert.equal(again.snapshot().pending.id,p.id);assert.match(again.snapshot().notice,/没有自动保存/);assert.equal(await again.confirm(),true);assert.equal(again.snapshot().receipt.operationId,p.operationId);assert.equal(again.snapshot().pending,null);assert.equal(await again.confirm(),false);
+});
+test('planning screen stale displayed revision cannot overwrite a newer availability view',async()=>{
+ const s=setup(),c=new PlanningController(s.store,s.commits);await c.recover();await availability(s);const bytes=s.files.files.get('task-store.json');await c.stage(intent('availability',{availability:[]}));assert.equal(c.snapshot().errorCode,'VERSION_CONFLICT');assert.equal(c.snapshot().pending,null);assert.equal(s.files.files.get('task-store.json'),bytes);
+});
+test('planning screen uncertain stage locks further generation until actual pending recovery',async()=>{
+ const s=setup(),c=new PlanningController(s.store,s.commits);await c.recover();const original=s.commits.proposals.stage.bind(s.commits.proposals);s.commits.proposals.stage=async i=>{await original(i);throw Error('lost screen acknowledgement');};await c.stage(intent('availability',{availability:[]}));assert.equal(c.snapshot().recoveryRequired,true);await c.stage(intent('availability',{availability:[]}));assert.equal(ok(await s.store.read()).proposals.length,1);await c.recover();assert.ok(c.snapshot().pending);assert.equal(c.snapshot().recoveryRequired,false);await c.cancel();assert.equal(c.snapshot().pending,null);assert.equal(ok(await s.store.read()).operations.length,0);
+});
+test('planning screen retains successful receipt when subsequent page read fails',async()=>{
+ const s=setup(),c=new PlanningController(s.store,s.commits);await c.recover();await c.stage(intent('availability',{availability:[]}));const original=s.commits.confirmation.apply.bind(s.commits.confirmation);s.commits.confirmation.apply=async r=>{const result=await original(r);if(result.success)s.store.read=async()=>({success:false,data:null,errorCode:'STORAGE_FAILED',message:'synthetic read failure'});return result;};
+ assert.equal(await c.confirm(),true);assert.ok(c.snapshot().receipt);assert.equal(c.snapshot().pending,null);assert.equal(c.snapshot().recoveryRequired,true);assert.match(c.snapshot().notice,/已取得正式保存回执/);
+});
+test('planning screen disposal suppresses delayed UI publication and further writes',async()=>{
+ const s=setup(),c=new PlanningController(s.store,s.commits);let calls=0;c.subscribe(()=>calls++);const loading=c.recover();c.dispose();const n=calls;await loading;await c.stage(intent('availability',{availability:[]}));assert.equal(calls,n);assert.equal(s.files.writes,0);
+});
+test('planning form requires complete valid Beijing dates, preserves zero ranges and handles multiple explicit rows',()=>{
+ const rows=parseAvailability('2026-11-18 19:00 ~ 2026-11-18 21:00\n2026-11-19 18:30 ~ 2026-11-19 19:00');assert.equal(rows.length,2);assert.equal(rows[0].startAt,'2026-11-18T19:00:00+08:00');assert.equal(planningTimeLabel('2026-11-18T11:00:00Z'),'2026-11-18 19:00');assert.deepEqual(parseAvailability(''),[]);
+ for(const text of ['明天晚上','2026-02-30 19:00','2026-11-18 24:00','2026-11-18'])assert.throws(()=>planningTimestamp(text),e=>e.code==='INVALID_ARGUMENT');assert.throws(()=>parseAvailability('2026-11-18 19:00'),e=>e.code==='INVALID_ARGUMENT');
 });
