@@ -203,6 +203,7 @@ struct TasksPage {
           .onClick(() => { this.reminderController?.disable(); })
         if (this.reminder.busy) { Text('正在核对系统提醒…').fontSize(12).fontColor('#617589') }
         if (this.reminder.notice.length > 0) { Text(this.reminder.notice).id('task-reminder-notice').fontSize(12).fontColor('#8A5A12') }
+        if (this.reminder.errorCode.length > 0) { Text('问题编号：' + this.reminder.errorCode).id('task-reminder-error-code').fontSize(11).fontColor('#617589') }
       }
     }.width('100%').alignItems(HorizontalAlign.Start).padding(12).backgroundColor('#FFFFFF').borderRadius(10)
   }

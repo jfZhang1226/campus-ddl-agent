@@ -12,18 +12,19 @@ export class HarmonyReminderPort implements ReminderPort {
   private context: common.UIAbilityContext;
   constructor(context: common.UIAbilityContext) { this.context = context; }
   supported(): boolean { return deviceInfo.osFullName.startsWith('OpenHarmony') && deviceInfo.sdkApiVersion >= 26; }
-  private failure(error: BusinessError): StorageFailure {
-    return new StorageFailure('REMINDER_OS_' + String(error.code), '系统提醒操作未完成，请核对通知权限或重新读取。');
+  private failure(error: BusinessError, operation: string): StorageFailure {
+    const code: string = Number.isSafeInteger(error.code) ? String(error.code) : 'NATIVE_EXCEPTION';
+    return new StorageFailure('REMINDER_' + operation + '_' + code, '系统提醒操作未完成，请核对通知权限或重新读取。');
   }
   async permission(): Promise<boolean> {
     if (!this.supported()) return false;
     try { return await notificationManager.isNotificationEnabled(); }
-    catch (error) { throw this.failure(error as BusinessError); }
+    catch (error) { throw this.failure(error as BusinessError, 'PERMISSION'); }
   }
   async requestPermission(): Promise<boolean> {
     if (!this.supported()) return false;
     try { await notificationManager.requestEnableNotification(this.context); return await this.permission(); }
-    catch (error) { throw this.failure(error as BusinessError); }
+    catch (error) { throw this.failure(error as BusinessError, 'REQUEST_PERMISSION'); }
   }
   async list(): Promise<ReminderRegistration[]> {
     if (!this.supported()) throw new StorageFailure('UNSUPPORTED_PLATFORM', '此入口需API26鸿蒙设备。');
@@ -31,7 +32,7 @@ export class HarmonyReminderPort implements ReminderPort {
       const infos = await reminderAgentManager.getAllValidReminders();
       return infos.filter(info => /^campusddl1-[a-f0-9]{32}$/.test(info.reminderReq.groupId || ''))
         .map(info => new ReminderRegistration(info.reminderId, info.reminderReq.groupId || ''));
-    } catch (error) { throw this.failure(error as BusinessError); }
+    } catch (error) { throw this.failure(error as BusinessError, 'LIST'); }
   }
   async publish(plan: ReminderPlan): Promise<number> {
     if (!this.supported()) throw new StorageFailure('UNSUPPORTED_PLATFORM', '此入口需API26鸿蒙设备。');
@@ -42,11 +43,13 @@ export class HarmonyReminderPort implements ReminderPort {
     }
     const date = new Date(when);
     const notificationId: number = Number.parseInt(plan.key.slice(-7), 16);
+    let operation: string = 'PUBLISH_CHECK';
     try {
       const existing = await reminderAgentManager.getAllValidReminders();
       if (existing.some(info => info.reminderReq.notificationId === notificationId && info.reminderReq.groupId !== plan.key)) {
         throw new StorageFailure('REMINDER_ID_COLLISION', '系统提醒编号冲突，本次未覆盖已有提醒。');
       }
+      operation = 'BUILD_REQUEST';
       const request: reminderAgentManager.ReminderRequestCalendar = {
         reminderType: reminderAgentManager.ReminderType.REMINDER_TYPE_CALENDAR,
         dateTime: { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate(),
@@ -58,10 +61,11 @@ export class HarmonyReminderPort implements ReminderPort {
         wantAgent: { pkgName: this.context.abilityInfo.bundleName, abilityName: 'EntryAbility' }
       };
       // 0 uses the system notification tone; this is not a promise of silent delivery.
+      operation = 'PUBLISH';
       return await reminderAgentManager.publishReminder(request);
     } catch (error) {
       if (error instanceof StorageFailure) throw error;
-      throw this.failure(error as BusinessError);
+      throw this.failure(error as BusinessError, operation);
     }
   }
   async cancel(id: number): Promise<void> {
@@ -69,6 +73,6 @@ export class HarmonyReminderPort implements ReminderPort {
     const ours = await this.list();
     if (!ours.some(record => record.id === id)) return; // Never cancel an unrelated feature's reminder.
     try { await reminderAgentManager.cancelReminder(id); }
-    catch (error) { throw this.failure(error as BusinessError); }
+    catch (error) { throw this.failure(error as BusinessError, 'CANCEL'); }
   }
 }
