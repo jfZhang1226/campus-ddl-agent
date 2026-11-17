@@ -2,7 +2,11 @@
   "string": [
     {
       "name": "app_name",
-      "value": "CampusDdlAgent"
+      "value": "课事清"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "课事清"
     }
   ]
 }

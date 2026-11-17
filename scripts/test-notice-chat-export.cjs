@@ -38,9 +38,9 @@ check('record, end, cancel, manual draft playback and immediate stop are reachab
   const page=read('entry/src/main/ets/pages/NoticeChat.ets');
   for(const id of ['notice-record','notice-finish','notice-cancel-voice','notice-speak','notice-stop-speech'])
     assert.ok(page.includes(".id('"+id+"')"));
-  assert.match(read('entry/src/main/ets/pages/VoiceChat.ets'),/pages\/NoticeChat/);
+  assert.match(read('entry/src/main/ets/pages/DebugTools.ets'),/pages\/NoticeChat/);
   assert.deepEqual(json('entry/src/main/resources/base/profile/main_pages.json').src,
-    ['pages/VoiceChat','pages/NoticeChat','pages/TaskAssistant','pages/Tasks','pages/Schedule','pages/SpeechProbe']);
+    ['pages/TaskAssistant','pages/Tasks','pages/Schedule','pages/GatewaySettings','pages/DebugTools','pages/VoiceChat','pages/NoticeChat','pages/SpeechProbe']);
 });
 check('native owner and lifecycle release are confined to the exported assembly',()=>{
   const ability=read('entry/src/main/ets/entryability/EntryAbility.ets');
@@ -60,14 +60,15 @@ check('production pages and client files are preserved except explicit export co
   const changed=new Set(['build-profile.json5','.arkui-x/arkui-x-config.json5','AppScope/app.json5',
     'entry/src/main/module.json5','entry/src/main/resources/base/element/string.json',
     'entry/src/main/ets/entryability/EntryAbility.ets','entry/src/main/resources/base/profile/main_pages.json',
-    'entry/src/main/ets/pages/TaskAssistant.ets','entry/src/main/ets/pages/Tasks.ets']);
+    'entry/src/main/ets/pages/TaskAssistant.ets','entry/src/main/ets/pages/Tasks.ets',
+    'entry/src/main/ets/pages/GatewaySettings.ets','entry/src/main/ets/pages/DebugTools.ets']);
   const files=cp.execFileSync('git',['ls-files','-z','client/'],{cwd:root,encoding:'utf8'}).split('\0').filter(Boolean);
   for(const file of files)if(!changed.has(file.slice(7)))
     assert.equal(hash(path.join(root,file)),hash(path.join(output,file.slice(7))),file);
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
 check('manifest matches actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,49);
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,500);assert.equal(Object.keys(manifest.hashes).length,57);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
@@ -118,5 +119,26 @@ check('work schedule route shares original storage and screen confirmation witho
   assert.match(page,/id\('plan-confirm'\)/);assert.match(page,/this.controller\?\.confirm\(\)/);
   assert.match(read('entry/src/main/ets/pages/Tasks.ets'),/url: 'pages\/Schedule'/);
   assert.doesNotMatch(page,/\.local.save\(|\.tasks.update\(|fetch\(/);
+});
+check('all launcher locales survive consecutive fresh exports and root uses the task assistant',()=>{
+  for(const scope of ['AppScope/resources','entry/src/main/resources'])for(const locale of ['base','zh_CN','en_US']) {
+    const file=scope+'/'+locale+'/element/string.json';
+    for(const name of ['app_name','EntryAbility_label']) {
+      assert.equal(json(file).string.find(x=>x.name===name).value,'课事清');
+      assert.equal(JSON.parse(fs.readFileSync(path.join(root,'client',file),'utf8')).string.find(x=>x.name===name).value,'课事清');
+    }
+  }
+  assert.match(read('entry/src/main/ets/entryability/EntryAbility.ets'),/loadContent\('pages\/TaskAssistant'\)/);
+  const second=path.join(testRoot,'second-export'); prepare(second);
+  for(const file of Object.keys(manifest.hashes))assert.equal(hash(path.join(second,file)),hash(path.join(output,file)));
+});
+check('one native gateway owner serves settings and task page without duplicate credential forms',()=>{
+  const settings=read('entry/src/main/ets/pages/GatewaySettings.ets');
+  assert.match(settings,/voiceChatOwner.get\(this.context\(\)\).configuration\(\)/);
+  assert.match(settings,/voiceChatOwner.get\(this.context\(\)\).configure\(config\)/);
+  assert.match(settings,/current.token/);assert.match(settings,/validateConfig/);
+  assert.doesNotMatch(read('entry/src/main/ets/pages/VoiceChat.ets'),/voice-gateway-token|voice-configure/);
+  assert.match(read('entry/src/main/ets/pages/TaskAssistant.ets'),/onPageShow\(\): void \{ this.syncGateway\(\); \}/);
+  for(const id of ['open-task-board','open-schedule','open-gateway-settings']) assert.ok(read('entry/src/main/ets/pages/TaskAssistant.ets').includes(".id('"+id+"')"));
 });
 console.log(`${count} T19 source-export checks passed. No signing, network, microphone or device calls.`);

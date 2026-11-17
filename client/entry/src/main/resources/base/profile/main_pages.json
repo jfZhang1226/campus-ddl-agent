@@ -5,6 +5,8 @@
     "pages/TaskAssistant",
     "pages/Tasks",
     "pages/Schedule",
+    "pages/GatewaySettings",
+    "pages/DebugTools",
     "pages/StorageCheck",
     "pages/TaskCheck",
     "pages/HistoryCheck",

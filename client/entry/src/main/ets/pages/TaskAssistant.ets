@@ -20,12 +20,22 @@ struct TaskAssistantPage {
   private previousKeyboardMode: KeyboardAvoidMode = KeyboardAvoidMode.OFFSET;
   private scroller: Scroller = new Scroller();
   private scrollTimer: number = -1;
+  private syncGateway(): void {
+    const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+    this.controller?.configure(chatOwner.get(context.filesDir).configuration());
+  }
+  onPageShow(): void { this.syncGateway(); }
+  private openPage(page: string): void {
+    if (!this.idle()) return;
+    taskAgentOwner.pause();
+    router.pushUrl({ url: page }).catch(() => { this.view.notice = '无法打开页面，请稍后重试。'; });
+  }
   aboutToAppear(): void {
     this.previousKeyboardMode = this.getUIContext().getKeyboardAvoidMode();
     this.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
     const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
     this.controller = taskAgentOwner.get(context);
-    this.controller.configure(chatOwner.get(context.filesDir).configuration());
+    this.syncGateway();
     this.controller.subscribe((state: TaskAgentView) => {
       const shouldScroll: boolean = state.messages.length !== this.view.messages.length ||
         (state.proposal !== null && state.proposal.id !== this.view.proposal?.id);
@@ -68,13 +78,20 @@ struct TaskAssistantPage {
   header() {
     Column({ space: 10 }) {
       Row({ space: 10 }) {
-        Button('返回').id('task-agent-back').fontSize(12).enabled(this.view.phase === 'idle').onClick(() => this.back())
+        if (router.getLength() > 1) {
+          Button('返回').id('task-agent-back').fontSize(12).enabled(this.view.phase === 'idle').onClick(() => this.back())
+        }
         Column({ space: 3 }) {
           Text('任务助手').fontSize(23).fontWeight(FontWeight.Bold).fontColor('#142C43')
           Text('贴通知、继续补充，核对后保存').fontSize(12).fontColor('#617589')
         }.layoutWeight(1).alignItems(HorizontalAlign.Start)
         Button('新对话').id('task-agent-new').fontSize(12).enabled(this.idle() && !this.view.historyPending)
           .onClick(() => { this.prompt = 'fresh'; })
+      }.width('100%')
+      Row({ space: 8 }) {
+        Button('我的任务').id('open-task-board').fontSize(12).enabled(this.idle()).onClick(() => this.openPage('pages/Tasks'))
+        Button('安排').id('open-schedule').fontSize(12).enabled(this.idle()).onClick(() => this.openPage('pages/Schedule'))
+        Button('设置').id('open-gateway-settings').fontSize(12).enabled(this.idle()).onClick(() => this.openPage('pages/GatewaySettings'))
       }.width('100%')
       if (this.view.phase !== 'idle') {
         Row({ space: 9 }) {
@@ -257,7 +274,10 @@ struct TaskAssistantPage {
         Scroll(this.scroller) {
           Column({ space: 12 }) {
             if (this.view.notice.length > 0) { Text(this.view.notice).id('task-agent-notice').fontSize(13).fontColor('#617589') }
-            if (!this.view.configured) { Text('请先返回主页填写团队网关设置，再进入任务助手。').fontSize(13).fontColor('#8A5A12') }
+            if (!this.view.configured) {
+              Text('模型尚未配置。已有任务和草案可离线查看、核对保存；发送新通知前请先设置模型连接。').id('task-agent-offline-hint').fontSize(13).fontColor('#8A5A12')
+              Button('去设置模型连接').id('task-agent-configure').onClick(() => this.openPage('pages/GatewaySettings'))
+            }
             if (this.view.messages.length === 0) { Text('把一段通知直接发进来；缺信息时我会追问，也可以查询已保存任务。').fontSize(15).fontColor('#617589') }
             ForEach(this.view.messages.slice(-30), (row: ChatMessage) => {
               Column({ space: 4 }) {
