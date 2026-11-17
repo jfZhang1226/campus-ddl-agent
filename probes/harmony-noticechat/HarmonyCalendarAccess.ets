@@ -82,7 +82,7 @@ export class HarmonyCalendarAccess implements CalendarReminderAccess {
       if (ids.length === 0) return [];
       if (ids.some(value => !Number.isSafeInteger(value) || value < 0)) throw new StorageFailure('CALENDAR_UNCERTAIN', '日历事件编号未核实。');
       const events = await calendar.getEvents(calendarManager.EventFilter.filterById(ids), ['id', 'identifier', 'startTime', 'endTime', 'reminderTime', 'isAllDay']);
-      return events.map(event => ({ id: event.id as number, key: event.identifier || '', startTime: event.startTime,
+      return events.map((event: calendarManager.Event): CalendarReminderEvent => ({ id: event.id as number, key: event.identifier || '', startTime: event.startTime,
         endTime: event.endTime, reminderMinutes: event.reminderTime || [], allDay: event.isAllDay || false }));
     } catch (error) { if (error instanceof StorageFailure) throw error; throw this.fail(error as BusinessError, 'EVENTS'); }
   }
