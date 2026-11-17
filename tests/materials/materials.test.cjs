@@ -102,6 +102,23 @@ test('cold pending cannot acquire authorization automatically; explicit re-confi
  assert.equal((await cold.commits.confirmation.apply(request)).errorCode,'CONFIRMATION_REQUIRED');assert.equal(ok(await cold.tasks.get(initial.task.id)).checklistItems[0].state,'pending');
  await apply(cold,ok(await cold.commits.proposals.get(p.id)));assert.equal(ok(await cold.tasks.get(initial.task.id)).checklistItems[0].state,'prepared');
 });
+for(const mode of ['ordinary-task','material-state'])test('uncommitted '+mode+' confirmation keeps one operation ID across a fresh runtime while authority stays lost',async()=>{
+ const s=setup(),initial=await seed(s);const p=ok(await stage(s,initial.task.id,c=>{if(mode==='ordinary-task')c.draft.title='合成标题更新';else c.checklistUpdates=[{itemId:initial.items[0].id,state:'prepared'}];}));
+ const before=ok(await s.commits.confirmation.confirm(p.id,p.expectedRevision));const snapshot=ok(await s.store.read());assert.equal(snapshot.proposals.at(-1).operationId,null);
+ const freshRuntime=new Runtime();freshRuntime.time='2026-11-17T10:30:00+08:00';const cold=setup(s.files,freshRuntime);
+ assert.equal((await cold.commits.confirmation.apply(before)).errorCode,'CONFIRMATION_REQUIRED');
+ const after=ok(await cold.commits.confirmation.confirm(p.id,p.expectedRevision));assert.equal(after.operationId,before.operationId,'same persistent proposal must not mint a different idempotency ID after restart');
+ const receipt=ok(await cold.commits.confirmation.apply(after));assert.equal(receipt.operationId,before.operationId);assert.equal(ok(await cold.store.read()).operations.filter(r=>r.proposalId===p.id).length,1);
+});
+test('cancelled task identity cannot be reallocated by a later explicit v4 reservation',async()=>{
+ const {PlanningIntent}=require(root+'planning/PlanningContracts.ts');const s=setup(),initial=await seed(s),p=ok(await stage(s,initial.task.id,c=>{c.draft.title='合成待取消修改';})),request=ok(await s.commits.confirmation.confirm(p.id,p.expectedRevision));ok(await s.commits.confirmation.cancel(p.id,p.expectedRevision));
+ const before=s.files.files.get('task-store.json'),revision=ok(await s.store.read()).revision;let calls=0;s.runtime.nextId=()=>++calls===1?'new-plan-holder':request.operationId.slice('operation-'.length);
+ const planning=new PlanningIntent();planning.availability=[];const result=await s.commits.proposals.stage({sessionId:'manual-week-plan',expectedRevision:revision,notices:[],changes:[],planning});assert.equal(result.success,false);assert.equal(result.errorCode,'INVALID_ARGUMENT');assert.equal(s.files.files.get('task-store.json'),before);
+});
+test('persistent task-operation identity keeps its independently computed frozen namespace vector',()=>{
+ const {taskProposalOperationId}=require(root+'domain/OperationIdentity.ts');
+ assert.equal(taskProposalOperationId('proposal-fixed-01'),'operation-b040c4ef85559bba5791e0261ac41998');
+});
 test('cancel material proposal preserves formal task and material history',async()=>{
  const s=setup(),initial=await seed(s),before=ok(await s.tasks.get(initial.task.id));const p=ok(await stage(s,initial.task.id,c=>{c.checklistUpdates=[{itemId:initial.items[0].id,state:'prepared'}];}));ok(await s.commits.confirmation.cancel(p.id,p.expectedRevision));
  const actual=ok(await s.tasks.get(initial.task.id));assert.deepEqual(actual.task,before.task);assert.deepEqual(actual.checklistItems,before.checklistItems);assert.equal(ok(await s.commits.proposals.get(p.id)).state,'cancelled');

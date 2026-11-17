@@ -12,6 +12,7 @@ import { isStorageId, StorageFailure, StorageResult, storageError, storageSucces
 import { PLAN_PROPOSAL_RECORD, PLAN_OPERATION_RECORD, PlanningChange, PlanningIntent } from '../planning/PlanningContracts';
 import { planningResult, planningTaskChanges, preparePlanningChange } from '../planning/PlanningRules';
 import { assertPlanningBefore, assertPlanningNotExpired } from '../planning/PlanningValidation';
+import { taskProposalOperationId } from '../domain/OperationIdentity';
 
 function value<T>(result: StorageResult<T>): T {
   if (!result.success || result.data === null) throw new StorageFailure(result.errorCode === null ? 'STORAGE_FAILED' : result.errorCode, result.message);
@@ -115,9 +116,12 @@ class CommitEngine {
 
   private usedOperationIds(snapshot: BusinessSnapshot): string[] {
     return snapshot.operations.map(entry => (entry as CommitReceipt).operationId).concat(
-      snapshot.proposals.filter(entry => (entry as CommitProposal).recordType === PLAN_PROPOSAL_RECORD)
-        .map(entry => (entry as CommitProposal).operationId as string),
+      snapshot.proposals.filter(entry => isProposalRecord((entry as CommitProposal).recordType))
+        .map(entry => this.reservedOperationId(entry as CommitProposal)),
       this.confirmations.map(record => record.request.operationId));
+  }
+  private reservedOperationId(proposal: CommitProposal): string {
+    return proposal.recordType === PLAN_PROPOSAL_RECORD ? proposal.operationId as string : taskProposalOperationId(proposal.id);
   }
   private async stagePlanning(draft: ProposalDraft): Promise<CommitProposal> {
     requireArgument(isStorageId(draft.sessionId) && Array.isArray(draft.notices) && draft.notices.length === 0 &&
@@ -255,6 +259,7 @@ class CommitEngine {
         state: 'pending', createdAt: this.now(), operationId: null, checklistItems: items };
       if (materialMode) { proposal.checklistBefore = materialBefore; proposal.checklistUpdates = updates; }
       validateProposal(proposal);
+      requireArgument(!this.usedOperationIds(snapshot).includes(this.reservedOperationId(proposal)), '方案幂等标识与已有操作或预留冲突，原数据保留，请重新整理方案。');
       snapshot.proposals.push(proposal);
       value(await this.store.save(snapshot, draft.expectedRevision));
       return copy(proposal);
@@ -289,9 +294,11 @@ class CommitEngine {
       const existing: ConfirmationRecord | undefined = this.confirmations.find((record: ConfirmationRecord) =>
         record.request.proposalId === id && record.proposalText === text);
       if (existing !== undefined) return copy(existing.request);
-      const used: string[] = this.usedOperationIds(snapshot);
-      const operationId: string = proposal.recordType === PLAN_PROPOSAL_RECORD ? proposal.operationId as string : this.id('operation-', used);
-      requireArgument(this.operation(snapshot, operationId) === null, '预留操作标识已被使用，请读取实际结果。');
+      const operationId: string = this.reservedOperationId(proposal);
+      requireArgument(this.operation(snapshot, operationId) === null && !snapshot.proposals.some(entry => {
+        const other = entry as CommitProposal;
+        return isProposalRecord(other.recordType) && other.id !== proposal.id && this.reservedOperationId(other) === operationId;
+      }), '预留操作标识已被其他操作或方案使用，请保留原数据并读取实际结果。');
       const request: ConfirmedCommitRequest = new ConfirmedCommitRequest(id, operationId, expected);
       this.confirmations.push(new ConfirmationRecord(request, proposal, this.now(proposal.createdAt)));
       return copy(request);

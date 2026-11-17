@@ -150,6 +150,7 @@ function prepare(output) {
     'entry/src/main/ets/planning/PlanningContracts.ts','entry/src/main/ets/planning/PlanningRules.ts','entry/src/main/ets/planning/PlanningValidation.ts',
     'entry/src/main/ets/planning/PlanningController.ts','entry/src/main/ets/planning/PlanningForm.ts',pages+'Schedule.ets',
     'entry/src/main/ets/planning/PlanningQuery.ts','entry/src/main/ets/agent/AgentExecutor.ts',
+    'entry/src/main/ets/domain/OperationIdentity.ts',
     'entry/src/main/ets/reminders/CalendarReminderPort.ts',pages+'HarmonyCalendarAccess.ets',
     'entry/src/main/module.json5','entry/src/main/resources/base/element/string.json'])
     hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
