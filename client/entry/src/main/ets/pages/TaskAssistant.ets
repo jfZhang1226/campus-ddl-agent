@@ -78,7 +78,7 @@ struct TaskAssistantPage {
   header() {
     Column({ space: 10 }) {
       Row({ space: 10 }) {
-        if (router.getLength() > 1) {
+        if (Number(router.getLength()) > 1) {
           Button('返回').id('task-agent-back').fontSize(12).enabled(this.view.phase === 'idle').onClick(() => this.back())
         }
         Column({ space: 3 }) {
