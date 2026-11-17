@@ -48,7 +48,9 @@ struct Schedule {
   }
   private title(id: string): string {
     const task = this.view.tasks.find(item => item.id === id);
-    return task === undefined ? id : task.title + '（' + (task.course || '课程未提供') + '，' + id + '）';
+    if (task === undefined) return '来源任务需重新核对';
+    const duplicate = this.view.tasks.filter(item => item.title === task.title && item.course === task.course).length > 1;
+    return task.title + ' · ' + (task.course || '课程未提供') + (duplicate ? ' · 记录' + id.slice(-6) : '');
   }
   private availableLines(rows: AvailabilityBlock[]): string {
     return rows.length === 0 ? '没有可用区间' : rows.map(row => planningTimeLabel(row.startAt) + ' ~ ' + planningTimeLabel(row.endAt)).join('\n');
@@ -97,16 +99,16 @@ struct Schedule {
     if (this.view.pending?.planning !== undefined) {
       Column({ space: 8 }) {
         Text('本次安排尚未保存').fontSize(18).fontWeight(FontWeight.Bold)
+        if (this.view.pending.planning.intent.action === 'done') {
+          Text('该任务剩余工时明确设为 ' + String(this.view.pending.planning.intent.remainingMinutes) + ' 分钟；不会自动标记任务提交或完成。').id('plan-preview-effort').fontSize(12)
+        }
         Scroll() {
           Column({ space: 8 }) {
-            Text('动作：' + this.view.pending.planning.intent.action).fontSize(12)
+            Text(this.view.pending.planning.intent.action === 'availability' ? '修改可用时间' : this.view.pending.planning.intent.action === 'replan' ? '生成工作安排' : this.view.pending.planning.intent.action === 'lock' ? '修改工作块锁定' : '记录工作块完成').fontSize(12)
             Text('原可用时间\n' + this.availableLines(this.view.pending.planning.beforeAvailability)).fontSize(12)
             Text('新可用时间\n' + this.availableLines(this.view.pending.planning.afterAvailability)).fontSize(12)
             Text('原安排\n' + this.blockLines(this.view.pending.planning.beforeBlocks)).fontSize(12)
             Text('新安排\n' + this.blockLines(this.view.pending.planning.afterBlocks)).id('plan-preview-blocks').fontSize(12)
-            if (this.view.pending.planning.intent.action === 'done') {
-              Text('该任务剩余工时明确设为 ' + String(this.view.pending.planning.intent.remainingMinutes) + ' 分钟；不会自动标记任务提交或完成。').fontSize(12)
-            }
             ForEach(this.view.pending.planning.candidate?.unscheduled || [], (row: UnscheduledWork) => { Text(this.gapText(row)).fontSize(12).fontColor('#9A541B') }, (row: UnscheduledWork) => row.taskId)
             Text('只保存此处列出的安排，缺口不会自动消失；任务截止不变。').fontSize(12)
           }.alignItems(HorizontalAlign.Start).width('100%')
