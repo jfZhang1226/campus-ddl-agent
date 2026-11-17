@@ -1,6 +1,6 @@
 # 本轮交接：已验证部分与后续接口
 
-2026-11-17，PR18候选，手机当前5aaa90c独立联调包。生产共享页面与原C保存机制已使用；独立包验证不等同组员label正式入口已经整合，不覆盖/清空组员应用。
+2026-11-17，PR18候选，手机当前ceb53cf独立联调包。生产共享页面与原C保存机制已使用；独立包验证不等同组员label正式入口已经整合，不覆盖/清空组员应用。
 
 ## 已有可复现证据
 
@@ -23,6 +23,8 @@
 ## C：v3/v4协议与历史
 
 重点核对CommitModels/CommitValidation/CommitServices、MaterialCommitValidation、PlanningValidation/Rules。v4预留operationId持久化与屏幕授权分离；取消保留归属；候选R与提交R+1仅在匹配回执时允许下一步块版本，正式读取拒绝超前回执。既有v1/v2/v3可读；旧客户端须拒绝未知v4，不通过降级或清库忽略历史。v4计算配方冻结，后续算法变更需保留历史验证路径。材料删除/重命名及任务删除对历史/块引用的处理尚未实现，不能直接删数组绕过回执绑定。
+
+ceb53cf另修任务/材料confirm跨重启造不同编号：保持原字段/参数，未提交旧tag按持久proposalId与冻结命名空间派生；v4显式预留不变，旧applied重放原编号，不新增confirm写入或revision变化。请重点核对OperationIdentity及碰撞/取消预留、固定向量、授权丢失回归；旧“必须换编号”断言改为稳定，同时保留未重新确认不能apply。见[T16决策](../decisions/T16-stable-task-operation-identity.md)。手机新版暂存冷恢复/明确材料保存和旧历史已验证，未测手机confirm后apply前中断的编号观测，后者只作主机证明。
 
 ## 仍未验证或未实施
 
