@@ -146,7 +146,7 @@ struct TaskAssistantPage {
   }
   @Builder
   receiptCard() {
-    if (this.view.receipt !== null) {
+    if (this.view.receipt !== null && this.view.proposal === null) {
       Column({ space: 7 }) {
         Text('最近本机保存结果').fontSize(15).fontWeight(FontWeight.Bold).fontColor('#176766')
         ForEach(this.view.receipt.tasks, (task: Task) => {
@@ -179,7 +179,7 @@ struct TaskAssistantPage {
           Text('任务已保存，当前材料详情暂未读全，请重新读取；不要重复保存。').fontSize(12).fontColor('#8A5A12')
         }
         Text('回执版本：' + String(this.view.receipt.committedRevision) + '；不代表学校平台已收到作业。').fontSize(11).fontColor('#617589')
-        Text('任务保存在本机；此页尚未接入系统到期提醒。').fontSize(11).fontColor('#617589')
+        Text('任务保存在本机；到期提醒请在“我的任务”详情核对启用，工作安排从“安排”进入。').fontSize(11).fontColor('#617589')
       }.width('100%').alignItems(HorizontalAlign.Start).padding(12).backgroundColor('#EAF4F0').borderRadius(11)
     }
   }

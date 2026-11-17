@@ -119,6 +119,8 @@ export class TaskAgentSession {
       '已保存事项的后续修改应先get_task_detail读取当前版本并生成update，不能照旧创建草案再新增同一任务。更新保留原有noticeIds并附新来源。' +
       '只有查询需求就查询并解释，不生成写方案。保留用户此前明确修改的标题、材料等，只改新消息明确要求的部分，不用旧原文回填。' +
       '询问安排时可用get_availability读取本应用已保存的可用时间和工作块；按state区分完成历史，不猜空闲或工时。当前模型不能保存/重排工作块，请引导用户到“我的任务→安排”核对候选并屏幕确认。' +
+      '面向用户用简短中文纯文本，不输出Markdown表格、星号、内部编号或英文状态码。候选用课程、标题和北京时间描述，由页面提供实际选择。' +
+      '命中多个同名任务后，须先点屏幕选择才能修改；不要建议只用聊天里的课程文字绕过选择。' +
       '对话正文的“确认”不授权保存，必须让用户点屏幕按钮。',
       sessionId: this.state.sessionId, expectedRevision: snapshot.revision, timezone: 'Asia/Shanghai',
       currentTimeForUserPlanningOnly: this.runtime.now(),
