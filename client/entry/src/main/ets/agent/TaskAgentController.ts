@@ -8,6 +8,7 @@ import { SpeechSession, SpeechView } from '../speech/VoiceChatController';
 import { UnavailableSpeechSession } from '../speech/UnavailableSpeechSession';
 import { Notice, Task } from '../domain/StorageModels';
 import { StorageFailure, storageSuccess } from '../data/storage/StorageTypes';
+import { queryPlanningRange } from '../planning/PlanningQuery';
 import { AgentExecutor } from './AgentExecutor';
 import { AgentLoop } from './AgentLoop';
 import { ToolCall, ToolResult, normalizeResult } from './AgentTools';
@@ -215,6 +216,10 @@ export class TaskAgentController {
             return { success: false, data: null, errorCode: 'INVALID_ARGUMENT', message: '本轮查询命中多个候选，请让用户用屏幕选择实际任务后继续，不能猜测更新对象。' };
           }
           return this.session.stage(input);
+        } }, { read: async (dateFrom: string, dateTo: string) => {
+          const result = await this.store.read();
+          if (!result.success || result.data === null) return result;
+          return storageSuccess(queryPlanningRange(result.data, dateFrom, dateTo));
         } });
       const loop = new AgentLoop({ turn: async (text, state, tools, results) => {
         if (generation !== this.generation || this.cancelRequested.length > 0) return agentError(this.cancelRequested || 'CANCELLED');

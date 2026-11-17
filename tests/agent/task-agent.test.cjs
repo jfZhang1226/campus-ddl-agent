@@ -106,6 +106,12 @@ test('follow-up requirement appends only new material with its source; prior dra
  const receipt=await h.session.confirm(),actual=ok(await h.tasks.get(task.id));assert.equal(receipt.checklistItems.length,1);assert.equal(actual.checklistItems.length,3);assert.deepEqual(actual.checklistItems.slice(0,2),oldItems);assert.equal(actual.checklistItems[2].sourceNoticeId,next.preparedSources.at(-1).id);
  await h.session.append('user','合成重复要求：运行截图');const repeat=updateFor(await h.session.context(),actual.task);repeat.changes[0].checklistCreates=p.changes[0].checklistCreates;assert.equal((await h.session.stage(repeat)).errorCode,'INVALID_ARGUMENT');assert.equal(ok(await h.tasks.get(task.id)).checklistItems.length,3);
 });
+test('actual task controller reads application availability through executor without changing business snapshot',async()=>{
+ const h=setup(),{BusinessSnapshot}=require(base+'domain/StorageModels.ts');const snapshot=new BusinessSnapshot();snapshot.availabilityBlocks=[{id:'app-availability',startAt:'2026-11-18T19:00:00+08:00',endAt:'2026-11-18T21:00:00+08:00'}];ok(await h.store.save(snapshot,0));const before=h.files.files.get('task-store.json');
+ const s=controller(h,(req,n)=>{if(n===1)return {type:'tool_calls',calls:[{id:'range',action:'get_availability',params:{dateFrom:'2026-11-18',dateTo:'2026-11-18'}}]};const result=req.results[0];assert.equal(result.success,true);assert.equal(result.data.availability[0].id,'app-availability');assert.equal(result.data.revision,1);assert.deepEqual(result.data.planBlocks,[]);return {type:'answer',text:'合成查询：已保存可用时间为19点至21点，当前没有工作块。'};});
+ await s.c.initialize();s.c.configure(new GatewayConfig('https://synthetic.invalid','synthetic-token',30000));await send(s.c,'查询2026年11月18日的可用时间');assert.equal(s.calls.length,2);assert.deepEqual(s.c.snapshot().toolActions,['get_availability']);assert.equal(h.files.files.get('task-store.json'),before);assert.equal(s.c.snapshot().proposal,null);s.c.dispose();
+});
+
 test('gateway decodes only bounded normalized replies and cannot expose confirm as a tool',()=>{
  assert.equal(decodeAgentTurn(new GatewayResponse(200,'<html>')).errorCode,'INVALID_RESPONSE');
  assert.equal(decodeAgentTurn(new GatewayResponse(401,'private vendor message')).errorCode,'UNAUTHORIZED');

@@ -37,3 +37,9 @@ PlanningValidation和原CommitEngine已接四类意图；方案、预留幂等�
 集成测试发现JsonSnapshotFile在候选R及提交后R+1各解码一次，新块的planRevision须等于真正提交R+1。验证只在存在匹配的新回执时允许这一单步候选版本，正式集合还须等于最新计划回执；CommitEngine读取仍拒绝回执版本大于实际快照。不能放宽到任意未来块版本，也不能把最终块版本改成暂存版本以掩盖失败。
 
 PlanningController/PlanningForm/Schedule页面已接同一应用存储和C确认。可用区间需要明确完整的北京时间；安排范围默认当前五分钟后起七天，可编辑且不超过七天，不把默认范围当用户空闲时间。候选含原/新安排、保留块和缺口；lock/done均须核对确认，done明确填写当前剩余分钟。未整理的输入阻止误返回/刷新，持久化待确认可退出后恢复，确认丢失时锁定生成直到读到实际结果。新增六项控制器/表单检查后总计23项通过，页面SDK及手机验证仍待后续记录；暂未接模型排程工具，不能称自然语言自动规划已完成。
+
+## 只读安排工具接续
+
+86/449构建和实际安排/提交历史/日历清理证据已记SILENT_MVP_STATUS.md。继续把既有get_availability占位接至本应用快照：输入完整YYYY-MM-DD、北京时间、含首尾最多七天；返回相交原区间（不裁剪），保留done/locked状态，revision与明确rangeSemantics。只回本应用availabilityBlocks/planBlocks，不读取OS其他日历，不回传任务标题/原通知/完整业务快照；没有写入或确认能力。单次最多100区间/200块，超出明确要求缩小范围，不静默截断。未注入端口的旧入口仍明确NOT_IMPLEMENTED，现TaskAgentController注入真实只读查询。
+
+模型可查询这些安排，但没有build_plan/propose_plan_changes或保存安排的权限；上下文明确指向“我的任务→安排”进行候选与屏幕确认。本增量不改服务端、不新增白名单动作、不改变v4协议。确定性测试分别核对跨北京日/UTC/边界、严格日期、损坏/opaque保留、大小上限与执行器无写入，并通过实际TaskAgentController验证工具结果来自正式快照且业务原字节不变；SDK、实际模型和手机本增量另记，不当已通过。

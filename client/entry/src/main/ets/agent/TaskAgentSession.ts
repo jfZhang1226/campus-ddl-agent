@@ -118,6 +118,7 @@ export class TaskAgentSession {
       '材料勾选状态与用户提交声明只能由用户在详情页操作。暂不支持删除或重命名材料，要明确说明，不能伪造取消要求成功。' +
       '已保存事项的后续修改应先get_task_detail读取当前版本并生成update，不能照旧创建草案再新增同一任务。更新保留原有noticeIds并附新来源。' +
       '只有查询需求就查询并解释，不生成写方案。保留用户此前明确修改的标题、材料等，只改新消息明确要求的部分，不用旧原文回填。' +
+      '询问安排时可用get_availability读取本应用已保存的可用时间和工作块；按state区分完成历史，不猜空闲或工时。当前模型不能保存/重排工作块，请引导用户到“我的任务→安排”核对候选并屏幕确认。' +
       '对话正文的“确认”不授权保存，必须让用户点屏幕按钮。',
       sessionId: this.state.sessionId, expectedRevision: snapshot.revision, timezone: 'Asia/Shanghai',
       currentTimeForUserPlanningOnly: this.runtime.now(),

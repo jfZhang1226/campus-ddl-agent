@@ -4,6 +4,8 @@
 // 模型可见 schema 与 validateParams 保持一致：schema 里声明的必填/类型/null 规则就是运行时校验规则。
 // 边界：模型只能 propose/查询；apply/confirm 由客户端确认事件触发（T16 ClientConfirmation）。
 
+import { validAvailabilityDates } from '../planning/PlanningQuery';
+
 export const MAX_AGENT_STEPS: number = 8;
 
 export const ALLOWED_ACTIONS: string[] = [
@@ -154,7 +156,7 @@ export function validateParams(action: string, params: Object): string {
     return hasOnlyKeys(p, ['noticeId']) && nonEmpty(p.noticeId) ? '' : TOOL_ERRORS.INVALID_ARGUMENT;
   }
   if (action === 'get_availability') {
-    return hasOnlyKeys(p, ['dateFrom', 'dateTo']) && nonEmpty(p.dateFrom) && nonEmpty(p.dateTo) ?
+    return hasOnlyKeys(p, ['dateFrom', 'dateTo']) && validAvailabilityDates(p.dateFrom as string, p.dateTo as string) ?
       '' : TOOL_ERRORS.INVALID_ARGUMENT;
   }
   if (action === 'get_tasks') {
@@ -243,7 +245,7 @@ export const AGENT_TOOL_SCHEMAS: Object[] = [
     { taskId: { type: 'string' } }, ['taskId']),
   schema('get_notice', '按 noticeId 读取已正式保存的通知原文、发布时间与来源；不含待确认方案里的新来源。',
     { noticeId: { type: 'string' } }, ['noticeId']),
-  schema('get_availability', '读取指定日期区间的可用时间与已占用区间（T24 排程前为占位）。',
+  schema('get_availability', '读取课事清已保存的可用时间与工作块（含状态）。日期YYYY-MM-DD，含首尾最多七天，北京时间；只读本应用数据，不读系统其他日历。返回相交原区间，不裁剪边界；done是历史，不当待做量。',
     { dateFrom: { type: 'string' }, dateTo: { type: 'string' } }, ['dateFrom', 'dateTo']),
   schema('propose_task_changes', '生成任务创建/修改草案与关联新通知；可随附本次新增材料（checklistCreates），不得重复已有清单、改写准备状态或声明提交；仅保存草案、不改正式任务，等待用户确认。',
     { sessionId: { type: 'string' }, expectedRevision: { type: 'integer' },
