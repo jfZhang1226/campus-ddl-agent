@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-16",
+  "runtimeCommit": "9a8ac6ee75540d94d1f4abc7e81448f00d3ebf60",
+  "scope": "T19 material origin UI and conservative edit attribution",
+  "tests": {
+    "confirmedSave": 49,
+    "interaction": 19,
+    "noticeImport": 19,
+    "sharedExport": 10,
+    "nativeExport": 7,
+    "total": 104
+  },
+  "redBeforeFix": {
+    "newCases": 4,
+    "passed": 1,
+    "failed": 3
+  },
+  "builds": [
+    {
+      "bundle": "com.campusddl.noticeentry",
+      "versionCode": 300,
+      "copiedClientFiles": 121,
+      "sourceHashesUnchanged": 11,
+      "unsignedBytes": 1209057,
+      "unsignedSha256": "dc5b0d84373e138712969b8317dcb614245ec0eae26461fb4c001d3884b74a34",
+      "abcSha256": "c78d6f25a72fe1d82a274519695f91bd20368fbf5e04f09c926fa7b28c4d4061",
+      "controllerSha256": "e09eb337c7aba9234fdb149347a07917712469731a59e3754442119c9fd7fb62",
+      "buildTime": "21 s 666 ms",
+      "materialOriginSymbolsPresent": true
+    },
+    {
+      "bundle": "com.campusddl.noticeprobe",
+      "versionCode": 400,
+      "copiedClientFiles": 121,
+      "sourceHashesUnchanged": 9,
+      "unsignedBytes": 854793,
+      "unsignedSha256": "3a3348c99a2de7df5185098f2053a1d6ff0f6a46f0df5de1cb110cf6cce71b43",
+      "abcSha256": "7db14f80545f66ae053b7da952f4d4e86c146783e36ff842ac7a29d8416f724d",
+      "controllerSha256": "e09eb337c7aba9234fdb149347a07917712469731a59e3754442119c9fd7fb62",
+      "buildTime": "16 s 262 ms",
+      "materialOriginSymbolsPresent": true
+    }
+  ],
+  "signed": false,
+  "installed": false,
+  "deviceValidated": false,
+  "realModelCalls": 0,
+  "audioCalls": 0,
+  "limits": [
+    "Host file recovery is not a device restart.",
+    "No historical data migration.",
+    "No source snippet evidence or multi-task support.",
+    "Existing device packages were not updated."
+  ]
+}

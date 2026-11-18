@@ -43,17 +43,29 @@ T06 的模板验收不代表 T08 存储或后续业务通过。签名和设备�
 
 ## A 的 T13 通知输入与创建确认
 
-[T13 接入说明](docs/setup/T13-通知输入与创建确认卡.md)记录新的共享通知导入页：调用 T12 提取接口，展示可编辑草案、缺项追问和原通知，取消不写，确认后把 Notice、Task 与 ChecklistItem 在同一本地快照 revision 中保存。C 提出的非 `+08:00` 截止时区和冲突恢复问题已通过；2026-11-12 已把 T11 后的最新 main 合入本分支，历史会话与通知导入入口共存。T13 19项、T11 66项及对话/存储/任务回归、双端构建通过；PR 仍保持 Draft，待针对新 head 最终复查。
+[T13 接入说明](docs/setup/T13-通知输入与创建确认卡.md)记录共享通知导入页：调用 T12 提取接口，展示可编辑草案、缺项追问和原通知，取消不写，确认后通过 T16/T19 共享确认写入路径原子保存 Notice、Task、ChecklistItem 和回执。C 提出的非 `+08:00` 截止时区和冲突恢复问题已通过；2026-11-18 已合入最新 main，并保留任务助手、历史会话、通知导入和唯一存储 owner。T13/T19/T16/T17 及基础回归、双端构建通过；PR 仍保持 Draft，待针对集成 head 最终复查。
+
+## D 的 T19 集成候选
+
+当前 D 的 T19 候选在原PR #17持续整合：共享任务助手直接接受通知原文及自然语言补充，调用真实T17工具和C本机任务/会话/确认事务。ff94007已在Pura 70完成真实模型缺日期通知→一句自然日期→确认保存→重启无网关冷读，见[实际记录](docs/setup/T19-task-dialogue-device-20261116.md)。新任务页手动语音、真实模型、尚未保存播报/停止、确认与冷读已按[独立设备证据](docs/setup/T19-task-agent-voice-device-20261117.md)完成；保存后[同任务改期/材料保留](docs/setup/T19-task-agent-update-device-20261117.md)及[来源原文回看](docs/setup/T19-task-saved-sources-20261117.md)亦已实测。当前noticeprobe/400运行0baac0a，2秒左右停顿连续转写的反馈绑定前版6824a74；英文缩写仍会误识别，须核对转写。旧通知入口继续保留编辑确认、停止整理、误返回与材料来源保护。系统到期提醒、安排表、通用材料更新及完整跨端验收仍未完成；候选未合并或发布。
 
 ## B 的 T12 通知提取与多轮补齐
 
-[T12 接入说明](docs/setup/T12-通知提取与多轮补齐.md)记录新增的 `POST /api/agent/extract-notice`：把通知原文提取成 Notice/Task/ChecklistItem 的可编辑草案，缺项追问或标记未知，保留发布时间与来源，多轮通过客户端回传 `draft`+`answers` 确定性合并。实现为 [server/notice_extraction.py](server/notice_extraction.py)（纯逻辑）加网关新端点；主机自测 [server/verify_t12.py](server/verify_t12.py) 66 项通过，并经 [server/.env](server/.env) 真实 DeepSeek 调用通过三条样例（exact/date_only/相对日期缺截止），[草案样例](fixtures/extraction/notice-draft-samples.json) 供 A 的 T13 确认卡对接。
+[T12 接入说明](docs/setup/T12-通知提取与多轮补齐.md)记录新增的 `POST /api/agent/extract-notice`：把通知原文提取成 Notice/Task/ChecklistItem 的可编辑草案，缺项追问或标记未知，保留发布时间与来源，多轮通过客户端回传 `draft`+`answers` 确定性合并。实现为 [server/notice_extraction.py](server/notice_extraction.py)（纯逻辑）加网关新端点；主机自测 [server/verify_t12.py](server/verify_t12.py) 66 项通过，并使用仅留本机的私有配置（仓库只提供[配置模板](server/.env.example)）完成真实 DeepSeek 调用三条样例（exact/date_only/相对日期缺截止），[草案样例](fixtures/extraction/notice-draft-samples.json) 供 A 的 T13 确认卡对接。
 
 ## C 的 T11 会话历史（任务分支）
 
 [T11 接入说明](docs/setup/T11-会话历史与恢复接入.md)记录实际聊天持久化、启动恢复、正式列表/详情、切换/新建与保存重试。2026-11-05 由 C 完成页面、50项T11及既有29/106/85项回归、新目录双端构建和同源一加Ace3/Pura70技术验证；[设备证据](docs/setup/evidence/t11-device-validation-20261105.json)区分人工HTTP与真实模型、正式页与隔离故障检查。T11 经 A/B 正式 Approve 后由 PR #14 于 2026-11-11 合入 main。
 
 2026-11-06 按B评审修正保存失败后的退出：空闲失败时可只读浏览，离开未保存会话需可取消且绑定当前内容/保存尝试的确认。25TS严格、66T11及29/106/85既有回归、新目录双端构建与包核验通过，[主机构建证据](docs/setup/evidence/t11-p2-host-build-20261106.json)绑定修正源码d3e4fd9；[本轮双端新交互与对照](docs/setup/evidence/t11-p2-device-comparison-20261106.json)已完成，分别限定Android真实写失败和鸿蒙持续版本冲突，未用旧包结果代替。原数据与网络保持，人工服务已清理，无真实模型。A/B 正式评审通过后，PR #14 已合入 main。
+
+## C 的 T16 幂等提交（当前任务分支）
+
+T11 已于2026-11-11经PR #14合入main/3a22a02，以上为交付阶段历史记录。当前从该main推进T16：[接口与验证说明](docs/setup/T16-幂等提交与业务快照.md)。任务创建/编辑方案由客户端明确确认后，将业务变化、方案状态与操作回执一次快照提交；相同operationId重试返回原回执，版本冲突需重新生成并确认。T16不替代T17正式Agent串联或T30关联删除。本次材料修正按授权更新原PR #15，请A/B/D独立复查；测试/构建与设备结果分别记录，暂不合并。
+
+T16原v1源码3f02e4a已完成29TS严格、56项幂等/确认检查及既有回归，新目录双端构建和包核验通过；[原主机/构建摘要](docs/setup/evidence/t16-host-build-20261111.json)绑定同源106个客户端文件。[原Android](docs/setup/evidence/t16-android-device-20261111.json)与[鸿蒙真机](docs/setup/evidence/t16-harmony-device-20261111.json)均已完成隔离人工确认/取消、受控替换失败/同操作重试、版本不一致阻断和真实冷启动/离线回执；106/110份旧文件保持，网络恢复/保持。[原双端实际文件对照](docs/setup/evidence/t16-device-comparison-20261111.json)的9个对象排除生成ID与审计时间后业务字段一致。这些空材料案例不覆盖后续材料增量。正式页面/Agent联调、独立评审、CI与最终验收仍另行推进；当前发布状态以GitHub PR为准，暂不合并。
+
+2026-11-12按B/D意见在同一T16分支补创建型材料：新建任务的checklistCreates由客户端预留ID，默认pending，与任务/来源/方案/回执一次保存；重复或重启重放原材料结果。新记录使用v2 tag，旧v1继续读取，旧客户端拒绝v2；新生成ID去掉多余task-，旧ID不改。29TS严格、92项T16和既有回归、同源双端构建与包核验通过，见[材料增量摘要](docs/setup/evidence/t16-materials-host-build-20261112.json)。新增路径[鸿蒙](docs/setup/evidence/t16-materials-harmony-device-20261112.json)与[Android真机](docs/setup/evidence/t16-materials-android-device-20261112.json)各29项断言/3次真实冷启动通过，[两端9个实际对象](docs/setup/evidence/t16-materials-device-comparison-20261112.json)替换生成ID/排除审计时间后业务一致；除明确更新的诊断索引外旧campus文件保持，网络恢复/保持。完整协议与限制见[T16说明第11—13节](docs/setup/T16-幂等提交与业务快照.md#11-创建型材料及-bd-意见修正2026-11-12)。材料勾选及已有清单编辑仍按T22推进；本次修正按授权推送原分支并更新PR #15，请A/B/D复查；暂不合并，正式T13/T17/T19整链路另验。
 
 ## C 的 T03 交付
 
@@ -68,3 +80,5 @@ T06 的模板验收不代表 T08 存储或后续业务通过。签名和设备�
 本分支已同步 main 的 T07 最小模型网关（`server/`）和 T10 文本对话；主入口为 T10，共享网关设置页保留 T08 存储开发验证入口。T10 消息与配置仍仅在内存中，尚未接入 T08 持久化或 T11 历史；任务业务与语音也未接入本分支页面。T08 技术复查通过与最终验收、合并确认分别记录，模型调用能力见 [T07](docs/setup/T07-B最小模型网关与接口约定.md)，存储样例不代替模型验证。
 
 本次 main 同步的组合源码43646d3已通过存储106项/对话29项主机检查、鸿蒙与完整Android构建及原生库/签名检查，见 [集成记录](docs/setup/evidence/t08-main-sync-20261029.json)。未新增真机或真实模型请求；最终确认保留新增组合入口的检查范围，B 对467a65c的结论不当作其已审后续差异。
+
+当前可复现主流程与尚未覆盖范围见[T40演示准备稿](docs/setup/T19-current-demo.md)，尚不是最终版本彩排或课程验收。

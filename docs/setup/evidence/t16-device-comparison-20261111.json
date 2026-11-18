@@ -1,0 +1,79 @@
+{
+  "recordedAt": "2026-11-11",
+  "task": "T16",
+  "sourceCommit": "3f02e4ae868e8d219c40f429d9ac7910cbfd1b36",
+  "clientFilesEqualFixedSource": 106,
+  "runtimeSourceUnchangedAfterHostBuilds": true,
+  "signedAndUnsignedHarmonyBytecodeEqual": true,
+  "android": {
+    "model": "PJE110 / OnePlus Ace3",
+    "api": 36,
+    "requiredAssertionsPassed": 21,
+    "preexistingFilesByteIdentical": 106,
+    "newIsolatedFiles": 10,
+    "coldProcessChecks": 3,
+    "apkSha256": "fca29e3dfa3ef28103a2bd61ca02c08f668de7946e189ef23d524deb506a27b7",
+    "networkFlagsRestored": true
+  },
+  "harmony": {
+    "model": "ADY-AL10 / Pura70",
+    "api": 26,
+    "requiredAssertionsPassed": 21,
+    "preexistingFilesByteIdentical": 110,
+    "newIsolatedFiles": 10,
+    "coldProcessChecks": 3,
+    "signedHapSha256": "673b44467ba49f47737d88325b1e943687f3d36493b992badde82b8c88c6cf8e",
+    "originalInactiveNoDefaultNetworkPreserved": true
+  },
+  "comparison": {
+    "cases": [
+      {
+        "case": "cancel",
+        "snapshotEqual": true,
+        "backupEqual": true,
+        "probeReportEqual": true
+      },
+      {
+        "case": "staleCancel",
+        "snapshotEqual": true,
+        "backupEqual": true,
+        "probeReportEqual": true
+      },
+      {
+        "case": "applied",
+        "snapshotEqual": true,
+        "backupEqual": true,
+        "probeReportEqual": true
+      }
+    ],
+    "equalObjects": 9,
+    "generatedIdsReplaced": true,
+    "auditTimestampsExcluded": [
+      "createdAt",
+      "updatedAt",
+      "confirmedAt"
+    ],
+    "taskVersionsAndSnapshotRevisionsRetained": true,
+    "appliedCurrentRevision": 3,
+    "receiptCommittedRevision": 2,
+    "taskCount": 2,
+    "operationCount": 1
+  },
+  "bothAppsStopped": true,
+  "existingUsbMappingsUnchanged": true,
+  "newUsbMappings": 0,
+  "syntheticHttpRequests": 0,
+  "realModelCalls": 0,
+  "limits": [
+    "Isolated artificial diagnostic UI; formal T13/T17 and real-model integration remain separate",
+    "One target create plus an independent control task; batch notice import and updates remain host coverage",
+    "One diagnostic button drives controlled failure plus same-request calls; formal failure/retry UI not exercised",
+    "Version mismatch is device-observed rejection/byte preservation; exact VERSION_CONFLICT code is host/fixed-source evidence",
+    "Full concurrency, authorization, corrupt/future records and lost-acknowledgement matrix is host coverage",
+    "No physical disk-full/power-loss/hardware-failure or cross-file transaction guarantee",
+    "Independent A/B review, CI and final project acceptance not claimed"
+  ],
+  "pushed": false,
+  "prCreated": false,
+  "merged": false
+}

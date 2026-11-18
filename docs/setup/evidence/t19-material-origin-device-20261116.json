@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-16",
+  "runtimeCommit": "9a8ac6ee75540d94d1f4abc7e81448f00d3ebf60",
+  "scope": "shared text-entry material origins device verification",
+  "artifact": {
+    "runtimeCommit": "9a8ac6ee75540d94d1f4abc7e81448f00d3ebf60",
+    "bundle": "com.campusddl.noticeentry",
+    "versionCode": 300,
+    "sourceHashesUnchanged": 11,
+    "signedBytes": 1257183,
+    "signedSha256": "82cd503488239bd2c87c747e9a4629e64139bcd0ddea37d33c89011791e034fe",
+    "abcSha256": "c78d6f25a72fe1d82a274519695f91bd20368fbf5e04f09c926fa7b28c4d4061",
+    "matchesPreviouslyVerifiedUnsignedAbc": true,
+    "buildTime": "17 s 347 ms"
+  },
+  "checkpoints": [
+    "old synthetic task and empty raw text preserved after same-bundle update",
+    "one raw notification entered exactly without prefilled task fields",
+    "model draft title, date, clock, channel and two materials inspected",
+    "two visible material origins start as notification extraction pending review",
+    "surrounding whitespace preserves the second extraction origin",
+    "rewriting the first label changes only its origin to manual",
+    "original raw notice and one task / two materials visible before explicit confirm",
+    "explicit confirm returns revision 4, normalized labels, correct origins and pending state",
+    "real process restart leaves URL/token empty",
+    "without gateway configuration, saved task/deadline/material origins still read correctly"
+  ],
+  "syntheticRawText": "这是合成验证通知：材料来源测试报告在2026年12月4日18点前上传课程平台，材料为PDF报告和源代码",
+  "synthetic": true,
+  "savedRevision": 4,
+  "cold": {
+    "realProcessRestart": true,
+    "credentialsEmpty": true,
+    "rawInputEmpty": true,
+    "savedReadbackMatches": true,
+    "taskTitle": "材料来源测试报告上传",
+    "deadline": "2026-12-04T18:00:00+08:00",
+    "manualMaterial": "合成自查表",
+    "extractedMaterial": "源代码"
+  },
+  "cleanup": {
+    "newModelRequests": 1,
+    "audioRequests": 0,
+    "credentialClearedByOwnAppRestart": true,
+    "usb8000MapPresent": false,
+    "gatewayListening": false
+  },
+  "newModelRequests": 1,
+  "requestCountScope": "client notice extraction submissions; internal provider attempts not measured",
+  "newFormalTestTasks": 1,
+  "audioRequests": 0,
+  "nativeVoicePackageUpdated": false,
+  "limits": [
+    "UI readback only; no production snapshot byte audit.",
+    "No native voice retest.",
+    "Prior historical source attribution was not reclassified.",
+    "Does not complete T17, multi-task, scheduling or system reminders."
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "runtimeCommit": "6824a743e5416f81a26bd17aa39e00313f2f460f",
+  "synthetic": true,
+  "configuredVadEndMs": 3000,
+  "userApproxPauseSeconds": 2,
+  "userObservedBothPhrasesInOneCapture": true,
+  "transcript": "这是合成测试报告需要p tf二元代码。",
+  "materialWordsMisrecognized": true,
+  "sentToModel": false,
+  "testInputCleared": true,
+  "notTimingBenchmark": true
+}

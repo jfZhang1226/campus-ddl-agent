@@ -2,8 +2,10 @@
   "src": [
     "pages/Index",
     "pages/NoticeImport",
+    "pages/TaskAssistant",
     "pages/StorageCheck",
     "pages/TaskCheck",
-    "pages/HistoryCheck"
+    "pages/HistoryCheck",
+    "pages/CommitCheck"
   ]
 }

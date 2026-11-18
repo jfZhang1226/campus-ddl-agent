@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-16",
+  "runtimeCommit": "d53607350f81654a0ee35bd75b446b684ebc79bd",
+  "scope": "task dialogue source and SDK candidate",
+  "tests": {
+    "taskAgent": 15,
+    "bAgent": 15,
+    "confirmedSave": 51,
+    "noticeImport": 19,
+    "sharedExport": 12,
+    "nativeExport": 7,
+    "total": 119
+  },
+  "unsigned": {
+    "runtimeCommit": "d53607350f81654a0ee35bd75b446b684ebc79bd",
+    "bundle": "com.campusddl.noticeentry",
+    "versionCode": 300,
+    "copiedClientFiles": 130,
+    "sourceHashesUnchanged": 21,
+    "unsignedBytes": 1447452,
+    "unsignedSha256": "599d476e4266cdd9757a55a2b40d14fe3d1c5e96b2e6518bb78391229d6ea3a7",
+    "abcSha256": "f7f1b4f4db8bc2c3bdd2c1eca6addb362805ec44511ca7286605a04759e9c2a4",
+    "buildTime": "23 s 218 ms"
+  },
+  "signed": {
+    "runtimeCommit": "d53607350f81654a0ee35bd75b446b684ebc79bd",
+    "bundle": "com.campusddl.noticeentry",
+    "versionCode": 300,
+    "signedBytes": 1491727,
+    "signedSha256": "44fa129852e25321eddec63b458c2726393571392d84478e8810bfe78238cabd",
+    "abcSha256": "f7f1b4f4db8bc2c3bdd2c1eca6addb362805ec44511ca7286605a04759e9c2a4",
+    "sourceHashesUnchanged": 21,
+    "matchesUnsignedAbc": true,
+    "buildTime": "16 s 270 ms"
+  },
+  "deviceInstalled": false,
+  "newPageDeviceVerified": false,
+  "realModelVerified": false,
+  "nativeVoiceOnNewPageVerified": false
+}

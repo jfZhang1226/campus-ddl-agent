@@ -1,0 +1,32 @@
+{
+  "syntheticInput": true,
+  "singleExplicitRequest": true,
+  "status": 200,
+  "responseType": "draft",
+  "requestId": "97ff0a72a220",
+  "errorCode": null,
+  "elapsedSeconds": 1.69,
+  "degraded": false,
+  "task": {
+    "title": "数据库实验报告",
+    "course": "数据库",
+    "deadlinePrecision": "exact",
+    "deadlineDate": null,
+    "dueAt": "2026-11-20T18:00:00+08:00",
+    "submissionChannel": "课程平台"
+  },
+  "materials": [
+    "PDF报告",
+    "源代码压缩包"
+  ],
+  "formalTasksWritten": false,
+  "date": "2026-11-14",
+  "gatewayConfiguredModel": "deepseek-flash",
+  "upstreamExternalHttps": true,
+  "rawInputOnly": true,
+  "taskFieldsPrefilled": false,
+  "actualClientParserAccepted": true,
+  "deviceInstalled": false,
+  "deviceSaved": false,
+  "evaluationType": "one synthetic development example, not a holdout or accuracy score"
+}

@@ -10,6 +10,8 @@ import { StorageFailure, StorageResult, storageError, storageSuccess } from './s
 export class NoticeImportInput {
   draft: NoticeDraft = new NoticeDraft();
   expectedRevision: number = 0;
+  // Client-only provenance, never sent as a model/T12 field. null preserves older callers.
+  materialFromNotice: boolean[] | null = null;
 }
 
 export class NoticeImportWrite {
@@ -101,6 +103,9 @@ export class NoticeImportRepository {
         draft.checklistItems.every((item) => item !== null && typeof item.label === 'string' &&
           item.state === 'pending' && item.label.trim().length > 0),
       '材料清单无效。');
+      requireArgument(request.materialFromNotice === undefined || request.materialFromNotice === null ||
+        (Array.isArray(request.materialFromNotice) && request.materialFromNotice.length === draft.checklistItems.length &&
+        request.materialFromNotice.every((entry: boolean) => typeof entry === 'boolean')), '材料来源标记无效。');
 
       const snapshot: BusinessSnapshot = value(await this.store.read());
       if (snapshot.revision !== expectedRevision) {
@@ -155,14 +160,15 @@ export class NoticeImportRepository {
         createdAt: now,
         updatedAt: now
       };
-      const checklistItems: ChecklistItem[] = draft.checklistItems.map((item) => {
+      const checklistItems: ChecklistItem[] = draft.checklistItems.map((item, index: number) => {
         return {
           id: this.nextUnique('check',
             (id: string) => snapshot.checklistItems.some((entry: ChecklistItem) => entry.id === id)),
           taskId: taskId,
           label: item.label,
           state: 'pending',
-          sourceNoticeId: noticeId,
+          sourceNoticeId: request.materialFromNotice !== undefined && request.materialFromNotice !== null &&
+            !request.materialFromNotice[index] ? null : noticeId,
           confirmedAt: null
         };
       });

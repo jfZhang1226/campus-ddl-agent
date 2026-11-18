@@ -1,0 +1,20 @@
+{
+  "runtimeCommit": "6824a743e5416f81a26bd17aa39e00313f2f460f",
+  "sourceHashesUnchanged": 17,
+  "copiedClientFiles": 130,
+  "unsignedBytes": 1131972,
+  "unsignedSha256": "5f1c499bee4314c35dc7c5351694c2f532a4b3ede2bc3bfe892a986d92945f9e",
+  "abcSha256": "31ec9af7fc18bf166219ffa44a94fa078a73bf19f84e9e3cf667bddfeec3cbec",
+  "buildTime": "16 s 720 ms",
+  "signed": true,
+  "installed": true,
+  "tests": {
+    "taskAgent": 24,
+    "sharedExport": 12,
+    "nativeExport": 8
+  },
+  "signedBytes": 1176953,
+  "signedSha256": "f91e4fd517f6f0548a10ae348e7a3a626b740404dc95bfa2ae9baafa2ca4d1e6",
+  "signedBuildTime": "16 s 581 ms",
+  "signedAbcMatches": true
+}

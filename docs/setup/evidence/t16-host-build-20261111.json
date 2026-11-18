@@ -1,0 +1,81 @@
+{
+  "recordedAt": "2026-11-11",
+  "task": "T16",
+  "sourceCommit": "3f02e4ae868e8d219c40f429d9ac7910cbfd1b36",
+  "baseMain": "3a22a025bbb51a2c6ebe119a26f35044e484f31d",
+  "branch": "feat/c-t16-confirmed-commit",
+  "sourceArchiveSha256": "98641ee7c5d82014ac98645ef89beab6d8cab4d666d1b0cd34726b910e15cded",
+  "clientSourceFiles": 106,
+  "allClientSourcesUnmodifiedDuringBuild": true,
+  "trackedSigningConfigsEmpty": true,
+  "tests": {
+    "strictTsFiles": 29,
+    "t16": 56,
+    "history": 66,
+    "storage": 106,
+    "tasks": 85,
+    "chat": 29
+  },
+  "harmonyBuild": {
+    "command": "devecocli build",
+    "success": true,
+    "tasksExecuted": 66,
+    "tasksUpToDate": 0,
+    "signed": false
+  },
+  "androidBuild": {
+    "command": "ace build apk --debug --target-platform arm64",
+    "success": true,
+    "gradleTasksExecuted": 32,
+    "hvigorTaskPasses": [
+      {
+        "executed": 3,
+        "upToDate": 10
+      },
+      {
+        "executed": 3,
+        "upToDate": 10
+      }
+    ],
+    "nativeAdapterLibraries": 9,
+    "httpPluginDex": true,
+    "apkSignatureV2Verified": true,
+    "packageName": "com.campusddl.agent",
+    "minSdk": 26,
+    "targetSdk": 33,
+    "abi": "arm64-v8a"
+  },
+  "t16BytecodeAndProbeSymbolsInBothPackages": true,
+  "artifacts": [
+    {
+      "file": "T16-Harmony-unsigned-20261111.hap",
+      "bytes": 754994,
+      "sha256": "751c204199b1075033ae6f7075bef99f7d102d94b28e21fb825b400cd3be7f65",
+      "t16SymbolsPresent": true
+    },
+    {
+      "file": "T16-Android-20261111.apk",
+      "bytes": 51056223,
+      "sha256": "fca29e3dfa3ef28103a2bd61ca02c08f668de7946e189ef23d524deb506a27b7",
+      "t16SymbolsPresent": true,
+      "nativeLibraries": 9,
+      "httpPluginDex": true
+    }
+  ],
+  "changedSourceTextScanned": 15,
+  "noNewSecretPattern": true,
+  "deviceValidationPerformed": false,
+  "realModelCalls": 0,
+  "pushed": false,
+  "prCreated": false,
+  "merged": false,
+  "limits": [
+    "Host checks and SDK builds only; both phones must verify this source separately",
+    "Harmony HAP unsigned; any existing authorized signing is a later external-directory step",
+    "Diagnostic UI is isolated artificial data, not formal T13/T17 or real model integration",
+    "Trusted client confirmation is a capability boundary, not authentication against malicious local code",
+    "Prepared Notice hashing is the trusted importer responsibility; model metadata cannot be forwarded directly",
+    "Current proposals support task create/update, not T30 deletion, T22 state transitions or T25 planning",
+    "No cross-file session/business transaction, automatic tmp recovery, CI pass or final acceptance claimed"
+  ]
+}

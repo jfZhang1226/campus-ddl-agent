@@ -1,0 +1,34 @@
+{
+  "runtimeCommit": "6824a743e5416f81a26bd17aa39e00313f2f460f",
+  "bundle": "com.campusddl.noticeprobe",
+  "versionCode": 400,
+  "synthetic": true,
+  "signedBuildEvidence": "t19-task-agent-pause-build-20261116.json",
+  "beforeDate": "2026-12-10",
+  "afterDate": "2026-12-12",
+  "materialLabels": [
+    "PDF 报告",
+    "源代码"
+  ],
+  "newMaterialCreates": 0,
+  "oldAndNewSourceCount": 2,
+  "screenOldAndNewValuesVerified": true,
+  "modelActions": [
+    "get_task_detail",
+    "propose_task_changes"
+  ],
+  "checks": {
+    "runtimeCommit": "6824a743e5416f81a26bd17aa39e00313f2f460f",
+    "sameTaskId": true,
+    "updatedDate": "2026-12-12",
+    "receiptRevision": 10,
+    "sameTwoMaterialsColdRead": true,
+    "ownProcessChanged": true,
+    "runtimeCredentialsEmpty": true,
+    "inputEmpty": true,
+    "gatewayStopped": true,
+    "usbMappingRemoved": true,
+    "audioOperationsThisRuntime": 0,
+    "pauseDurationDeviceVerified": false
+  }
+}

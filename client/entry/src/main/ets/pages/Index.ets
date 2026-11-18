@@ -99,6 +99,13 @@ struct Index {
     });
   }
 
+  private openHistoryCheck(): void {
+    this.storageNavigationError = '';
+    router.pushUrl({ url: 'pages/HistoryCheck' }).catch(() => {
+      this.storageNavigationError = '无法打开历史验证页，请稍后重试。';
+    });
+  }
+
   private openNoticeImport(): void {
     this.storageNavigationError = '';
     chatOwner.pause();
@@ -107,10 +114,10 @@ struct Index {
     });
   }
 
-  private openHistoryCheck(): void {
+  private openCommitCheck(): void {
     this.storageNavigationError = '';
-    router.pushUrl({ url: 'pages/HistoryCheck' }).catch(() => {
-      this.storageNavigationError = '无法打开历史验证页，请稍后重试。';
+    router.pushUrl({ url: 'pages/CommitCheck' }).catch(() => {
+      this.storageNavigationError = '无法打开提交验证页，请稍后重试。';
     });
   }
 
@@ -133,6 +140,11 @@ struct Index {
         .onClick(() => this.settingsOpen = !this.settingsOpen)
       }.width('100%')
       Row({ space: 10 }) {
+        Button('任务助手').id('task-agent-entry').fontSize(12).fontColor('#FFFFFF').backgroundColor('#176766')
+          .enabled(!this.view.busy).onClick(() => {
+            chatOwner.pause();
+            router.pushUrl({ url: 'pages/TaskAssistant' }).catch(() => { this.storageNavigationError = '无法打开任务助手，请重试。'; });
+          })
         Button('历史会话').id('history-open-list').fontSize(12).fontColor('#176766').backgroundColor('#E1F0EC')
           .enabled(this.historyAvailable()).onClick(() => { if (this.history !== null) this.history.showList(); })
         Button('新对话').id('chat-new-conversation').fontSize(12).fontColor('#176766').backgroundColor('#E1F0EC')
@@ -221,6 +233,9 @@ struct Index {
         Button('T11 历史验证（开发用）').id('t11-history-entry')
           .enabled(!this.view.busy)
           .onClick(() => this.openHistoryCheck())
+        Button('T16 提交验证（开发用）').id('t16-commit-entry')
+          .enabled(!this.view.busy)
+          .onClick(() => this.openCommitCheck())
         if (this.storageNavigationError.length > 0) {
           Text(this.storageNavigationError).fontSize(12).fontColor('#A43B32')
         }

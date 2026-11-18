@@ -2,6 +2,7 @@ import { BusinessSnapshot, ChecklistItem, Message, Notice, Session, SessionDocum
 import { SnapshotCodec, StorageFailure, checkHeader, isStorageId, requireStorage } from './StorageTypes';
 import { checkMessages } from './MessageCodec';
 import { isCalendarDate, isOffsetTimestamp } from '../../domain/DateRules';
+import { validateCommitRecords } from '../../domain/CommitValidation';
 
 function text(value: string): boolean {
   return typeof value === 'string' && value.trim().length > 0;
@@ -91,6 +92,11 @@ export class BusinessSnapshotCodec implements SnapshotCodec<BusinessSnapshot> {
     value.notices.forEach((notice: Notice) => checkNotice(notice));
     value.tasks.forEach((task: Task) => checkTask(task, noticeIds));
     value.checklistItems.forEach((item: ChecklistItem) => checkChecklist(item, value.tasks));
+    try { validateCommitRecords(value); }
+    catch (error) {
+      if (error instanceof StorageFailure && error.code === 'UNSUPPORTED_SCHEMA') throw error;
+      throw new StorageFailure('CORRUPT_DATA', '方案或操作记录无效，原文件已保留。');
+    }
     return value;
   }
 }

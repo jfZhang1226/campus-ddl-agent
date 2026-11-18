@@ -1,0 +1,88 @@
+{
+  "recordedAt": "2026-11-12",
+  "task": "T16 creation materials / B-D comments",
+  "sourceCommit": "3e244dd0cadf36d746d605c5e166f1f00189ea46",
+  "clientFilesEqualFixedSource": 106,
+  "runtimeSourceUnchangedAfterHostBuilds": true,
+  "signedAndUnsignedHarmonyBytecodeEqual": true,
+  "android": {
+    "model": "PJE110 / OnePlus Ace3",
+    "api": 36,
+    "requiredAssertionsPassed": 29,
+    "backupFiles": 423,
+    "preexistingCampusFilesBackedUp": 116,
+    "preexistingCampusFilesByteIdentical": 115,
+    "existingDiagnosticIndexUpdated": 1,
+    "newIsolatedFiles": 9,
+    "coldProcessChecks": 3,
+    "apkSha256": "76f0daa70143e7050b00901771b35700581165748f35f8ddab7a22ee59c6ba07",
+    "networkFlagsRestored": true
+  },
+  "harmony": {
+    "model": "ADY-AL10 / Pura70",
+    "api": 26,
+    "requiredAssertionsPassed": 29,
+    "backupFiles": 120,
+    "preexistingFilesByteIdentical": 119,
+    "existingDiagnosticIndexUpdated": 1,
+    "newIsolatedFiles": 9,
+    "coldProcessChecks": 3,
+    "signedHapSha256": "f6a394f3f58d33f673d3fa308d41c2df596194d5b2492dfa9edd66c64cccd2ef",
+    "originalInactiveNoDefaultNetworkPreserved": true
+  },
+  "comparison": {
+    "cases": [
+      {
+        "case": "cancel",
+        "snapshotEqual": true,
+        "backupEqual": true,
+        "probeReportEqual": true
+      },
+      {
+        "case": "staleCancel",
+        "snapshotEqual": true,
+        "backupEqual": true,
+        "probeReportEqual": true
+      },
+      {
+        "case": "applied",
+        "snapshotEqual": true,
+        "backupEqual": true,
+        "probeReportEqual": true
+      }
+    ],
+    "equalObjects": 9,
+    "generatedTaskProposalOperationAndMaterialIdsReplaced": true,
+    "auditTimestampsExcluded": [
+      "createdAt",
+      "updatedAt",
+      "confirmedAt"
+    ],
+    "taskVersionsSnapshotRevisionsAndNoticeBusinessFieldsRetained": true,
+    "allMaterialLabelsStatesTaskAndSourceBindingsRetained": true,
+    "appliedCurrentRevision": 3,
+    "receiptCommittedRevision": 2,
+    "taskCount": 2,
+    "noticeCount": 1,
+    "materialCount": 2,
+    "operationCount": 1
+  },
+  "bothAppsStopped": true,
+  "existingUsbMappingsUnchanged": true,
+  "newUsbMappings": 0,
+  "syntheticHttpRequests": 0,
+  "realModelCalls": 0,
+  "limits": [
+    "Isolated artificial diagnostic UI; formal T13/T17/T19 and real-model integration remain separate",
+    "One target create with one notice and two materials plus an independent control task; batch/update matrix remains host coverage",
+    "One diagnostic button drives controlled failure plus same-request calls; formal failure/retry UI not exercised",
+    "Version mismatch is observed rejection and byte preservation; exact VERSION_CONFLICT is host/fixed-source evidence",
+    "Full concurrency, authorization, corrupt/future records and lost-acknowledgement matrix is host coverage",
+    "No physical disk-full/power-loss/hardware-failure or cross-file transaction guarantee",
+    "Existing material-list edits and checkbox/prepared/task-state workflow remain T22",
+    "Independent A/B/D review, formal integration, CI and final acceptance not claimed"
+  ],
+  "repairPushed": false,
+  "prExists": true,
+  "merged": false
+}

@@ -170,7 +170,8 @@ test('controller extracts, preserves edits and atomically saves Notice/Task/Chec
   assert.equal(saved.notices[0].contentHash,
     nodeCrypto.createHash('sha256').update(saved.notices[0].rawText, 'utf8').digest('hex'));
   assert.ok(saved.checklistItems.every(item => item.taskId === saved.tasks[0].id &&
-    item.sourceNoticeId === saved.notices[0].id && item.state === 'pending' && item.confirmedAt === null));
+    item.state === 'pending' && item.confirmedAt === null));
+  assert.deepEqual(saved.checklistItems.map(item => item.sourceNoticeId), [saved.notices[0].id, null]);
   await controller.confirm();
   assert.equal((await h.store.read()).data.tasks.length, 1);
 });
