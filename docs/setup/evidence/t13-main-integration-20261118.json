@@ -68,6 +68,15 @@
     },
     "voiceChat": {
       "passed": 16
+    },
+    "sharedNoticeExport": {
+      "passed": 12
+    },
+    "noticeChatExport": {
+      "passed": 8
+    },
+    "speechProbe": {
+      "passed": 21
     }
   },
   "builds": {
@@ -92,12 +101,18 @@
   },
   "deviceValidationRepeated": false,
   "realModelCalls": 0,
+  "finalTreeDiffFromMain": {
+    "clientCodeFiles": 0,
+    "remainingFiles": 5,
+    "scope": "T13 documentation and integration evidence only"
+  },
   "ciClaimed": false,
   "finalAcceptanceClaimed": false,
   "merged": false,
   "notes": [
     "T13 remains a Notice confirmation and editing surface; it now delegates the production save path to the shared T16 confirmation writer.",
     "Mainline T19 preserves per-material origin and uses a dedicated import session instead of inventing a chat session.",
+    "After integration, the client code tree is identical to main; the PR's remaining tree delta is documentation and evidence.",
     "The branch gained a new merge commit and needs a formal review against that new SHA before final merge."
   ]
 }
