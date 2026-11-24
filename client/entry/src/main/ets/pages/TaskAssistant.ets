@@ -124,7 +124,7 @@ struct TaskAssistantPage {
   header() {
     Column({ space: 12 }) {
       Row({ space: 12 }) {
-        Image($r('app.media.assistant_idle')).width(44).height(44).objectFit(ImageFit.Contain)
+        AssistantMascot({ mode: this.mascotMode, active: this.mascotActive, edge: 48, tag: 'brand' })
         Column({ space: 3 }) {
           Text('课事清').fontSize(21).fontWeight(FontWeight.Bold).fontColor(AppTheme.ink)
           Text('校园里的事，一件件安排好').fontSize(11).fontColor(AppTheme.muted)
