@@ -207,7 +207,7 @@ struct TaskAssistantPage {
           Column({ space: 4 }) {
             Text('当前材料 · ' + detail.task.title).fontSize(12).fontColor(AppTheme.primary)
             ForEach(detail.checklistItems, (item: ChecklistItem) => {
-              Text(item.label + ' · ' + (item.state === 'pending' ? '待准备' : item.state)).fontSize(12).fontColor(AppTheme.muted)
+              Text(item.label + ' · ' + (item.state === 'prepared' ? '已准备' : '待准备')).fontSize(12).fontColor(AppTheme.muted)
             }, (item: ChecklistItem) => item.id + ':' + item.state)
             if (detail.checklistItems.length === 0) { Text('尚未记录材料要求。').fontSize(11).fontColor(AppTheme.muted) }
             Button(this.expandedSavedTaskId === detail.task.id ? '收起已保存来源' :
