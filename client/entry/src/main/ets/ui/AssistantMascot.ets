@@ -4,7 +4,7 @@ import { AssistantFrame, AssistantMotionPlayer } from './AssistantMotion';
 export struct AssistantMascot {
   @Prop @Watch('syncMode') mode: string = 'idle';
   @Prop @Watch('syncActive') active: boolean = true;
-  @Prop size: number = 112;
+  @Prop edge: number = 112;
   tag: string = 'main';
   @State private spriteMode: string = 'idle';
   @State private cell: number = 0;
@@ -22,10 +22,10 @@ export struct AssistantMascot {
   }
   build() {
     Stack({ alignContent: Alignment.TopStart }) {
-      Image(this.sprite()).width(this.size * 2).height(this.size * 2).objectFit(ImageFit.Fill)
-        .position({ x: -(this.cell % 2) * this.size, y: -Math.floor(this.cell / 2) * this.size })
+      Image(this.sprite()).width(this.edge * 2).height(this.edge * 2).objectFit(ImageFit.Fill)
+        .position({ x: -(this.cell % 2) * this.edge, y: -Math.floor(this.cell / 2) * this.edge })
         .id('mascot-sprite-' + this.tag + '-' + this.spriteMode + '-' + String(this.cell))
-    }.width(this.size).height(this.size).clip(true).id('assistant-mascot-' + this.tag)
+    }.width(this.edge).height(this.edge).clip(true).id('assistant-mascot-' + this.tag)
       .accessibilityText('课事清小助手，点击打招呼').onClick(() => { this.player?.greet(); })
   }
 }

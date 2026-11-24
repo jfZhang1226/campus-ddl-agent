@@ -141,7 +141,7 @@ struct TaskAssistantPage {
       }
       if (this.mascotMode !== 'idle') {
         Row({ space: 12 }) {
-          AssistantMascot({ mode: this.mascotMode, active: this.mascotActive, size: 74, tag: 'activity' })
+          AssistantMascot({ mode: this.mascotMode, active: this.mascotActive, edge: 74, tag: 'activity' })
           Column({ space: 5 }) {
             Text(this.mascotHint).id('mascot-activity-hint').fontSize(13).fontColor(AppTheme.primary)
             if (this.view.phase === 'running' || this.view.phase === 'staging') { Text('整理成草案后，仍由你确认保存').fontSize(11).fontColor(AppTheme.muted) }
@@ -342,7 +342,7 @@ struct TaskAssistantPage {
             if (this.view.notice.length > 0) { Text(this.view.notice).id('task-agent-notice').fontSize(13).fontColor(AppTheme.muted) }
             if (this.view.messages.length === 0) {
               Column({ space: 12 }) {
-                AssistantMascot({ mode: 'idle', active: this.mascotActive, size: 112, tag: 'hero' })
+                AssistantMascot({ mode: 'idle', active: this.mascotActive, edge: 112, tag: 'hero' })
                 Text('通知交给我\n事情有着落').fontSize(26).fontWeight(FontWeight.Bold).fontColor(AppTheme.ink).lineHeight(35)
                 Text('粘贴一段通知，或用语音告诉我。\n任务、截止和材料，帮你一起整理。').fontSize(13).fontColor(AppTheme.muted).lineHeight(23)
                 Text('核对草案后，由你确认保存').fontSize(11).fontColor(AppTheme.primary).padding({ left: 12, right: 12, top: 8, bottom: 8 }).backgroundColor(AppTheme.soft).borderRadius(18)

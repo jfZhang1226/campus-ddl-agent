@@ -17,7 +17,7 @@ struct MascotPreview {
       }.width('100%')
       Text('仅预览动作，不发送消息或保存任务').fontSize(13).fontColor(AppTheme.muted)
       Blank()
-      AssistantMascot({ mode: this.mode, active: this.active, size: 240, tag: 'preview' })
+      AssistantMascot({ mode: this.mode, active: this.active, edge: 240, tag: 'preview' })
       Text(this.mode === 'idle' ? '眨眨眼，随时待命' : this.mode === 'wave' ? '你好呀' : this.mode === 'think' ? '想一想，怎么安排' : '拿小本子记下来')
         .id('mascot-preview-label').fontSize(18).fontColor(AppTheme.primary)
       Blank()
