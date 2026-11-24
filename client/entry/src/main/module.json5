@@ -20,9 +20,9 @@
         "name": "EntryAbility",
         "srcEntry": "./ets/entryability/EntryAbility.ets",
         "description": "$string:EntryAbility_desc",
-        "icon": "$media:brand_mark",
+        "icon": "$media:assistant_idle",
         "label": "$string:EntryAbility_label",
-        "startWindowIcon": "$media:brand_mark",
+        "startWindowIcon": "$media:assistant_idle",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
         "skills": [

@@ -12,6 +12,7 @@ struct DebugToolsPage {
       Button('语音链路诊断').id('debug-voice-chat').onClick(() => this.open('pages/VoiceChat'))
       Button('通知草案诊断').id('debug-notice-chat').onClick(() => this.open('pages/NoticeChat'))
       Button('语音能力探测').id('debug-speech-probe').onClick(() => this.open('pages/SpeechProbe'))
+      Button('小助手动作预览').id('debug-mascot-preview').onClick(() => this.open('pages/MascotPreview'))
       Text(this.notice).fontSize(13)
     }.width('100%').height('100%').padding(18).backgroundColor('#F2F6F7')
   }

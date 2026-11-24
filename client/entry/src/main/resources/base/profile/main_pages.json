@@ -10,6 +10,7 @@
     "pages/StorageCheck",
     "pages/TaskCheck",
     "pages/HistoryCheck",
-    "pages/CommitCheck"
+    "pages/CommitCheck",
+    "pages/MascotPreview"
   ]
 }

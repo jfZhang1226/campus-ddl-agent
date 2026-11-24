@@ -1,3 +1,5 @@
+import { AssistantMascot } from '../ui/AssistantMascot';
+import { assistantMode, shouldFinishWriting } from '../ui/AssistantMotion';
 import { AppTheme } from '../ui/AppTheme';
 import { AppTabBar } from '../ui/AppTabBar';
 import { DeadlineEditor } from '../ui/DeadlineEditor';
@@ -21,6 +23,25 @@ struct TaskAssistantPage {
   @State sourcesOpen: boolean = false;
   @State expandedSavedTaskId: string = '';
   @State voiceOpen: boolean = false;
+  @State mascotMode: string = 'idle';
+  @State mascotHint: string = '';
+  @State mascotActive: boolean = true;
+  private mascotFinishTimer: number = -1;
+  private priorPhase: string = '';
+  private savingReceiptBefore: string = '';
+  private syncMascot(state: TaskAgentView): void {
+    if (state.phase === 'saving' && this.priorPhase !== 'saving') this.savingReceiptBefore = this.view.receipt?.operationId || '';
+    if (this.mascotActive && shouldFinishWriting(this.priorPhase, state.phase, state.errorCode, this.savingReceiptBefore, state.receipt?.operationId || '')) {
+      this.mascotMode = 'write'; this.mascotHint = '已保存到本机';
+      clearTimeout(this.mascotFinishTimer);
+      this.mascotFinishTimer = setTimeout(() => { this.mascotMode = 'idle'; this.mascotHint = ''; }, 1100);
+    } else if (!(state.phase === 'idle' && this.mascotMode === 'write' && this.mascotHint === '已保存到本机' && state.errorCode.length === 0)) {
+      clearTimeout(this.mascotFinishTimer);
+      this.mascotMode = assistantMode(state.phase, state.errorCode);
+      this.mascotHint = this.mascotMode === 'write' ? '正在保存到本机…' : state.phase === 'staging' ? '正在整理待确认草案…' : '正在分析通知，想一想怎么安排…';
+    }
+    this.priorPhase = state.phase;
+  }
   @State deadlineTaskId: string = '';
   @State deadlineDate: string = '';
   @State deadlineTime: string = '';
@@ -49,7 +70,7 @@ struct TaskAssistantPage {
     const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
     this.controller?.configure(chatOwner.get(context.filesDir).configuration());
   }
-  onPageShow(): void { this.syncGateway(); }
+  onPageShow(): void { this.mascotActive = true; this.syncGateway(); }
   private openPage(page: string): void {
     if (!this.idle()) return;
     taskAgentOwner.pause();
@@ -64,14 +85,16 @@ struct TaskAssistantPage {
     this.controller.subscribe((state: TaskAgentView) => {
       const shouldScroll: boolean = state.messages.length !== this.view.messages.length ||
         (state.proposal !== null && state.proposal.id !== this.view.proposal?.id);
+      this.syncMascot(state);
       this.view = state;
       if (shouldScroll) { clearTimeout(this.scrollTimer); this.scrollTimer = setTimeout(() => { this.scroller.scrollEdge(Edge.Bottom); }, 100); }
     });
   }
-  onPageHide(): void { taskAgentOwner.pause(); }
+  onPageHide(): void { this.mascotActive = false; this.mascotMode = 'idle'; this.mascotHint = ''; clearTimeout(this.mascotFinishTimer); taskAgentOwner.pause(); }
   aboutToDisappear(): void {
     this.getUIContext().setKeyboardAvoidMode(this.previousKeyboardMode);
     taskAgentOwner.pause(); this.controller?.unsubscribe();
+    this.mascotActive = false; clearTimeout(this.mascotFinishTimer);
     clearTimeout(this.scrollTimer);
   }
   private idle(): boolean { return this.view.phase === 'idle' && !this.view.speech.busy; }
@@ -101,7 +124,7 @@ struct TaskAssistantPage {
   header() {
     Column({ space: 12 }) {
       Row({ space: 12 }) {
-        Image($r('app.media.brand_mark')).width(40).height(40)
+        Image($r('app.media.assistant_idle')).width(44).height(44).objectFit(ImageFit.Contain)
         Column({ space: 3 }) {
           Text('课事清').fontSize(21).fontWeight(FontWeight.Bold).fontColor(AppTheme.ink)
           Text('校园里的事，一件件安排好').fontSize(11).fontColor(AppTheme.muted)
@@ -116,14 +139,18 @@ struct TaskAssistantPage {
             .enabled(this.idle()).onClick(() => this.openPage('pages/GatewaySettings'))
         }.padding(10).width('100%').backgroundColor('#F4EEDC').borderRadius(12)
       }
-      if (this.view.phase !== 'idle') {
-        Row({ space: 9 }) {
-          LoadingProgress().width(18).height(18).color(AppTheme.primary)
-          Text(this.view.phase === 'saving' ? '正在保存…' : this.view.phase === 'staging' ? '正在整理草案…' : '正在处理…')
-            .fontSize(12).fontColor(AppTheme.muted).layoutWeight(1)
-          Button('停止').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-agent-stop').height(30).fontSize(12).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft)
-            .enabled(this.view.phase === 'running').onClick(() => { this.controller?.stop(); })
-        }.width('100%')
+      if (this.mascotMode !== 'idle') {
+        Row({ space: 12 }) {
+          AssistantMascot({ mode: this.mascotMode, active: this.mascotActive, size: 74, tag: 'activity' })
+          Column({ space: 5 }) {
+            Text(this.mascotHint).id('mascot-activity-hint').fontSize(13).fontColor(AppTheme.primary)
+            if (this.view.phase === 'running' || this.view.phase === 'staging') { Text('整理成草案后，仍由你确认保存').fontSize(11).fontColor(AppTheme.muted) }
+          }.layoutWeight(1).alignItems(HorizontalAlign.Start)
+          if (this.view.phase === 'running') {
+            Button('停止').id('task-agent-stop').height(30).fontSize(12).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft)
+              .onClick(() => { this.controller?.stop(); })
+          }
+        }.width('100%').padding({ left: 4, right: 8 }).backgroundColor(AppTheme.soft).borderRadius(18)
       }
     }.width('100%').padding({ left: 22, right: 22, top: 18, bottom: 16 }).backgroundColor(AppTheme.canvas)
   }
@@ -314,12 +341,12 @@ struct TaskAssistantPage {
           Column({ space: 12 }) {
             if (this.view.notice.length > 0) { Text(this.view.notice).id('task-agent-notice').fontSize(13).fontColor(AppTheme.muted) }
             if (this.view.messages.length === 0) {
-              Column({ space: 16 }) {
-                Image($r('app.media.brand_mark')).width(64).height(64)
-                Text('通知交给我\n事情有着落').fontSize(28).fontWeight(FontWeight.Bold).fontColor(AppTheme.ink).lineHeight(38)
-                Text('粘贴一段通知，或用语音告诉我。\n任务、截止和材料，帮你一起整理。').fontSize(14).fontColor(AppTheme.muted).lineHeight(23)
+              Column({ space: 12 }) {
+                AssistantMascot({ mode: 'idle', active: this.mascotActive, size: 112, tag: 'hero' })
+                Text('通知交给我\n事情有着落').fontSize(26).fontWeight(FontWeight.Bold).fontColor(AppTheme.ink).lineHeight(35)
+                Text('粘贴一段通知，或用语音告诉我。\n任务、截止和材料，帮你一起整理。').fontSize(13).fontColor(AppTheme.muted).lineHeight(23)
                 Text('核对草案后，由你确认保存').fontSize(11).fontColor(AppTheme.primary).padding({ left: 12, right: 12, top: 8, bottom: 8 }).backgroundColor(AppTheme.soft).borderRadius(18)
-              }.width('100%').padding({ top: 32, bottom: 28 }).alignItems(HorizontalAlign.Start)
+              }.width('100%').padding({ top: 14, bottom: 14 }).alignItems(HorizontalAlign.Start)
             }
             ForEach(this.view.messages.slice(-30), (row: ChatMessage) => {
               Column({ space: 4 }) {
