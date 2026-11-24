@@ -1,0 +1,79 @@
+{
+  "date": "2026-11-25",
+  "runtimeCommit": "aa140536c0f429f639f4255e207a094cffd46e26",
+  "bundleName": "com.campusddl.noticeprobe",
+  "versionName": "0.6.1",
+  "versionCode": 601,
+  "build": {
+    "clientFiles": 165,
+    "fingerprints": 68,
+    "unsigned": "21 s 651 ms",
+    "signed": "19 s 466 ms",
+    "sameAbc": true,
+    "signedHapSha256": "b8d9a470f2e1ef650b0f57d3498bafd6f121456b36ee1958a888378d4285067a"
+  },
+  "hostChecks": {
+    "task-agent": 37,
+    "materials": 34,
+    "commits": 93,
+    "plan-commits": 29,
+    "reminders": 30,
+    "notice-chat-export": 14,
+    "shared-notice-export": 12
+  },
+  "device": {
+    "samePackageRetainDataInstall": true,
+    "reusedSignature": true,
+    "tabs": [
+      "助手",
+      "任务",
+      "安排",
+      "设置"
+    ],
+    "launcherLabel": "课事清",
+    "launcherTapVerified": true,
+    "visibleNativeDateAndTimePickers": true,
+    "unselectedTimeStaysUnknown": true,
+    "invalidTimeRejected": true,
+    "availabilityEmptyInputRejected": true,
+    "deadlineDraftRestageAndColdRestore": true,
+    "savedDeadlinePreviewCancelConfirmAndColdRead": true,
+    "finalNativeNavigation": true,
+    "voiceControlsReachableWithoutStarting": true,
+    "gatewayRuntimeConfigRestored": true
+  },
+  "data": {
+    "userTasksBefore": 5,
+    "userMaterialsBefore": 15,
+    "allOriginalTaskAndMaterialFieldsUnchanged": true,
+    "tasksAfter": 6,
+    "syntheticTasksAdded": 1,
+    "syntheticTitle": "合成界面验收报告",
+    "syntheticDeadlineFinal": "2026-12-28T19:00:00+08:00",
+    "pendingAfter": 0,
+    "backupPrivateAndNotCommitted": true
+  },
+  "boundaries": {
+    "realModelDraftRuntime": "d4b8fb1",
+    "draftLocalEditAndConfirmRuntime": "d4b8fb1",
+    "savedTaskNativeEditorRuntime": "84de281",
+    "finalLayoutAndNavigationRuntime": "aa14053",
+    "businessAndDeadlineCoreHashesMatchAllCandidates": true,
+    "localConfirmWithGatewayConfigAbsent": true,
+    "physicalNetworkDisconnectTested": false,
+    "audioOperations": 0,
+    "recentReminderTriggered": false,
+    "newAudioAcceptance": false,
+    "actualReminderDelivery": false,
+    "androidIosAcceptance": false,
+    "modelPlanWriteToolsAdded": false,
+    "modelDeadlineEditToolAdded": false,
+    "businessSchemaOrTagsChanged": false
+  },
+  "delivery": {
+    "gatewaySessionKeptForUser": true,
+    "computerUsbRequiredForCurrentGateway": true,
+    "appColdRestartNeedsProjectToken": true,
+    "finalPage": "clean task assistant"
+  }
+}

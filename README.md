@@ -2,6 +2,8 @@
 
 校园通知与 DDL 管理 Agent，使用 ArkUI-X 共享核心业务与 UI 代码，面向鸿蒙和 Android 两端。
 
+2026-11-25 鸿蒙用户版：[四入口与截止时间直接编辑](docs/setup/USER_APP_GUIDE.md)。墨绿浅色界面、助手/任务/安排/设置固定导航；支持在草案及任务详情本地补充日期和时刻，核对后确认保存。
+
 2026-11-18 鸿蒙演示：[课事清操作与模型连接恢复](docs/setup/DEMO_APP_GUIDE.md)。独立包 `com.campusddl.noticeprobe` 保留原数据，桌面名“课事清”，启动直达任务助手；不覆盖组员 `label`。
 
 ## 项目文档
