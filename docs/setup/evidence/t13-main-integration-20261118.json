@@ -1,0 +1,118 @@
+{
+  "task": "T13",
+  "date": "2026-11-18",
+  "scope": "Integrate T13 with the latest mainline that includes T16, T17 and T19 confirmed-save work",
+  "branch": "feat/a-t13-notice-confirm",
+  "mainCommit": "0a6b283b0bcb5fab4e2a930a7df78605f7ea0b32",
+  "t13HeadBeforeIntegration": "9be0c663434153162499e1c3243b10fd8298ce9e",
+  "conflict": {
+    "onlyCodeFile": "client/entry/src/main/ets/pages/Index.ets",
+    "resolution": "Preserve notice import, task assistant, history list/detail, new chat, T16 diagnostics and unsaved-discard guards"
+  },
+  "formalReviewsBeforeIntegration": {
+    "B": {
+      "state": "APPROVED",
+      "head": "9be0c663434153162499e1c3243b10fd8298ce9e"
+    },
+    "D": {
+      "state": "APPROVED",
+      "head": "9be0c663434153162499e1c3243b10fd8298ce9e"
+    },
+    "C": {
+      "state": "APPROVED_OLD_HEAD",
+      "head": "5cf6d0d06ea905ed2d3a022ebdce1339d5ee5319"
+    },
+    "A": {
+      "state": "NOT_SUBMITTED"
+    }
+  },
+  "productionNoticePath": {
+    "controller": "NoticeSaveController",
+    "writer": "NoticeConfirmedWriter",
+    "usesT16Confirmation": true,
+    "preservesPerMaterialOrigin": true,
+    "dedicatedSessionId": "session-t19-notice-import",
+    "legacyDirectRepositoryRetainedForCompatibilityTests": true
+  },
+  "hostChecks": {
+    "t13": {
+      "passed": 19,
+      "strictTsFiles": 40
+    },
+    "t19ConfirmedSave": {
+      "passed": 51
+    },
+    "noticeInteraction": {
+      "passed": 23
+    },
+    "t16Commits": {
+      "passed": 92
+    },
+    "t17AgentTools": {
+      "passed": 15
+    },
+    "taskAgent": {
+      "passed": 24
+    },
+    "history": {
+      "passed": 66
+    },
+    "storage": {
+      "passed": 106
+    },
+    "tasks": {
+      "passed": 85
+    },
+    "chat": {
+      "passed": 29
+    },
+    "voiceChat": {
+      "passed": 16
+    },
+    "sharedNoticeExport": {
+      "passed": 12
+    },
+    "noticeChatExport": {
+      "passed": 8
+    },
+    "speechProbe": {
+      "passed": 21
+    }
+  },
+  "builds": {
+    "harmony": {
+      "result": "BUILD SUCCESSFUL",
+      "signedHap": {
+        "bytes": 1542593,
+        "sha256": "612bf9b8074b5bfd0a5423773395e89d9f33bfd135fc9084e63d112243c65c5e"
+      },
+      "unsignedHap": {
+        "bytes": 1497109,
+        "sha256": "350c3849ed39d5d4dc28ff48288aa5e29e374bdef3375659e96437dabc9d83bb"
+      }
+    },
+    "android": {
+      "result": "BUILD SUCCESSFUL",
+      "apk": {
+        "bytes": 50288251,
+        "sha256": "629f2abe99aff97e4bb04985701b31f7c018c10fa1d8afa981d22be2eebbf710"
+      }
+    }
+  },
+  "deviceValidationRepeated": false,
+  "realModelCalls": 0,
+  "finalTreeDiffFromMain": {
+    "clientCodeFiles": 0,
+    "remainingFiles": 5,
+    "scope": "T13 documentation and integration evidence only"
+  },
+  "ciClaimed": false,
+  "finalAcceptanceClaimed": false,
+  "merged": false,
+  "notes": [
+    "T13 remains a Notice confirmation and editing surface; it now delegates the production save path to the shared T16 confirmation writer.",
+    "Mainline T19 preserves per-material origin and uses a dedicated import session instead of inventing a chat session.",
+    "After integration, the client code tree is identical to main; the PR's remaining tree delta is documentation and evidence.",
+    "The branch gained a new merge commit and needs a formal review against that new SHA before final merge."
+  ]
+}

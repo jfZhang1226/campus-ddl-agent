@@ -1,0 +1,76 @@
+{
+  "task": "T13",
+  "date": "2026-11-12",
+  "scope": "Integrate T13 with the merged T11 mainline and verify both product entry points coexist",
+  "branch": "feat/a-t13-notice-confirm",
+  "baseMain": "3a22a025bbb51a2c6ebe119a26f35044e484f31d",
+  "t13HeadBeforeIntegration": "5cf6d0d06ea905ed2d3a022ebdce1339d5ee5319",
+  "integrationConflict": {
+    "file": "client/entry/src/main/ets/pages/Index.ets",
+    "resolution": "Preserve notice import, history list/detail, new chat, settings and unsaved-discard guards in the same page",
+    "leftoverConflictMarkers": false
+  },
+  "hostChecks": {
+    "t13": {
+      "passed": 19,
+      "strictTsFiles": 30
+    },
+    "history": {
+      "passed": 66,
+      "strictTsFiles": 27
+    },
+    "chat": {
+      "passed": 29
+    },
+    "storage": {
+      "passed": 106
+    },
+    "tasks": {
+      "passed": 85
+    }
+  },
+  "builds": {
+    "harmony": {
+      "command": "hvigorw assembleHap --mode module -p product=default -p module=entry@default --no-daemon",
+      "result": "BUILD SUCCESSFUL",
+      "signedHap": {
+        "bytes": 934005,
+        "sha256": "6c42bcca8e2c645e7735619a82ab5db34cadf282f8937e585383d4f177510d7e"
+      },
+      "unsignedHap": {
+        "bytes": 875730,
+        "sha256": "074b25b914286eb3aa73045883e003ee336835a21a6a8b6f759188f594c139e0"
+      }
+    },
+    "android": {
+      "command": "gradlew assembleDebug --no-daemon",
+      "result": "BUILD SUCCESSFUL",
+      "apk": {
+        "bytes": 50288251,
+        "sha256": "629f2abe99aff97e4bb04985701b31f7c018c10fa1d8afa981d22be2eebbf710"
+      }
+    }
+  },
+  "bReview": {
+    "url": "https://github.com/jfZhang1226/campus-ddl-agent/pull/13#issuecomment-6679398706",
+    "result": "No substantive defect and no blocking item",
+    "scopeDecision": {
+      "manualFieldEditingImplemented": true,
+      "multiRoundAnswersConnected": false,
+      "clarificationFieldRetained": false,
+      "editedDeadlinePrecision": "minute",
+      "unmodifiedTimestampStringPreserved": true,
+      "contentHashVerifiedAgainstNodeCrypto": true
+    }
+  },
+  "deviceRegressionRepeated": false,
+  "realModelCalls": 0,
+  "ciClaimed": false,
+  "finalAcceptanceClaimed": false,
+  "merged": false,
+  "notes": [
+    "T13 remains an editable confirmation card backed by manual field editing; T12 model multi-round answers are not claimed as connected.",
+    "The latest C technical result remains valid for the prior head, but this integration commit requires final review against its new SHA.",
+    "No HarmonyOS or Android device was connected during this integration verification."
+  ]
+}
