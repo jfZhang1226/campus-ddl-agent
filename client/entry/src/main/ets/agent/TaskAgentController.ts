@@ -294,6 +294,16 @@ export class TaskAgentController {
     catch (error) { this.handle(error as Error); }
     finally { if (generation === this.generation) { this.view.phase = 'idle'; this.publish(); } }
   }
+  async editDeadline(taskId: string, date: string, time: string): Promise<boolean> {
+    if (this.busy() || this.view.historyPending || this.view.recoveryRequired) return false;
+    this.view.phase = 'staging'; this.view.errorCode = ''; this.publish();
+    try {
+      await this.session.editDeadline(taskId, date, time);
+      this.view.sources = await this.session.sourceDetails(); this.sourceReady = true;
+      this.view.notice = '截止时间已更新到草案，请核对后确认保存。'; return true;
+    } catch (error) { this.handle(error as Error); return false; }
+    finally { this.view.phase = 'idle'; this.publish(); }
+  }
   async confirm(): Promise<void> {
     if (this.busy() || this.session.proposal() === null || !this.sourceReady) return;
     this.view.phase = 'saving'; this.view.errorCode = ''; this.publish();

@@ -12,6 +12,8 @@ import { isStorageId, StorageFailure, StorageResult, storageError, storageSucces
 import { PLAN_PROPOSAL_RECORD, PLAN_OPERATION_RECORD, PlanningChange, PlanningIntent } from '../planning/PlanningContracts';
 import { planningResult, planningTaskChanges, preparePlanningChange } from '../planning/PlanningRules';
 import { assertPlanningBefore, assertPlanningNotExpired } from '../planning/PlanningValidation';
+import { applyDeadline, DeadlineInput, deadlineNote } from '../ui/DeadlineInput';
+import { sha256Hex } from './storage/Sha256';
 import { taskProposalOperationId } from '../domain/OperationIdentity';
 
 function value<T>(result: StorageResult<T>): T {
@@ -150,12 +152,12 @@ class CommitEngine {
     value(await this.store.save(snapshot, draft.expectedRevision)); return copy(proposal);
   }
 
-  stage(input: ProposalDraft): Promise<StorageResult<CommitProposal>> {
+  stage(input: ProposalDraft, replacingId: string = ''): Promise<StorageResult<CommitProposal>> {
     return guard(async () => {
       const draft: ProposalDraft = copy(input);
       requireArgument(Object.keys(draft).every((key: string) => ['sessionId', 'expectedRevision', 'notices', 'changes', 'planning'].includes(key)),
         '方案含未支持的字段，不能忽略后保存。');
-      if (draft.planning !== undefined) return this.stagePlanning(draft);
+      if (draft.planning !== undefined) { requireArgument(replacingId.length === 0, '不能用任务修改替换安排方案。'); return this.stagePlanning(draft); }
       requireArgument(isStorageId(draft.sessionId) && Array.isArray(draft.notices) && Array.isArray(draft.changes) &&
         draft.changes.length > 0 && draft.changes.length <= 50, '方案会话或变更数量无效。');
       revision(draft.expectedRevision);
@@ -188,6 +190,10 @@ class CommitEngine {
       catch (error) { throw new StorageFailure('INVALID_ARGUMENT', '待导入的通知字段无效。'); }
       const snapshot: BusinessSnapshot = await this.read();
       this.checkRevision(snapshot, draft.expectedRevision);
+      if (replacingId.length > 0) {
+        const previous = this.pending(snapshot, replacingId, draft.expectedRevision);
+        requireArgument(previous.sessionId === draft.sessionId && previous.kind === 'task_changes', '只能替换当前会话的待确认任务草案。');
+      }
       if (snapshot.proposals.some(entry => (entry as CommitProposal).recordType === PLAN_PROPOSAL_RECORD && (entry as CommitProposal).state === 'pending')) {
         throw new StorageFailure('CONFIRMATION_REQUIRED', '已有待确认安排，请先核对保存或放弃，不能用另一方案使其过期。');
       }
@@ -260,9 +266,41 @@ class CommitEngine {
       if (materialMode) { proposal.checklistBefore = materialBefore; proposal.checklistUpdates = updates; }
       validateProposal(proposal);
       requireArgument(!this.usedOperationIds(snapshot).includes(this.reservedOperationId(proposal)), '方案幂等标识与已有操作或预留冲突，原数据保留，请重新整理方案。');
+      if (replacingId.length > 0) this.proposal(snapshot, replacingId).state = 'cancelled';
       snapshot.proposals.push(proposal);
       value(await this.store.save(snapshot, draft.expectedRevision));
+      if (replacingId.length > 0) this.confirmations = this.confirmations.filter(record => record.request.proposalId !== replacingId);
       return copy(proposal);
+    });
+  }
+  /** Screen-only date edit; old cancellation and new staging commit together. No formal task write. */
+  reviseDeadline(id: string, taskId: string, date: string, time: string): Promise<StorageResult<CommitProposal>> {
+    return guard(async () => {
+      const snapshot = await this.read();
+      const previous = this.pending(snapshot, id, snapshot.revision);
+      requireArgument(previous.kind === 'task_changes' && previous.changes.some(change => change.taskId === taskId), '请重新选择当前草案中的任务。');
+      const input = new ProposalDraft(); input.sessionId = previous.sessionId; input.expectedRevision = snapshot.revision;
+      input.notices = copy(previous.notices);
+      input.changes = previous.changes.map(change => {
+        const next = new TaskChangeDraft(); next.action = change.action;
+        next.taskId = change.action === 'create' ? null : change.taskId; next.expectedVersion = change.expectedVersion;
+        next.draft = copy(change.draft); next.confirmSubmission = change.confirmSubmission;
+        if (next.confirmSubmission === undefined) delete next.confirmSubmission;
+        next.checklistCreates = (previous.checklistItems || []).filter(item => item.taskId === change.taskId).map(item => ({ label: item.label, sourceNoticeId: item.sourceNoticeId }));
+        next.checklistUpdates = (previous.checklistUpdates || []).filter(item => item.taskId === change.taskId).map(item => ({ itemId: item.itemId, state: item.state }));
+        return next;
+      });
+      const index = previous.changes.findIndex(change => change.taskId === taskId);
+      const selected = input.changes[index].draft;
+      const before = [selected.deadlinePrecision, selected.deadlineDate, selected.dueAt].join('|');
+      applyDeadline(selected, new DeadlineInput(date, time));
+      requireArgument(before !== [selected.deadlinePrecision, selected.deadlineDate, selected.dueAt].join('|'), '截止时间没有变化。');
+      const raw = deadlineNote(selected);
+      const used = snapshot.notices.map(notice => notice.id).concat(previous.notices.map(notice => notice.id));
+      const notice: Notice = { id: this.id('notice-', used), rawText: raw, sourceLabel: '人工补充 · 截止时间编辑', publishedAt: null,
+        importedAt: this.now(), timezone: selected.timezone, contentHash: sha256Hex(raw) };
+      input.notices.push(notice); selected.noticeIds.push(notice.id);
+      return value(await this.stage(input, id));
     });
   }
   get(id: string): Promise<StorageResult<CommitProposal>> { return guard(async () => copy(this.proposal(await this.read(), id))); }
@@ -453,6 +491,7 @@ export class ClientConfirmation {
   confirm(id: string, expectedRevision: number): Promise<StorageResult<ConfirmedCommitRequest>> { return this.engine.confirm(id, expectedRevision); }
   apply(request: ConfirmedCommitRequest): Promise<StorageResult<CommitReceipt>> { return this.engine.apply(request); }
   cancel(id: string, expectedRevision: number): Promise<StorageResult<CommitProposal>> { return this.engine.cancel(id, expectedRevision); }
+  reviseDeadline(id: string, taskId: string, date: string, time: string): Promise<StorageResult<CommitProposal>> { return this.engine.reviseDeadline(id, taskId, date, time); }
   receipt(id: string): Promise<StorageResult<CommitReceipt>> { return this.engine.receipt(id); }
 }
 

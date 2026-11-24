@@ -317,3 +317,38 @@ test('material detail read failure cannot turn a successful actual commit into f
  assert.equal(ok(await h.store.read()).tasks.length,1);await s.c.confirm();assert.equal(ok(await h.store.read()).operations.length,1);
  h.tasks.get=get;await s.c.recover();assert.equal(s.c.snapshot().detailsPending,false);assert.equal(s.c.snapshot().savedDetails[0].checklistItems.length,2);s.c.dispose();
 });
+
+
+test('screen deadline editing atomically replaces batch proposal, preserves other task and evidence, requires fresh confirmation',async()=>{
+ const h=setup(),ctx=await prepared(h),input=proposal(ctx);const second=clone(input.changes[0]);second.draft.title='合成第二报告';second.draft.deadlineDate='2026-12-05';input.changes.push(second);
+ const old=ok(await h.session.stage(input));const target=old.changes[0].taskId;const authorization=ok(await h.commits.confirmation.confirm(old.id,old.expectedRevision));
+ await h.session.editDeadline(target,'2026-12-04','18:30');const next=h.session.proposal();assert.notEqual(next.id,old.id);
+ assert.equal(next.changes[0].draft.dueAt,'2026-12-04T18:30:00+08:00');assert.equal(next.changes[0].draft.deadlineDate,null);
+ assert.equal(next.changes[1].draft.deadlineDate,'2026-12-05');assert.equal(next.checklistItems.length,old.checklistItems.length);
+ assert.equal(next.notices.filter(n=>n.sourceLabel==='人工补充 · 截止时间编辑').length,1);
+ assert.equal(ok(await h.store.read()).tasks.length,0);assert.equal(ok(await h.commits.proposals.get(old.id)).state,'cancelled');
+ assert.equal((await h.commits.confirmation.apply(authorization)).success,false);
+ const cold=setup(h.files);await cold.session.open();assert.equal(cold.session.proposal().id,next.id);assert.equal(ok(await cold.store.read()).tasks.length,0);
+ const receipt=await cold.session.confirm();assert.equal(receipt.tasks.length,2);assert.equal(receipt.tasks[0].dueAt,'2026-12-04T18:30:00+08:00');
+});
+test('invalid, unchanged or wrong-target screen deadline edits preserve original pending bytes',async()=>{
+ const h=setup(),ctx=await prepared(h);const old=ok(await h.session.stage(proposal(ctx)));const bytes=h.files.files.get('task-store.json');
+ for(const args of [[old.changes[0].taskId,'2026-02-30','18:00'],[old.changes[0].taskId,'2026-12-04','25:00'],[old.changes[0].taskId,'','18:00'],[old.changes[0].taskId,'2026-12-04',''],['not-the-task','2026-12-04','18:00']]){
+  await assert.rejects(()=>h.session.editDeadline(...args));assert.equal(h.files.files.get('task-store.json'),bytes);assert.equal(h.session.proposal().id,old.id);
+ }
+});
+test('atomic screen deadline replacement handles pre-commit failure and lost acknowledgement without losing or duplicating pending',async()=>{
+ const h=setup(),ctx=await prepared(h);const old=ok(await h.session.stage(proposal(ctx)));const original=h.files.replace.bind(h.files);let fail=true;
+ h.files.replace=async(a,b)=>{if(b==='task-store.json'&&fail){fail=false;throw Error('synthetic precommit');}return original(a,b);};
+ await assert.rejects(()=>h.session.editDeadline(old.changes[0].taskId,'2026-12-04','18:00'));await h.session.recover();assert.equal(h.session.proposal().id,old.id);
+ h.files.lose=true;await assert.rejects(()=>h.session.editDeadline(old.changes[0].taskId,'2026-12-04','19:00'));
+ const cold=setup(h.files);await cold.session.open();assert.notEqual(cold.session.proposal().id,old.id);assert.equal(cold.session.proposal().changes[0].draft.dueAt,'2026-12-04T19:00:00+08:00');
+ assert.equal(ok(await cold.commits.proposals.list()).filter(p=>p.state==='pending').length,1);assert.equal(ok(await cold.store.read()).tasks.length,0);
+});
+test('manual deadline evidence remains available in a subsequent model refinement and fresh session cannot borrow it',async()=>{
+ const h=setup(),ctx=await prepared(h);const old=ok(await h.session.stage(proposal(ctx)));await h.session.editDeadline(old.changes[0].taskId,'2026-12-04','18:00');
+ const revised=h.session.proposal(),context=await h.session.context(revised);const manual=context.preparedSources.find(n=>n.sourceLabel==='人工补充 · 截止时间编辑');assert.ok(manual);
+ await h.session.cancelPending();await h.session.append('user','合成补充：另外需要运行截图');const follow=await h.session.context(revised);
+ assert.ok(follow.preparedSources.some(n=>n.id===manual.id));const next=follow.priorProposal;next.expectedRevision=ok(await h.store.read()).revision;next.notices=[];
+ assert.equal((await h.session.stage(next)).success,true);await h.session.fresh();const fresh=await h.session.context();assert.ok(!fresh.preparedSources.some(n=>n.id===manual.id));
+});

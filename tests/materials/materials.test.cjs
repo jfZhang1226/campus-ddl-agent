@@ -206,3 +206,21 @@ test('submission snapshots retain real original notice binding and reject a mism
  const snapshot=ok(await s.store.read()),original=s.files.files.get('task-store.json');snapshot.operations.at(-1).submissionSnapshots[0].materials[0].sourceNoticeId='unknown-notice';
  assert.equal((await s.store.save(snapshot,snapshot.revision)).success,false);assert.equal(s.files.files.get('task-store.json'),original);
 });
+
+
+test('saved-task deadline edit stages actual old/new and human source offline; confirmation retains ID and materials',async()=>{
+ const s=setup(),a=await seed(s),c=await actions(s,a.task.id);const before=ok(await s.tasks.get(a.task.id));
+ await c.prepareDeadline('2026-12-28','18:15');assert.equal(c.snapshot().pending.changes[0].draft.dueAt,'2026-12-28T18:15:00+08:00');
+ assert.deepEqual(ok(await s.tasks.get(a.task.id)).task,before.task);assert.deepEqual(ok(await s.tasks.get(a.task.id)).checklistItems,before.checklistItems);assert.equal(c.snapshot().pending.notices[0].sourceLabel,'人工补充 · 截止时间编辑');
+ assert.equal(await c.confirm(),true);const after=ok(await s.tasks.get(a.task.id));assert.equal(after.task.id,a.task.id);assert.equal(after.task.version,before.task.version+1);
+ assert.equal(after.task.dueAt,'2026-12-28T18:15:00+08:00');assert.deepEqual(after.checklistItems,before.checklistItems);assert.equal(after.notices.length,before.notices.length+1);
+ const cold=setup(s.files);assert.deepEqual(ok(await cold.tasks.get(a.task.id)).task,after.task);
+});
+test('saved-task deadline supports date-only and unknown; invalid dates, stale versions and terminal changes stay blocked',async()=>{
+ const s=setup(),a=await seed(s),c=await actions(s,a.task.id);const before=s.files.files.get('task-store.json');
+ await c.prepareDeadline('2026-02-30','');assert.equal(c.snapshot().pending,null);assert.equal(s.files.files.get('task-store.json'),before);
+ await c.prepareDeadline('2026-12-28','');assert.equal(c.snapshot().pending.changes[0].draft.deadlinePrecision,'date_only');assert.equal(await c.confirm(),true);
+ c.select(ok(await s.tasks.get(a.task.id)));await c.prepareDeadline('','');assert.equal(c.snapshot().pending.changes[0].draft.deadlinePrecision,'unknown');await c.cancel();
+ assert.equal(ok(await s.tasks.get(a.task.id)).task.deadlineDate,'2026-12-28');
+ c.select(ok(await s.tasks.get(a.task.id)));await apply(s,ok(await stage(s,a.task.id,ch=>{ch.draft.title='合成新版本';})));await c.prepareDeadline('2026-12-29','18:00');assert.equal(c.snapshot().errorCode,'VERSION_CONFLICT');
+});

@@ -5,6 +5,8 @@ import { LocalStore } from '../data/LocalStore';
 import { TaskReadPort } from './TaskBoardController';
 import { isOperationRecord } from '../domain/CommitValidation';
 import { StorageFailure, StorageResult } from '../data/storage/StorageTypes';
+import { applyDeadline, DeadlineInput, deadlineNote } from '../ui/DeadlineInput';
+import { sha256Hex } from '../data/storage/Sha256';
 import { timestampMillis } from '../domain/DateRules';
 
 function value<T>(result: StorageResult<T>): T {
@@ -82,7 +84,7 @@ export class TaskActionsController {
     if (item === undefined || this.view.detail === null || ['done', 'cancelled'].includes(this.view.detail.task.status)) return;
     item.state = item.state === 'prepared' ? 'pending' : 'prepared'; this.publish();
   }
-  private async stage(mode: string, label: string = '', effort: number | null = null): Promise<void> {
+  private async stage(mode: string, label: string = '', effort: number | null = null, deadline: DeadlineInput | null = null): Promise<void> {
     if (this.disposed || this.view.busy || this.view.pending !== null || this.view.recoveryRequired || this.view.detail === null) return;
     const selected = copy(this.view.detail);
     const choices = copy(this.view.materials);
@@ -120,6 +122,17 @@ export class TaskActionsController {
       }
       if (mode === 'materials' && (change.checklistUpdates || []).length === 0) throw new StorageFailure('INVALID_ARGUMENT', '材料状态没有变化。');
       const input: ProposalDraft = { sessionId: SESSION, expectedRevision: actual.revision, notices: [], changes: [change] };
+      if (mode === 'deadline' && deadline !== null) {
+        const before = [draft.deadlinePrecision, draft.deadlineDate, draft.dueAt].join('|');
+        applyDeadline(draft, deadline);
+        if (before === [draft.deadlinePrecision, draft.deadlineDate, draft.dueAt].join('|')) throw new StorageFailure('INVALID_ARGUMENT', '截止时间没有变化。');
+        const text = deadlineNote(draft); const snapshot = value(await this.store.read());
+        input.notices = [{ id: 'notice-manual-' + sha256Hex(JSON.stringify([actual.task.id, actual.task.version, text])).slice(0, 32),
+          rawText: text, sourceLabel: '人工补充 · 截止时间编辑', publishedAt: null, importedAt: new Date().toISOString(),
+          timezone: draft.timezone, contentHash: sha256Hex(text) }];
+        if (snapshot.notices.some(notice => notice.id === input.notices[0].id)) throw new StorageFailure('VERSION_CONFLICT', '该次修改已存在，请刷新任务。');
+        draft.noticeIds.push(input.notices[0].id);
+      }
       this.view.recoveryRequired = true; // Stage acknowledgement can be lost; no automatic second proposal.
       const result = await this.commits.proposals.stage(input);
       if (!result.success || result.data === null) {
@@ -131,6 +144,7 @@ export class TaskActionsController {
     } catch (error) { this.error(error as Error); }
     finally { this.view.busy = false; this.publish(); }
   }
+  prepareDeadline(date: string, time: string): Promise<void> { return this.stage('deadline', '', null, new DeadlineInput(date, time)); }
   prepareMaterials(): Promise<void> { return this.stage('materials'); }
   prepareStatus(status: string): Promise<void> {
     const modes: string[] = ['ready', 'progress', 'done', 'cancel', 'submit'];

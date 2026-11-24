@@ -1,3 +1,5 @@
+import { AppTheme } from '../ui/AppTheme';
+import { AppTabBar } from '../ui/AppTabBar';
 import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
 import { getClientStorage } from '../data/ClientStorage';
@@ -17,6 +19,12 @@ struct Schedule {
   @State localNotice: string = '';
   @State doneBlock: string = '';
   @State remainingText: string = '';
+  @State formOpen: boolean = false;
+  private navigate(page: string): void {
+    if (this.onBackPress() || this.view.pending !== null || this.view.recoveryRequired) { this.localNotice = '请先处理当前安排草案或未保存输入。'; return; }
+    if (page === 'pages/TaskAssistant') router.back({ url: page });
+    else router.pushUrl({ url: page }, router.RouterMode.Single).catch(() => { this.localNotice = '暂时无法打开页面。'; });
+  }
   private originalAvailability: string = '';
   private controller: PlanningController | null = null;
   aboutToAppear(): void {
@@ -114,8 +122,8 @@ struct Schedule {
           }.alignItems(HorizontalAlign.Start).width('100%')
         }.height(230).width('100%')
         Row({ space: 8 }) {
-          Button('放弃本方案').id('plan-cancel').enabled(!this.view.busy && !this.view.recoveryRequired).onClick(() => { this.cancel(); })
-          Button('确认保存安排').id('plan-confirm').enabled(!this.view.busy && !this.view.recoveryRequired).onClick(() => { this.confirm(); })
+          Button('放弃本方案').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-cancel').enabled(!this.view.busy && !this.view.recoveryRequired).onClick(() => { this.cancel(); })
+          Button('确认保存安排').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-confirm').enabled(!this.view.busy && !this.view.recoveryRequired).onClick(() => { this.confirm(); })
         }
       }.padding(12).backgroundColor('#E8F3F0').borderRadius(12).width('100%')
     }
@@ -123,29 +131,32 @@ struct Schedule {
   build() {
     Column({ space: 8 }) {
       Row({ space: 10 }) {
-        Button('返回').id('plan-back').fontSize(12).enabled(!this.view.busy).onClick(() => { if (!this.onBackPress()) router.back(); })
+        Button('返回').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-back').fontSize(12).enabled(!this.view.busy).onClick(() => { if (!this.onBackPress()) router.back(); })
         Text('工作安排').fontSize(22).fontWeight(FontWeight.Bold).layoutWeight(1)
-        Button('重新读取').id('plan-refresh').fontSize(12).enabled(!this.view.busy).onClick(() => { this.reload(); })
+        Button('重新读取').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-refresh').fontSize(12).enabled(!this.view.busy).onClick(() => { this.reload(); })
       }.padding(12).width('100%')
-      Text(this.view.notice).id('plan-notice').fontSize(12).fontColor('#176766')
+      if (this.view.pending !== null || this.view.errorCode.length > 0 || this.view.receipt !== null) { Text(this.view.notice).id('plan-notice').fontSize(12).fontColor(AppTheme.primary) }
       if (this.view.errorCode.length > 0) { Text('问题编号：' + this.view.errorCode).fontSize(11).fontColor('#9A541B') }
       if (this.localNotice.length > 0) { Text(this.localNotice).id('plan-local-notice').fontSize(12).fontColor('#9A541B') }
       this.preview()
       Scroll() {
         Column({ space: 12 }) {
           Text('按已知工时、确切截止和你提供的可用时间生成最多七天安排。所有时间均为北京时间。').fontSize(13)
+          Button(this.formOpen ? '收起安排设置' : '设置可用时间与安排范围').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-edit-settings').width('100%').height(46).fontSize(14).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.formOpen = !this.formOpen; })
+          if (this.formOpen) {
           Text('我的可用时间').fontSize(18).fontWeight(FontWeight.Medium)
-          Text('每行：2026-11-18 19:00 ~ 2026-11-18 21:00\n留空表示清空，仍需核对并确认。').fontSize(12)
+          Text('每行：2026-12-01 19:00 ~ 2026-12-01 21:00\n留空表示清空，仍需核对并确认。').fontSize(12)
           TextArea({ text: this.availabilityText, placeholder: '填写完整起止时间，每行一个区间' }).id('plan-availability-input').height(110).maxLength(20000)
             .enabled(this.editable()).onChange((text: string) => { this.availabilityText = text; })
-          Button('核对可用时间').id('plan-availability-stage').enabled(this.editable()).onClick(() => { this.stageAvailability(); })
-          if (this.dirty()) { Button('放弃本页输入').id('plan-discard-input').enabled(!this.view.busy).onClick(() => { this.syncForm(); this.localNotice = ''; }) }
+          Button('核对可用时间').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-availability-stage').enabled(this.editable()).onClick(() => { this.stageAvailability(); })
+          if (this.dirty()) { Button('放弃本页输入').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-discard-input').enabled(!this.view.busy).onClick(() => { this.syncForm(); this.localNotice = ''; }) }
           Text('安排范围（不超过七天）').fontSize(16)
           TextInput({ text: this.fromText, placeholder: '起点 YYYY-MM-DD HH:mm' }).id('plan-from').enabled(this.editable()).onChange((text: string) => { this.fromText = text; })
           TextInput({ text: this.toText, placeholder: '终点 YYYY-MM-DD HH:mm' }).id('plan-to').enabled(this.editable()).onChange((text: string) => { this.toText = text; })
-          Button('生成安排候选').id('plan-replan').enabled(this.editable()).onClick(() => { this.replan(); })
+          Button('生成安排候选').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-replan').enabled(this.editable()).onClick(() => { this.replan(); })
+          }
           Text('已保存工作块（' + String(this.view.blocks.length) + '）').id('plan-saved-count').fontSize(18)
-          if (this.view.blocks.length === 0) { Text('还没有已保存的工作安排。').fontSize(13) }
+          if (this.view.blocks.length === 0) { Text('还没有安排\n先设置可用时间，再为任务生成工作块。').fontSize(15).fontColor(AppTheme.muted).padding(24) }
           ForEach(this.view.blocks, (block: PlanBlock) => {
             Column({ space: 6 }) {
               Text(this.title(block.taskId)).fontSize(14)
@@ -153,8 +164,8 @@ struct Schedule {
               Text(block.state === 'done' ? '已完成' : block.locked ? '待完成 · 已锁定' : '待完成').fontSize(12)
               if (block.state === 'pending') {
                 Row({ space: 8 }) {
-                  Button(block.locked ? '核对解除锁定' : '核对锁定').id('plan-lock-' + block.id).fontSize(11).enabled(this.editable()).onClick(() => { this.lock(block); })
-                  Button('记录完成').id('plan-done-' + block.id).fontSize(11).enabled(this.editable()).onClick(() => {
+                  Button(block.locked ? '核对解除锁定' : '核对锁定').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-lock-' + block.id).fontSize(11).enabled(this.editable()).onClick(() => { this.lock(block); })
+                  Button('记录完成').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-done-' + block.id).fontSize(11).enabled(this.editable()).onClick(() => {
                     if (this.readyForBlock()) { this.doneBlock = block.id; this.remainingText = ''; }
                   })
                 }
@@ -164,7 +175,7 @@ struct Schedule {
           if (this.doneBlock.length > 0 && this.view.pending === null) {
             Text('完成此块后，该任务目前还需多少分钟？0也须明确填写。不会自动扣工时或声明提交。').fontSize(13)
             TextInput({ text: this.remainingText, placeholder: '当前剩余分钟' }).id('plan-remaining').type(InputType.Number).maxLength(9).enabled(this.editable()).onChange((text: string) => { this.remainingText = text; })
-            Button('核对完成与剩余工时').id('plan-done-stage').enabled(this.editable()).onClick(() => { this.finishBlock(); })
+            Button('核对完成与剩余工时').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-done-stage').enabled(this.editable()).onClick(() => { this.finishBlock(); })
           }
           if (this.view.receipt?.planning !== undefined) {
             Text('上次确认时的未安排项（后续任务变化后须重新生成核对）').fontSize(14)
@@ -172,6 +183,7 @@ struct Schedule {
           }
         }.padding(16).width('100%').alignItems(HorizontalAlign.Start)
       }.layoutWeight(1).width('100%')
-    }.width('100%').height('100%').backgroundColor('#F3F6F5')
+      AppTabBar({ active: 'schedule', enabledTabs: !this.view.busy, onSelect: (page: string): void => { this.navigate(page); } })
+    }.width('100%').height('100%').backgroundColor(AppTheme.canvas)
   }
 }

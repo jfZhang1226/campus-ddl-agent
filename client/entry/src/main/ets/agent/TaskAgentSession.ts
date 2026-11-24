@@ -33,6 +33,7 @@ export class TaskAgentSession {
   private uncertain: boolean = false;
   private dirty: boolean = false;
   private writeBusy: boolean = false;
+  private manualSources: Notice[] = [];
   constructor(private store: LocalStore, private commits: CommitServices, sessions: SessionStore,
     private runtime: NoticeImportRuntime = new LocalNoticeImportRuntime()) {
     this.repository = new SessionRepository(sessions, new TaskAgentSessionRuntime(runtime));
@@ -73,7 +74,7 @@ export class TaskAgentSession {
   async fresh(): Promise<void> {
     if (this.dirty || this.locked()) throw new StorageFailure('BUSY', '请先保存记录或重新读取实际结果。');
     await this.cancelPending();
-    this.history.fresh(); this.state = new ChatHistorySnapshot(); this.pending = null; this.request = null;
+    this.history.fresh(); this.state = new ChatHistorySnapshot(); this.pending = null; this.request = null; this.manualSources = [];
   }
   private async sources(): Promise<Notice[]> {
     if (this.state.sessionId.length === 0) return [];
@@ -102,6 +103,7 @@ export class TaskAgentSession {
       });
     }
     const allPrepared = await this.sources();
+    if (previous !== null) previous.notices.forEach(notice => { if (!allPrepared.some(source => source.id === notice.id)) allPrepared.push(clone(notice)); });
     const required: string[] = previous === null ? [] : previous.sourceNoticeIds;
     const recentIds: string[] = allPrepared.slice(-12).map(source => source.id);
     const prepared = allPrepared.filter(source => recentIds.includes(source.id) || required.includes(source.id));
@@ -142,6 +144,7 @@ export class TaskAgentSession {
       if (this.pending !== null) throw new StorageFailure('CONFIRMATION_REQUIRED', '已有待确认方案，请先在页面取消或确认。');
       const current = value(await this.store.read());
       const prepared = await this.sources();
+      if (this.manualSources.length > 0) this.manualSources.forEach(notice => { if (!prepared.some(source => source.id === notice.id)) prepared.push(clone(notice)); });
       const allowed: string[] = current.notices.map(n => n.id).concat(prepared.map(n => n.id));
       if (draft.changes.some(change => change.draft.noticeIds.some(id => !allowed.includes(id)) ||
         (change.action === 'create' && (change.draft.noticeIds.length === 0 || change.draft.status !== 'todo')))) {
@@ -171,6 +174,7 @@ export class TaskAgentSession {
       const entries = value(await this.commits.proposals.list()).filter(p => p.sessionId === this.state.sessionId && p.state === 'pending');
       if (entries.length > 1) throw new StorageFailure('RECOVERY_REQUIRED', '存在多个待确认方案，不能自动选择。');
       this.pending = entries.length === 0 ? null : entries[0]; this.uncertain = false;
+      this.manualSources = this.pending === null ? this.manualSources : clone(this.pending.notices.filter(notice => notice.sourceLabel === '人工补充 · 截止时间编辑'));
       if (this.request !== null && (this.pending === null || this.pending.id !== this.request.proposalId)) this.request = null;
     } catch (error) { this.uncertain = true; throw error as Error; }
   }
@@ -181,6 +185,21 @@ export class TaskAgentSession {
     const snapshot = value(await this.store.read());
     value(await this.commits.confirmation.cancel(this.pending.id, snapshot.revision));
     this.pending = null; this.request = null;
+  }
+  async editDeadline(taskId: string, date: string, time: string): Promise<void> {
+    if (this.writeBusy || this.uncertain || this.dirty || this.pending === null) throw new StorageFailure('BUSY', '请先处理正在进行的操作。');
+    this.writeBusy = true;
+    const previous = this.pending;
+    try {
+      this.uncertain = true;
+      const result = await this.commits.confirmation.reviseDeadline(previous.id, taskId, date, time);
+      if (!result.success || result.data === null) {
+        if (['INVALID_ARGUMENT', 'VERSION_CONFLICT', 'NOT_FOUND', 'PROPOSAL_CANCELLED', 'ALREADY_APPLIED'].includes(result.errorCode || '')) this.uncertain = false;
+        throw new StorageFailure(result.errorCode || 'STORAGE_FAILED', result.message);
+      }
+      this.pending = result.data; this.request = null; this.uncertain = false;
+      this.manualSources = clone(result.data.notices.filter(notice => notice.sourceLabel === '人工补充 · 截止时间编辑'));
+    } finally { this.writeBusy = false; }
   }
   async confirm(): Promise<CommitReceipt> {
     if (this.writeBusy || this.uncertain) throw new StorageFailure('BUSY', '请先重新读取暂存结果。');

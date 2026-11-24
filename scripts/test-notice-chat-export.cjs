@@ -68,7 +68,7 @@ check('production pages and client files are preserved except explicit export co
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
 check('manifest matches actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,500);assert.equal(Object.keys(manifest.hashes).length,57);
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,600);assert.equal(Object.keys(manifest.hashes).length,66);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
@@ -139,6 +139,8 @@ check('one native gateway owner serves settings and task page without duplicate 
   assert.match(settings,/current.token/);assert.match(settings,/validateConfig/);
   assert.doesNotMatch(read('entry/src/main/ets/pages/VoiceChat.ets'),/voice-gateway-token|voice-configure/);
   assert.match(read('entry/src/main/ets/pages/TaskAssistant.ets'),/onPageShow\(\): void \{ this.syncGateway\(\); \}/);
-  for(const id of ['open-task-board','open-schedule','open-gateway-settings']) assert.ok(read('entry/src/main/ets/pages/TaskAssistant.ets').includes(".id('"+id+"')"));
+  assert.match(read('entry/src/main/ets/pages/TaskAssistant.ets'),/AppTabBar/);
+  assert.match(read('entry/src/main/ets/ui/AppTabBar.ets'),/pages\/Tasks/);
+  assert.match(read('entry/src/main/ets/ui/AppTabBar.ets'),/pages\/Schedule/);
 });
 console.log(`${count} T19 source-export checks passed. No signing, network, microphone or device calls.`);
