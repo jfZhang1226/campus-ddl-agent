@@ -117,7 +117,7 @@ struct TasksPage {
           Row({ space: 8 }) {
             Button('放弃本次修改').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-action-cancel').fontSize(12).enabled(!this.actions.busy && !this.actions.recoveryRequired)
               .onClick(() => { this.actionsController?.cancel(); })
-            Button('确认保存修改').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-action-confirm').fontSize(12).enabled(!this.actions.busy && !this.actions.recoveryRequired)
+            Button('确认保存修改').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-action-confirm').backgroundColor(AppTheme.primary).fontColor('#FFFFFF').fontSize(12).enabled(!this.actions.busy && !this.actions.recoveryRequired)
               .onClick(() => { this.saveAction(); })
           }
         }.width('100%').alignItems(HorizontalAlign.Start).padding(12).backgroundColor('#FFF5DE')
@@ -131,7 +131,7 @@ struct TasksPage {
       Text('勾选只修改本页草稿，核对并确认保存后才改变正式记录。').fontSize(12).fontColor(AppTheme.muted)
       ForEach(this.actions.materials, (item: MaterialChoice) => {
         Row({ space: 8 }) {
-          Checkbox({ name: item.itemId }).id('task-material-' + item.itemId).select(item.state === 'prepared')
+          Checkbox({ name: item.itemId }).id('task-material-' + item.itemId).select(item.state === 'prepared').selectedColor(AppTheme.primary)
             .enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired && this.view.detail?.task.status !== 'done' && this.view.detail?.task.status !== 'cancelled')
             .onChange((checked: boolean) => { if (checked !== (item.state === 'prepared')) this.actionsController?.toggle(item.itemId); })
           Text((item.state === 'prepared' ? '已准备 · ' : '待准备 · ') + item.label + (item.state !== item.originalState ? '（未保存）' : '')).fontSize(14).layoutWeight(1)
@@ -140,10 +140,10 @@ struct TasksPage {
       if (this.actions.materials.length === 0) { Text('没有记录材料要求。').fontSize(13).fontColor(AppTheme.muted) }
       Button('核对准备情况').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-material-prepare').fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
         .onClick(() => { if (this.readyForAction('materials')) this.actionsController?.prepareMaterials(); })
-      if (this.view.detail?.task.status !== 'done' && this.view.detail?.task.status !== 'cancelled') {
-        Button(this.moreOpen ? '收起任务操作' : '管理材料与任务进度').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-more-actions').fontSize(13).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.moreOpen = !this.moreOpen; })
+      Button(this.moreOpen ? '收起任务操作' : '管理材料与任务进度').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-more-actions').fontSize(13).onClick(() => { this.moreOpen = !this.moreOpen; })
       if (this.moreOpen) {
-      TextInput({ text: this.materialLabel, placeholder: '手动补充材料名称' }).id('task-material-name').maxLength(200)
+      if (this.view.detail?.task.status !== 'done' && this.view.detail?.task.status !== 'cancelled') {
+        TextInput({ text: this.materialLabel, placeholder: '手动补充材料名称' }).id('task-material-name').maxLength(200)
           .enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired).onChange((text: string) => { this.materialLabel = text; })
         Button('核对新增材料').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-material-add').fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
           .onClick(() => { if (this.readyForAction('add')) this.actionsController?.prepareAddMaterial(this.materialLabel); })
@@ -176,12 +176,12 @@ struct TasksPage {
           .fontSize(12).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
           .onClick(() => { if (this.readyForAction('submit')) this.actionsController?.prepareStatus('submit'); })
       }
+      }
       if (this.actions.needsSubmissionReview) { Text('任务或要求在上次声明后已变化，请重新核对；原提交声明仍保留。').fontSize(12).fontColor('#9A541B') }
       Text('提交声明历史（' + String(this.actions.submissions.length) + '）').fontSize(15)
       ForEach(this.actions.submissions, (entry: UserSubmissionSnapshot) => {
         Text(this.reminderTime(entry.confirmedSubmittedAt) + ' · 任务版本' + String(entry.taskVersion) + '\n渠道：' + (entry.submissionChannel || '未提供') + '\n材料：' + entry.materials.map(item => item.label).join('、')).fontSize(12)
       }, (entry: UserSubmissionSnapshot) => entry.id)
-      }
     }.width('100%').alignItems(HorizontalAlign.Start).padding(12).backgroundColor('#FFFFFF').borderRadius(10)
   }
   private reminderTime(instant: string): string {
@@ -309,10 +309,10 @@ Row({ space: 12 }) {
         TextInput({ text: this.view.keyword, placeholder: '按标题或课程查找' }).id('task-board-search')
           .maxLength(100).onChange((text: string) => { this.controller?.editKeyword(text); }).margin({ left: 14, right: 14 })
         Row({ space: 5 }) {
-          Button('待办').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-board-active').fontSize(11).onClick(() => { this.controller?.setFilter('active'); })
-          Button('七天内').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-board-week').fontSize(11).onClick(() => { this.controller?.setFilter('week'); })
-          Button('待补日期').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-board-undated').fontSize(11).onClick(() => { this.controller?.setFilter('undated'); })
-          Button('全部').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-board-all').fontSize(11).onClick(() => { this.controller?.setFilter('all'); })
+          Button('待办').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-board-active').backgroundColor(this.view.filter === 'active' ? AppTheme.primary : AppTheme.soft).fontColor(this.view.filter === 'active' ? '#FFFFFF' : AppTheme.primary).fontSize(11).onClick(() => { this.controller?.setFilter('active'); })
+          Button('七天内').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-board-week').backgroundColor(this.view.filter === 'week' ? AppTheme.primary : AppTheme.soft).fontColor(this.view.filter === 'week' ? '#FFFFFF' : AppTheme.primary).fontSize(11).onClick(() => { this.controller?.setFilter('week'); })
+          Button('待补日期').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-board-undated').backgroundColor(this.view.filter === 'undated' ? AppTheme.primary : AppTheme.soft).fontColor(this.view.filter === 'undated' ? '#FFFFFF' : AppTheme.primary).fontSize(11).onClick(() => { this.controller?.setFilter('undated'); })
+          Button('全部').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-board-all').backgroundColor(this.view.filter === 'all' ? AppTheme.primary : AppTheme.soft).fontColor(this.view.filter === 'all' ? '#FFFFFF' : AppTheme.primary).fontSize(11).onClick(() => { this.controller?.setFilter('all'); })
         }.width('100%').padding({ left: 12, right: 12 })
         Text(this.view.today + ' · 北京时间 · 显示 ' + String(this.view.rows.length) + '/' + String(this.view.total) + ' 项')
           .fontSize(12).fontColor(AppTheme.muted)

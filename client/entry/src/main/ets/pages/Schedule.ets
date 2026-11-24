@@ -1,3 +1,4 @@
+import { AvailabilityEditor } from '../ui/AvailabilityEditor';
 import { AppTheme } from '../ui/AppTheme';
 import { AppTabBar } from '../ui/AppTabBar';
 import router from '@ohos.router';
@@ -20,6 +21,7 @@ struct Schedule {
   @State doneBlock: string = '';
   @State remainingText: string = '';
   @State formOpen: boolean = false;
+  @State addingAvailability: boolean = false;
   private navigate(page: string): void {
     if (this.onBackPress() || this.view.pending !== null || this.view.recoveryRequired) { this.localNotice = '请先处理当前安排草案或未保存输入。'; return; }
     if (page === 'pages/TaskAssistant') router.back({ url: page });
@@ -41,6 +43,7 @@ struct Schedule {
   private dirty(): boolean { return this.view.pending === null && (this.availabilityText !== this.originalAvailability || this.doneBlock.length > 0); }
   onBackPress(): boolean {
     if (this.view.busy) return true;
+    if (this.addingAvailability) { this.addingAvailability = false; return true; }
     if (this.dirty()) { this.localNotice = '还有未核对的可用时间或完成声明，请先核对或放弃本页输入。'; return true; }
     return false;
   }
@@ -123,7 +126,7 @@ struct Schedule {
         }.height(230).width('100%')
         Row({ space: 8 }) {
           Button('放弃本方案').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-cancel').enabled(!this.view.busy && !this.view.recoveryRequired).onClick(() => { this.cancel(); })
-          Button('确认保存安排').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-confirm').enabled(!this.view.busy && !this.view.recoveryRequired).onClick(() => { this.confirm(); })
+          Button('确认保存安排').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-confirm').backgroundColor(AppTheme.primary).fontColor('#FFFFFF').enabled(!this.view.busy && !this.view.recoveryRequired).onClick(() => { this.confirm(); })
         }
       }.padding(12).backgroundColor('#E8F3F0').borderRadius(12).width('100%')
     }
@@ -142,13 +145,25 @@ struct Schedule {
       Scroll() {
         Column({ space: 12 }) {
           Text('按已知工时、确切截止和你提供的可用时间生成最多七天安排。所有时间均为北京时间。').fontSize(13)
+          Text('我的可用时间').fontSize(18).fontWeight(FontWeight.Medium)
+          Text(this.availabilityText.length > 0 ? this.availabilityText : '先告诉我你什么时候有空。').fontSize(13).fontColor(AppTheme.muted).width('100%').padding(16).backgroundColor('#FFFFFF').borderRadius(16)
+          if (this.addingAvailability) {
+            AvailabilityEditor({ onAdd: (line: string): void => {
+              this.availabilityText = this.availabilityText.length > 0 ? this.availabilityText + '\n' + line : line; this.addingAvailability = false;
+            }, onCancel: (): void => { this.addingAvailability = false; } })
+          } else {
+            Button('添加可用时间').id('plan-add-availability').height(42).width('100%').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).enabled(this.editable()).onClick(() => { this.addingAvailability = true; })
+          }
+          if (this.availabilityText !== this.originalAvailability) {
+            Button('核对保存可用时间').id('plan-availability-stage').height(44).width('100%').backgroundColor(AppTheme.primary).enabled(this.editable()).onClick(() => { this.stageAvailability(); })
+          }
+          Button('生成七日安排').id('plan-quick-replan').height(46).width('100%').backgroundColor(AppTheme.primary).enabled(this.editable()).onClick(() => { this.replan(); })
           Button(this.formOpen ? '收起安排设置' : '设置可用时间与安排范围').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-edit-settings').width('100%').height(46).fontSize(14).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.formOpen = !this.formOpen; })
           if (this.formOpen) {
           Text('我的可用时间').fontSize(18).fontWeight(FontWeight.Medium)
           Text('每行：2026-12-01 19:00 ~ 2026-12-01 21:00\n留空表示清空，仍需核对并确认。').fontSize(12)
           TextArea({ text: this.availabilityText, placeholder: '填写完整起止时间，每行一个区间' }).id('plan-availability-input').height(110).maxLength(20000)
             .enabled(this.editable()).onChange((text: string) => { this.availabilityText = text; })
-          Button('核对可用时间').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-availability-stage').enabled(this.editable()).onClick(() => { this.stageAvailability(); })
           if (this.dirty()) { Button('放弃本页输入').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('plan-discard-input').enabled(!this.view.busy).onClick(() => { this.syncForm(); this.localNotice = ''; }) }
           Text('安排范围（不超过七天）').fontSize(16)
           TextInput({ text: this.fromText, placeholder: '起点 YYYY-MM-DD HH:mm' }).id('plan-from').enabled(this.editable()).onChange((text: string) => { this.fromText = text; })

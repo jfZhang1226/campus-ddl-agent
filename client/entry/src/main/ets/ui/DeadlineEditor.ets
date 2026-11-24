@@ -2,10 +2,10 @@ import { AppTheme } from './AppTheme';
 
 @Component
 export struct DeadlineEditor {
-  initialDate: string = '';
-  initialTime: string = '';
-  saving: boolean = false;
-  error: string = '';
+  @Prop initialDate: string = '';
+  @Prop initialTime: string = '';
+  @Prop saving: boolean = false;
+  @Prop error: string = '';
   onApply: (date: string, time: string) => void = (_date: string, _time: string): void => {};
   onCancel: () => void = (): void => {};
   @State dateText: string = '';

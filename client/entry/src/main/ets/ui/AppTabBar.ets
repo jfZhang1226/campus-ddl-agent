@@ -2,8 +2,8 @@ import { AppTheme } from './AppTheme';
 
 @Component
 export struct AppTabBar {
-  active: string = 'assistant';
-  enabledTabs: boolean = true;
+  @Prop active: string = 'assistant';
+  @Prop enabledTabs: boolean = true;
   onSelect: (page: string) => void = (_page: string): void => {};
   private icon(tab: string): Resource {
     return tab === 'assistant' ? $r('app.media.nav_assistant') : tab === 'tasks' ? $r('app.media.nav_tasks') :

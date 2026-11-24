@@ -140,7 +140,7 @@ function prepare(output) {
     'entry/src/main/ets/domain/OperationIdentity.ts',
     'entry/src/main/ets/reminders/CalendarReminderPort.ts',pages+'HarmonyCalendarAccess.ets',
     pages+'GatewaySettings.ets',pages+'DebugTools.ets',
-    ...['ui/AppTheme.ets','ui/AppTabBar.ets','ui/DeadlineEditor.ets','ui/DeadlineInput.ts'].map(f=>'entry/src/main/ets/'+f),
+    ...['ui/AppTheme.ets','ui/AppTabBar.ets','ui/DeadlineEditor.ets','ui/DeadlineInput.ts','ui/AvailabilityEditor.ets'].map(f=>'entry/src/main/ets/'+f),
     ...['brand_mark','nav_assistant','nav_tasks','nav_schedule','nav_settings'].map(f=>'entry/src/main/resources/base/media/'+f+'.svg'),'AppScope/app.json5',
     'AppScope/resources/base/element/string.json','AppScope/resources/zh_CN/element/string.json','AppScope/resources/en_US/element/string.json',
     'entry/src/main/module.json5','entry/src/main/resources/base/element/string.json','entry/src/main/resources/zh_CN/element/string.json','entry/src/main/resources/en_US/element/string.json'])
