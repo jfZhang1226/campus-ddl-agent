@@ -336,7 +336,9 @@ struct TaskAssistantPage {
             if (this.view.historyPending) {
               Button('重试保存对话记录').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-agent-retry-history').enabled(this.idle()).onClick(() => { this.controller?.retryHistory(); })
             }
-            Button('恢复草案或保存结果').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-agent-recover').fontSize(12).enabled(this.idle()).onClick(() => { this.controller?.recover(); })
+            if (this.view.recoveryRequired || this.view.errorCode.length > 0) {
+              Button('恢复草案或保存结果').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-agent-recover').fontSize(12).enabled(this.idle()).onClick(() => { this.controller?.recover(); })
+            }
           }.width('100%').padding(14)
         }.layoutWeight(1).width('100%')
         Column({ space: 10 }) {
@@ -347,7 +349,7 @@ struct TaskAssistantPage {
             .onChange((text: string) => { this.controller?.edit(text); })
           Row({ space: 10 }) {
             Button(this.voiceOpen ? '收起语音' : '语音输入').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-agent-voice-mode').fontSize(12).height(38).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft)
-              .enabled(!this.view.speech.busy).onClick(() => { this.voiceOpen = !this.voiceOpen; })
+              .enabled(this.view.speechEnabled && !this.view.speech.busy).onClick(() => { this.voiceOpen = !this.voiceOpen; })
             Text('先核对，再保存').fontSize(11).fontColor(AppTheme.muted).layoutWeight(1)
             Button('发送').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('task-agent-send').width(78).height(38).backgroundColor(AppTheme.primary).fontColor('#FFFFFF').fontSize(14)
               .enabled(this.idle() && this.view.configured && !this.view.historyPending && !this.view.recoveryRequired && this.view.input.trim().length > 0)
