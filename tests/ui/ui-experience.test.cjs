@@ -108,6 +108,7 @@ test('actual pages wire both route directions, shared preference and unchanged b
   const assistant=fs.readFileSync(path.join(root,'pages/TaskAssistant.ets'),'utf8');
   assert.equal((assistant.match(/AssistantMascot\(/g)||[]).length,1);assert.match(assistant,/edge: this.largeSimpleMode \? 96 : 104/);
   assert.match(assistant,/this.controller\?\.confirm\(\)/);assert.match(assistant,/this.view.input/);
+  assert.match(assistant,/id\('task-agent-send'\)\.width\(this.largeSimpleMode \? 96 : 68\)/);
   const owner=fs.readFileSync(path.join(root,'ui/UiPreferencesOwner.ets'),'utf8');assert.match(owner,/ArkFilePort\(filesDir, 'campus-ui'\)/);
   assert.doesNotMatch(owner,/getClientStorage|GatewaySecret|token|task-store/);
 });

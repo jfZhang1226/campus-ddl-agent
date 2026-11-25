@@ -401,7 +401,7 @@ struct TaskAssistantPage {
               .onClick(() => { this.composerExpanded = !this.composerExpanded; })
             }
             Blank().layoutWeight(1)
-            Button('发送').fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-agent-send').width(68).height(this.largeSimpleMode ? 56 : 38).backgroundColor(AppTheme.primary).fontColor(AppTheme.onPrimary).fontColor('#FFFFFF').fontSize(AppTheme.font(14, this.largeSimpleMode))
+            Button('发送').fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 1 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-agent-send').width(this.largeSimpleMode ? 96 : 68).height(this.largeSimpleMode ? 56 : 38).backgroundColor(AppTheme.primary).fontColor(AppTheme.onPrimary).fontColor('#FFFFFF').fontSize(AppTheme.font(14, this.largeSimpleMode))
               .enabled(this.idle() && this.view.configured && !this.view.historyPending && !this.view.recoveryRequired && this.view.input.trim().length > 0)
               .onClick(() => { this.controller?.send(); })
           }.width('100%')
