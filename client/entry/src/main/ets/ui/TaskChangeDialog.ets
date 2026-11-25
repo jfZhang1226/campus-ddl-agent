@@ -20,6 +20,7 @@ export struct TaskChangeDialog {
   }
   private progress(change: ProposedTaskChange): string {
     if (this.view.pending === null) return '';
+    if (change.draft.status === 'cancelled') return '取消后移出待办，原有记录保留';
     const before = (this.view.pending.checklistBefore || []).filter(item => item.taskId === change.taskId);
     const added = (this.view.pending.checklistItems || []).filter(item => item.taskId === change.taskId);
     const updates = this.view.pending.checklistUpdates || [];
