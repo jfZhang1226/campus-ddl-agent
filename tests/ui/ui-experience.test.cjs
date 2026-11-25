@@ -95,6 +95,19 @@ test('large mode enforces readable core text while normal typography remains unc
   for(const size of [10,11,12,13,14,15,16,18,22,30]){assert.equal(readableFont(size,false),size);assert.ok(readableFont(size,true)>=18);assert.ok(readableFont(size,true)>size);}
   assert.ok(readableLineHeight(26,true)>readableFont(15,true));assert.equal(readableLineHeight(26,false),26);
 });
+test('downward conversation drag only clears focus and preserves unsent input, proposals and controller actions',()=>{
+  const file=path.resolve(__dirname,'../../client/entry/src/main/ets/pages/TaskAssistant.ets');
+  const source=fs.readFileSync(file,'utf8');
+  const body=source.match(/private dismissKeyboard\(\): void \{([\s\S]*?)\n  \}/)[1];
+  const dismiss=new Function(body),view={input:'合成的未发送文字',proposal:{pending:true}},calls=[];
+  const owner={inputFocused:false,view,getUIContext:()=>({getFocusController:()=>({clearFocus:()=>calls.push('focus')})}),
+    controller:{edit:()=>assert.fail('must not edit'),send:()=>assert.fail('must not send'),confirm:()=>assert.fail('must not save')}};
+  const before=JSON.stringify(view);dismiss.call(owner);assert.deepEqual(calls,[]);
+  owner.inputFocused=true;dismiss.call(owner);assert.deepEqual(calls,['focus']);assert.equal(JSON.stringify(view),before);
+  assert.match(source,/id\('assistant-conversation-scroll'\)[\s\S]*?parallelGesture\(PanGesture\(\{ direction: PanDirection.Down, distance: 18 \}\)/);
+  const input=source.slice(source.indexOf('TextArea({ text: this.view.input'),source.indexOf('Row({ space: 10 })',source.indexOf('TextArea({ text: this.view.input')));
+  assert.doesNotMatch(input,/parallelGesture|dismissKeyboard/,'long input retains its own scrolling');
+});
 test('actual pages wire both route directions, shared preference and unchanged business confirmations',()=>{
   const root=path.resolve(__dirname,'../../client/entry/src/main/ets');
   for(const name of ['TaskAssistant','Tasks','Schedule','GatewaySettings']){

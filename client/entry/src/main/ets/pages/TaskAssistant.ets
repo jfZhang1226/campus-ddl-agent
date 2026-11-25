@@ -108,6 +108,10 @@ struct TaskAssistantPage {
     clearTimeout(this.scrollTimer);
   }
   private idle(): boolean { return this.view.phase === 'idle' && !this.view.speech.busy; }
+  private dismissKeyboard(): void {
+    if (!this.inputFocused) return;
+    this.getUIContext().getFocusController().clearFocus();
+  }
   onBackPress(): boolean {
     if (this.deadlineTaskId.length > 0) { this.deadlineTaskId = ''; return true; }
     if (this.view.speech.busy) this.controller?.cancelVoice();
@@ -163,6 +167,8 @@ struct TaskAssistantPage {
         }.width('100%').padding({ left: 4, right: 8 }).backgroundColor(AppTheme.soft).borderRadius(18)
       }
     }.width('100%').padding({ left: 22, right: 22, top: 18, bottom: 16 }).backgroundColor(AppTheme.canvas)
+      .parallelGesture(PanGesture({ direction: PanDirection.Down, distance: 18 })
+        .onActionStart(() => { this.dismissKeyboard(); }))
   }
   @Builder
   proposalCard() {
@@ -383,7 +389,9 @@ struct TaskAssistantPage {
               Button('重新加载').fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-agent-recover').fontSize(AppTheme.font(12, this.largeSimpleMode)).enabled(this.idle()).onClick(() => { this.controller?.recover(); })
             }
           }.width('100%').padding({ left: 22, right: 22, top: 12, bottom: 14 }).alignItems(HorizontalAlign.Start)
-        }.layoutWeight(1).width('100%')
+        }.layoutWeight(1).width('100%').id('assistant-conversation-scroll')
+          .parallelGesture(PanGesture({ direction: PanDirection.Down, distance: 18 })
+            .onActionStart(() => { this.dismissKeyboard(); }))
         Column({ space: 10 }) {
           this.voiceControls()
           if (this.view.proposal !== null) { Text('发送补充会取消当前未保存方案并重新整理，仍需再次确认保存。').fontSize(AppTheme.font(11, this.largeSimpleMode)).fontColor(AppTheme.amber) }
