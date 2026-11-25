@@ -73,7 +73,7 @@ struct GatewaySettingsPage {
           Button('调试工具').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('open-debug-tools').fontSize(12).enabled(!this.dirty())
             .onClick(() => { router.pushUrl({ url: 'pages/DebugTools' }).catch(() => { this.notice = '无法打开调试工具。'; }); })
         }.width('100%').alignItems(HorizontalAlign.Start)
-      }.layoutWeight(1).width('100%')
+      }.layoutWeight(1).width('100%').align(Alignment.Top)
       AppTabBar({ active: 'settings', onSelect: (page: string): void => { this.navigate(page); } })
     }.padding({ left: 18, right: 18, top: 16 }).width('100%').height('100%').backgroundColor(AppTheme.canvas)
   }

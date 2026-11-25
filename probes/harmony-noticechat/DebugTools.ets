@@ -22,7 +22,7 @@ struct DebugToolsPage {
           Button('对话样式预览').id('debug-style-preview').width('100%').height(44).fontSize(14).fontColor(AppTheme.primary).backgroundColor(AppTheme.surface).borderRadius(14).onClick(() => this.open('pages/StylePreview'))
           if (this.notice.length > 0) { Text(this.notice).fontSize(12).fontColor(AppTheme.amber) }
         }.width('100%').alignItems(HorizontalAlign.Start)
-      }.width('100%').layoutWeight(1)
+      }.width('100%').layoutWeight(1).align(Alignment.Top)
     }.width('100%').height('100%').padding(22).backgroundColor(AppTheme.canvas)
   }
 }

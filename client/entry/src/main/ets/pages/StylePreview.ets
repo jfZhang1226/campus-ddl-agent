@@ -34,7 +34,7 @@ struct StylePreviewPage {
             .borderRadius(22).border({ width: 1, color: AppTheme.border })
           MessageBubble({ role: 'user', content: '再提醒我准备演示。' })
         }.width('100%').padding({ left: 22, right: 22, top: 6, bottom: 12 })
-      }.layoutWeight(1).width('100%')
+      }.layoutWeight(1).width('100%').align(Alignment.Top)
       Row() {
         Text('输入通知，或继续补充…').fontSize(14).fontColor(AppTheme.muted).layoutWeight(1)
         Text('发送').fontSize(13).fontColor(AppTheme.onPrimary).padding({ left: 18, right: 18, top: 11, bottom: 11 })
