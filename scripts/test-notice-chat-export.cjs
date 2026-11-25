@@ -68,7 +68,7 @@ check('production pages and client files are preserved except explicit export co
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
 check('manifest matches actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,1000);assert.equal(Object.keys(manifest.hashes).length,93);
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,1100);assert.equal(Object.keys(manifest.hashes).length,97);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
@@ -95,7 +95,7 @@ check('task dialogue native owner supplies speech while shared business, validat
 check('task detail and candidate choices call actual controllers without bypassing confirmation',()=>{
   const page=read('entry/src/main/ets/pages/Tasks.ets'),dialogue=read('entry/src/main/ets/pages/TaskAssistant.ets');
   assert.match(page,/new TaskActionsController\(storage.local, storage.tasks, storage.commits\)/);
-  assert.match(page,/task-action-confirm/);assert.match(page,/this.actionsController\?\.confirm\(\)/);
+  assert.match(read('entry/src/main/ets/ui/TaskChangeDialog.ets'),/task-action-confirm/);assert.match(page,/this.actionsController\?\.confirm\(\)/);
   assert.match(page,/hasLocalChanges/);assert.match(page,/submissionChannel/);assert.match(page,/entry.materials/);
   assert.match(dialogue,/task-agent-choose-/);assert.match(dialogue,/this.controller\?\.chooseTask\(task.id\)/);
   assert.match(dialogue,/selectedTask.notices/);

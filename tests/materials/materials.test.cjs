@@ -224,3 +224,27 @@ test('saved-task deadline supports date-only and unknown; invalid dates, stale v
  assert.equal(ok(await s.tasks.get(a.task.id)).task.deadlineDate,'2026-12-28');
  c.select(ok(await s.tasks.get(a.task.id)));await apply(s,ok(await stage(s,a.task.id,ch=>{ch.draft.title='合成新版本';})));await c.prepareDeadline('2026-12-29','18:00');assert.equal(c.snapshot().errorCode,'VERSION_CONFLICT');
 });
+
+test('repository completion projection follows only confirmed material writes and returns to active after append/uncheck',async()=>{
+ const {taskIsComplete}=require(root+'tasks/TaskCompletion.ts');const s=setup(),a=await seed(s,1),c=await actions(s,a.task.id);
+ const complete=async()=>{const list=ok(await s.tasks.list());return taskIsComplete(list.tasks.find(t=>t.id===a.task.id),list.progress.find(t=>t.taskId===a.task.id));};
+ assert.equal(await complete(),false);c.toggle(a.items[0].id);await c.prepareMaterials();assert.equal(await complete(),false);await c.confirm();assert.equal(await complete(),true);
+ c.select(ok(await s.tasks.get(a.task.id)));await c.prepareAddMaterial('合成新增事项');assert.equal(await complete(),true);await c.confirm();assert.equal(await complete(),false);
+ c.select(ok(await s.tasks.get(a.task.id)));const added=c.snapshot().materials.find(i=>i.state==='pending');c.toggle(added.itemId);await c.prepareMaterials();await c.confirm();assert.equal(await complete(),true);
+ c.select(ok(await s.tasks.get(a.task.id)));c.toggle(a.items[0].id);await c.prepareMaterials();await c.confirm();assert.equal(await complete(),false);
+ const list=ok(await s.tasks.list());assert.equal(list.revision,ok(await s.tasks.get(a.task.id)).revision);assert.deepEqual({...list.progress.find(t=>t.taskId===a.task.id)},{taskId:a.task.id,total:2,prepared:1});
+});
+test('explicit append to a done task narrowly reopens work while preserving old receipts; cancelled stays protected',async()=>{
+ const s=setup(),a=await seed(s,0,null);await apply(s,ok(await stage(s,a.task.id,c=>{c.draft.status='done';})));const before=ok(await s.store.read());
+ const c=await actions(s,a.task.id);await c.prepareAddMaterial('合成新工作');assert.equal(c.snapshot().pending.changes[0].draft.status,'in_progress');assert.equal(ok(await s.tasks.get(a.task.id)).task.status,'done');
+ assert.equal(await c.confirm(),true);const detail=ok(await s.tasks.get(a.task.id));assert.equal(detail.task.id,a.task.id);assert.equal(detail.task.status,'in_progress');assert.equal(detail.task.remainingMinutes,null);assert.equal(detail.checklistItems[0].state,'pending');
+ const after=ok(await s.store.read());for(const receipt of before.operations)assert.deepEqual(after.operations.find(r=>r.operationId===receipt.operationId),receipt);
+ const b=await seed(s,0,null);await apply(s,ok(await stage(s,b.task.id,c=>{c.draft.status='done';})));
+ assert.equal((await stage(s,b.task.id,c=>{c.draft.status='in_progress';})).success,false);
+ assert.equal((await stage(s,b.task.id,c=>{c.draft.status='in_progress';c.draft.remainingMinutes=10;c.checklistCreates=[{label:'合成追加',sourceNoticeId:null}];})).success,false);
+ const cancelled=await seed(s,0,null);await apply(s,ok(await stage(s,cancelled.task.id,c=>{c.draft.status='cancelled';})));const cc=await actions(s,cancelled.task.id);await cc.prepareAddMaterial('合成禁止追加');assert.equal(cc.snapshot().pending,null);
+});
+test('submitted task with new pending material is active without erasing submission declaration',async()=>{
+ const {taskIsComplete}=require(root+'tasks/TaskCompletion.ts');const s=setup(),a=await seed(s,1);const first=await submitted(s,a.task.id);const history=clone(first.submissionSnapshots);assert.equal(history.length,1);
+ const c=await actions(s,a.task.id);await c.prepareAddMaterial('合成补交文件');await c.confirm();const list=ok(await s.tasks.list()),t=list.tasks.find(t=>t.id===a.task.id);assert.equal(t.status,'submitted');assert.equal(taskIsComplete(t,list.progress.find(p=>p.taskId===t.id)),false);assert.deepEqual(ok(await s.commits.confirmation.receipt(first.operationId)).submissionSnapshots,history);
+});

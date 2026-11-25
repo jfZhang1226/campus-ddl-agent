@@ -1,5 +1,5 @@
 import { BusinessSnapshot, ChecklistItem, Notice, Task } from '../domain/StorageModels';
-import { LocalTaskRuntime, TaskDetail, TaskDraft, TaskList, TaskQuery, TaskRuntime, TaskWrite } from '../domain/TaskContracts';
+import { LocalTaskRuntime, TaskDetail, TaskDraft, TaskList, TaskQuery, TaskRuntime, TaskWrite, TaskChecklistProgress } from '../domain/TaskContracts';
 import { deadlineDay, isOffsetTimestamp, timestampMillis } from '../domain/DateRules';
 import { requireArgument, validateDraft, validateQuery, validateTask } from '../domain/TaskValidation';
 import { LocalStore } from './LocalStore';
@@ -98,7 +98,11 @@ export class TaskRepository {
       });
       tasks.sort((a: Task, b: Task) => timestampMillis(a.createdAt) - timestampMillis(b.createdAt) ||
         (a.id < b.id ? -1 : a.id === b.id ? 0 : 1));
-      return storageSuccess(new TaskList(tasks, snapshot.revision));
+      const progress = tasks.map(task => {
+        const items = snapshot.checklistItems.filter(item => item.taskId === task.id);
+        return new TaskChecklistProgress(task.id, items.length, items.filter(item => item.state === 'prepared').length);
+      });
+      return storageSuccess(new TaskList(tasks, snapshot.revision, progress));
     } catch (error) { return storageError<TaskList>(error as Error); }
   }
 

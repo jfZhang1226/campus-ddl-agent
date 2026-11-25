@@ -26,10 +26,16 @@ export class TaskQuery {
   includeUndated: boolean = false;
 }
 
+export class TaskChecklistProgress {
+  constructor(public taskId: string, public total: number = 0, public prepared: number = 0) {}
+}
 export class TaskList {
   tasks: Task[];
   revision: number;
-  constructor(tasks: Task[], revision: number) { this.tasks = tasks; this.revision = revision; }
+  progress: TaskChecklistProgress[];
+  constructor(tasks: Task[], revision: number, progress: TaskChecklistProgress[] = []) {
+    this.tasks = tasks; this.revision = revision; this.progress = progress;
+  }
 }
 
 export class TaskDetail {

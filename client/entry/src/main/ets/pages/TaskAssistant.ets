@@ -6,7 +6,8 @@ import { openAppTab, prepareTabBack, appTabArrived } from '../ui/TabNavigation';
 import { displayPreferences } from '../ui/UiPreferencesOwner';
 import { AppTheme } from '../ui/AppTheme';
 import { AppTabBar } from '../ui/AppTabBar';
-import { DeadlineEditor } from '../ui/DeadlineEditor';
+import { DeadlineEditDialog } from '../ui/DeadlineEditDialog';
+import { DeadlineDialogState } from '../ui/DeadlineDialogState';
 import { deadlineInput, deadlineLabel } from '../ui/DeadlineInput';
 import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
@@ -51,23 +52,31 @@ struct TaskAssistantPage {
     this.priorPhase = state.phase;
   }
   @State deadlineTaskId: string = '';
-  @State deadlineDate: string = '';
-  @State deadlineTime: string = '';
-  @State deadlineError: string = '';
+  @State deadlineState: DeadlineDialogState = new DeadlineDialogState();
+  private deadlineDialog: CustomDialogController = new CustomDialogController({
+    builder: DeadlineEditDialog({ state: $deadlineState,
+      onApply: (date: string, time: string): void => { this.applyDeadline(date, time); },
+      onCancel: (): void => { this.closeDeadline(); } }),
+    customStyle: true, alignment: DialogAlignment.Center, autoCancel: false,
+    onWillDismiss: (action: DismissDialogAction): void => { if (this.idle()) { action.dismiss(); this.deadlineTaskId = ''; } }
+  });
+  private closeDeadline(): void { this.deadlineDialog.close(); this.deadlineTaskId = ''; }
   @State advancedOpen: boolean = false;
   private editDeadline(taskId: string): void {
     if (!this.idle() || this.view.proposal === null) return;
     const change = this.view.proposal.changes.find(item => item.taskId === taskId);
     if (change === undefined) return;
     const input = deadlineInput(change.draft);
-    this.deadlineTaskId = taskId; this.deadlineDate = input.date; this.deadlineTime = input.time; this.deadlineError = '';
+    this.deadlineTaskId = taskId; this.deadlineState = new DeadlineDialogState(input.date, input.time); this.deadlineDialog.open();
   }
   private async applyDeadline(date: string, time: string): Promise<void> {
-    if (await this.controller?.editDeadline(this.deadlineTaskId, date, time)) this.deadlineTaskId = '';
-    else this.deadlineError = this.view.notice;
+    this.deadlineState = new DeadlineDialogState(date, time, '', true);
+    const saved: boolean = await this.controller?.editDeadline(this.deadlineTaskId, date, time) || false;
+    this.deadlineState = new DeadlineDialogState(date, time, saved ? '' : this.view.notice);
+    if (saved) this.closeDeadline();
   }
   private navigate(page: string): void {
-    if (this.deadlineTaskId.length > 0) { this.deadlineError = '请先应用或取消本次时间编辑。'; return; }
+    if (this.deadlineTaskId.length > 0) { this.deadlineState = new DeadlineDialogState(this.deadlineState.date, this.deadlineState.time, '请先应用或取消本次时间编辑。'); return; }
     this.openPage(page);
   }
   private controller: TaskAgentController | null = null;
@@ -102,6 +111,7 @@ struct TaskAssistantPage {
   }
   onPageHide(): void { this.mascotActive = false; this.mascotMode = 'idle'; this.mascotHint = ''; clearTimeout(this.mascotFinishTimer); taskAgentOwner.pause(); }
   aboutToDisappear(): void {
+    this.closeDeadline();
     this.getUIContext().setKeyboardAvoidMode(this.previousKeyboardMode);
     taskAgentOwner.pause(); this.controller?.unsubscribe();
     this.mascotActive = false; clearTimeout(this.mascotFinishTimer);
@@ -113,7 +123,7 @@ struct TaskAssistantPage {
     this.getUIContext().getFocusController().clearFocus();
   }
   onBackPress(): boolean {
-    if (this.deadlineTaskId.length > 0) { this.deadlineTaskId = ''; return true; }
+    if (this.deadlineTaskId.length > 0) { if (this.idle()) this.closeDeadline(); return true; }
     if (this.view.speech.busy) this.controller?.cancelVoice();
     if (!this.idle()) return true;
     if (this.view.input.length > 0 || this.view.proposal !== null) { this.prompt = 'leave'; return true; }
@@ -346,12 +356,7 @@ struct TaskAssistantPage {
         BrandCover()
       } else {
       this.header()
-      if (this.deadlineTaskId.length > 0) {
-        Scroll() {
-          DeadlineEditor({ initialDate: this.deadlineDate, initialTime: this.deadlineTime, saving: !this.idle(), error: this.deadlineError,
-            onApply: (date: string, time: string): void => { this.applyDeadline(date, time); }, onCancel: (): void => { this.deadlineTaskId = ''; } })
-        }.layoutWeight(1).width('100%').padding(16)
-      } else if (this.prompt.length > 0) {
+      if (this.prompt.length > 0) {
         Column({ space: 14 }) {
           Text(this.prompt === 'fresh' ? '开始新的任务对话？' : '离开当前页面？').fontSize(AppTheme.font(20, this.largeSimpleMode)).fontColor(AppTheme.ink)
           Text(this.prompt === 'fresh' ? '旧对话保留；未确认方案会取消，当前未发送输入会清空。' :

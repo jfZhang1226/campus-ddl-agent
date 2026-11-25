@@ -2,7 +2,10 @@ import { openAppTab, prepareTabBack, appTabArrived } from '../ui/TabNavigation';
 import { displayPreferences } from '../ui/UiPreferencesOwner';
 import { AppTheme } from '../ui/AppTheme';
 import { AppTabBar } from '../ui/AppTabBar';
-import { DeadlineEditor } from '../ui/DeadlineEditor';
+import { DeadlineEditDialog } from '../ui/DeadlineEditDialog';
+import { DeadlineDialogState } from '../ui/DeadlineDialogState';
+import { TaskChangeDialog } from '../ui/TaskChangeDialog';
+import { checklistProgress, taskCompletionLabel } from '../tasks/TaskCompletion';
 import { deadlineInput, deadlineLabel } from '../ui/DeadlineInput';
 import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
@@ -28,9 +31,29 @@ struct TasksPage {
   @State effortMinutes: string = '';
   @State localHint: string = '';
   @State deadlineOpen: boolean = false;
-  @State deadlineDate: string = '';
-  @State deadlineTime: string = '';
-  @State deadlineError: string = '';
+  @State deadlineState: DeadlineDialogState = new DeadlineDialogState();
+  @State changeDialogOpen: boolean = false;
+  private changeDialog: CustomDialogController = new CustomDialogController({
+    builder: TaskChangeDialog({ view: $actions, onConfirm: (): void => { this.saveAction(); },
+      onCancel: (): void => { this.actionsController?.cancel(); }, onRecover: (): void => { this.actionsController?.recover(); } }),
+    customStyle: true, alignment: DialogAlignment.Center, autoCancel: false,
+    onWillDismiss: (action: DismissDialogAction): void => {
+      if (!this.actions.busy) { action.dismiss(); this.changeDialogOpen = false; }
+    }
+  });
+  private deadlineDialog: CustomDialogController = new CustomDialogController({
+    builder: DeadlineEditDialog({ state: $deadlineState,
+      onApply: (date: string, time: string): void => { this.applyDeadline(date, time); },
+      onCancel: (): void => { this.closeDeadline(); } }),
+    customStyle: true, alignment: DialogAlignment.Center, autoCancel: false,
+    onWillDismiss: (action: DismissDialogAction): void => {
+      if (!this.actions.busy) { action.dismiss(); this.deadlineOpen = false; }
+    }
+  });
+  private showChange(): void {
+    if (this.actions.pending !== null && !this.deadlineOpen && !this.changeDialogOpen) { this.changeDialogOpen = true; this.changeDialog.open(); }
+  }
+  private closeDeadline(): void { this.deadlineDialog.close(); this.deadlineOpen = false; }
   @State moreOpen: boolean = false;
   @State reminderOpen: boolean = false;
   @State taskSourcesOpen: boolean = false;
@@ -44,11 +67,13 @@ struct TasksPage {
   private openDeadline(): void {
     if (this.view.detail === null || this.hasLocalChanges() || this.actions.pending !== null || this.actions.busy) { this.localHint = '请先处理当前未保存的修改。'; return; }
     const input = deadlineInput(this.view.detail.task);
-    this.deadlineDate = input.date; this.deadlineTime = input.time; this.deadlineError = ''; this.deadlineOpen = true;
+    this.deadlineState = new DeadlineDialogState(input.date, input.time); this.deadlineOpen = true; this.deadlineDialog.open();
   }
   private async applyDeadline(date: string, time: string): Promise<void> {
+    this.deadlineState = new DeadlineDialogState(date, time, '', true);
     await this.actionsController?.prepareDeadline(date, time);
-    if (this.actions.pending !== null) this.deadlineOpen = false; else this.deadlineError = this.actions.notice;
+    this.deadlineState = new DeadlineDialogState(date, time, this.actions.pending === null ? this.actions.notice : '');
+    if (this.actions.pending !== null) { this.closeDeadline(); this.showChange(); }
   }
   private controller: TaskBoardController | null = null;
   private reminderController: TaskReminderController | null = null;
@@ -62,7 +87,12 @@ struct TasksPage {
     this.reminderController.subscribe((view: TaskReminderView) => { this.reminder = view; });
     const storage = getClientStorage(context.filesDir);
     this.actionsController = new TaskActionsController(storage.local, storage.tasks, storage.commits);
-    this.actionsController.subscribe((view: TaskActionsView) => { this.actions = view; });
+    this.actionsController.subscribe((view: TaskActionsView) => {
+      const newProposal: boolean = view.pending !== null && view.pending.id !== this.actions.pending?.id;
+      this.actions = view;
+      if (view.pending === null && this.changeDialogOpen) { this.changeDialog.close(); this.changeDialogOpen = false; }
+      else if (newProposal) this.showChange();
+    });
     this.actionsController.initialize();
     this.controller = new TaskBoardController(storage.tasks);
     this.controller.subscribe((view: TaskBoardView) => {
@@ -76,10 +106,11 @@ struct TasksPage {
     });
     this.controller.reload();
   }
-  aboutToDisappear(): void { this.controller?.dispose(); this.controller = null; this.reminderController?.dispose(); this.reminderController = null; this.actionsController?.dispose(); this.actionsController = null; }
+  aboutToDisappear(): void {
+    this.changeDialog.close(); this.deadlineDialog.close(); this.changeDialogOpen = false; this.deadlineOpen = false; this.controller?.dispose(); this.controller = null; this.reminderController?.dispose(); this.reminderController = null; this.actionsController?.dispose(); this.actionsController = null; }
   onBackPress(): boolean {
     if (this.reminder.busy || this.actions.busy) return true;
-    if (this.deadlineOpen) { this.deadlineOpen = false; return true; }
+    if (this.deadlineOpen) { this.closeDeadline(); return true; }
     if (this.hasLocalChanges()) { this.localHint = '还有未保存的勾选、材料名称或工时，请先核对保存或放弃本页修改。'; return true; }
     if (this.view.detail !== null) { this.controller?.closeDetail(); return true; }
     prepareTabBack('pages/Tasks'); return false;
@@ -105,34 +136,6 @@ struct TasksPage {
     }
   }
   @Builder
-  pendingAction() {
-    if (this.actions.pending !== null) {
-      Scroll() {
-        Column({ space: 7 }) {
-          Text('修改尚未保存，请核对').fontSize(AppTheme.font(17, this.largeSimpleMode)).fontWeight(FontWeight.Medium)
-          ForEach(this.actions.pending.changes, (change: ProposedTaskChange) => {
-            Text(change.draft.title + '：' + this.status(change.before?.status || 'todo') + ' → ' + this.status(change.draft.status)).fontSize(AppTheme.font(13, this.largeSimpleMode))
-            Text('截止：' + (change.before === null ? '未知' : deadlineLabel(change.before)) + ' → ' + deadlineLabel(change.draft)).fontSize(AppTheme.font(13, this.largeSimpleMode)).fontColor(AppTheme.primary)
-            Text('渠道：' + (change.draft.submissionChannel || '未提供')).fontSize(AppTheme.font(11, this.largeSimpleMode))
-            Text('剩余工时：' + (change.before?.remainingMinutes === null || change.before === null ? '未知' : String(change.before.remainingMinutes) + '分钟') + ' → ' + (change.draft.remainingMinutes === null ? '未知' : String(change.draft.remainingMinutes) + '分钟')).fontSize(AppTheme.font(12, this.largeSimpleMode))
-            if (change.confirmSubmission) { Text('本次仅记录你的提交声明，不代表学校平台已收到。').fontSize(AppTheme.font(12, this.largeSimpleMode)).fontColor(AppTheme.amber) }
-          }, (change: ProposedTaskChange) => change.taskId)
-          Text('核对前的材料：' + (this.actions.pending.checklistBefore || []).map(item => item.label + (item.state === 'prepared' ? '（已准备）' : '（待准备）')).join('、')).fontSize(AppTheme.font(12, this.largeSimpleMode))
-          ForEach(this.actions.pending.checklistUpdates || [], (item: ProposedChecklistState) => {
-            Text(item.before.label + '：' + (item.before.state === 'prepared' ? '已准备' : '待准备') + ' → ' + (item.state === 'prepared' ? '已准备' : '待准备')).fontSize(AppTheme.font(12, this.largeSimpleMode))
-          }, (item: ProposedChecklistState) => item.itemId)
-          Text('新增材料：' + (this.actions.pending.checklistItems || []).map(item => item.label).join('、')).fontSize(AppTheme.font(12, this.largeSimpleMode))
-          Flex({ wrap: FlexWrap.Wrap }) {
-            Button('放弃本次修改').fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0, maxWidth: '100%' }).margin({ right: 6, bottom: 6 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-action-cancel').fontSize(AppTheme.font(12, this.largeSimpleMode)).enabled(!this.actions.busy && !this.actions.recoveryRequired)
-              .onClick(() => { this.actionsController?.cancel(); })
-            Button('确认保存修改').fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0, maxWidth: '100%' }).margin({ right: 6, bottom: 6 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-action-confirm').backgroundColor(AppTheme.primary).fontColor(AppTheme.onPrimary).fontColor('#FFFFFF').fontSize(AppTheme.font(12, this.largeSimpleMode)).enabled(!this.actions.busy && !this.actions.recoveryRequired)
-              .onClick(() => { this.saveAction(); })
-          }
-        }.width('100%').alignItems(HorizontalAlign.Start).padding(12).backgroundColor(AppTheme.warning)
-      }.height(230).width('100%')
-    }
-  }
-  @Builder
   materialPanel() {
     Column({ space: 8 }) {
       Text('材料与准备状态').fontSize(AppTheme.font(17, this.largeSimpleMode)).fontWeight(FontWeight.Medium)
@@ -150,7 +153,7 @@ struct TasksPage {
         .onClick(() => { if (this.readyForAction('materials')) this.actionsController?.prepareMaterials(); })
       Button(this.moreOpen ? '收起任务操作' : '管理材料与任务进度').fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-more-actions').fontSize(AppTheme.font(13, this.largeSimpleMode)).onClick(() => { this.moreOpen = !this.moreOpen; })
       if (this.moreOpen) {
-      if (this.view.detail?.task.status !== 'done' && this.view.detail?.task.status !== 'cancelled') {
+      if (this.view.detail?.task.status !== 'cancelled') {
         TextInput({ text: this.materialLabel, placeholder: '手动补充材料名称' }).fontSize(AppTheme.font(16, this.largeSimpleMode)).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14).id('task-material-name').maxLength(200)
           .enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired).onChange((text: string) => { this.materialLabel = text; })
         Button('核对新增材料').fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-material-add').fontSize(AppTheme.font(12, this.largeSimpleMode)).enabled(!this.actions.busy && this.actions.pending === null && !this.actions.recoveryRequired)
@@ -274,7 +277,7 @@ Row({ space: 12 }) {
             .enabled(!this.actions.busy && this.actions.pending === null && !['done', 'cancelled'].includes(this.view.detail.task.status))
             .onClick(() => { this.openDeadline(); })
         }.width('100%').padding(16).backgroundColor(AppTheme.soft).borderRadius(18)
-        Text('课程：' + (this.view.detail.task.course || '未提供') + ' · ' + this.status(this.view.detail.task.status))
+        Text('课程：' + (this.view.detail.task.course || '未提供') + ' · ' + taskCompletionLabel(this.view.detail.task, checklistProgress(this.view.detail.task.id, this.view.detail.checklistItems)))
           .fontSize(AppTheme.font(13, this.largeSimpleMode)).fontColor(AppTheme.muted)
         Text('提交渠道：' + (this.view.detail.task.submissionChannel || '未提供')).fontSize(AppTheme.font(13, this.largeSimpleMode))
         Button(this.reminderOpen ? '收起提醒设置' : '截止前提醒 ›').fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-reminder-expand').width('100%').fontSize(AppTheme.font(14, this.largeSimpleMode)).fontColor(AppTheme.primary).backgroundColor(AppTheme.surface).onClick(() => { this.reminderOpen = !this.reminderOpen; })
@@ -337,19 +340,20 @@ Row({ space: 12 }) {
           .enabled(!this.view.loading && !this.reminder.busy && !this.actions.busy)
           .onClick(() => { this.refreshTask(null); })
       }
-      this.pendingAction()
+      if (this.actions.pending !== null && !this.changeDialogOpen) {
+        Button('查看待确认修改').id('task-action-review').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft)
+          .onClick(() => { this.showChange(); })
+      }
       if (this.view.error.length > 0) { Text(this.view.error).id('task-board-error').fontSize(AppTheme.font(13, this.largeSimpleMode)).fontColor(AppTheme.amber).padding(12) }
       if (this.view.loading) { LoadingProgress().width(30).height(30) }
-      if (this.deadlineOpen) {
-        Scroll() { DeadlineEditor({ initialDate: this.deadlineDate, initialTime: this.deadlineTime, saving: this.actions.busy, error: this.deadlineError,
-          onApply: (date: string, time: string): void => { this.applyDeadline(date, time); }, onCancel: (): void => { this.deadlineOpen = false; } }) }.layoutWeight(1).width('100%').padding(16)
-      } else if (this.view.detail !== null) {
+      if (this.view.detail !== null) {
         Scroll() { this.detail() }.layoutWeight(1).width('100%')
       } else {
         TextInput({ text: this.view.keyword, placeholder: '按标题或课程查找' }).fontSize(AppTheme.font(16, this.largeSimpleMode)).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14).id('task-board-search')
           .maxLength(100).onChange((text: string) => { this.controller?.editKeyword(text); }).margin({ left: 14, right: 14 })
         Flex({ wrap: FlexWrap.Wrap }) {
           Button('待办').margin({ right: 6, bottom: 6 }).fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-board-active').backgroundColor(this.view.filter === 'active' ? AppTheme.primary : AppTheme.soft).fontColor(this.view.filter === 'active' ? '#FFFFFF' : AppTheme.primary).fontSize(AppTheme.font(11, this.largeSimpleMode)).onClick(() => { this.controller?.setFilter('active'); })
+          Button('已完成').margin({ right: 6, bottom: 6 }).fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 2 }).borderRadius(AppTheme.controlRadius).id('task-board-completed').backgroundColor(this.view.filter === 'completed' ? AppTheme.primary : AppTheme.soft).fontColor(this.view.filter === 'completed' ? AppTheme.onPrimary : AppTheme.primary).onClick(() => { this.controller?.setFilter('completed'); })
           Button('七天内').margin({ right: 6, bottom: 6 }).fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-board-week').backgroundColor(this.view.filter === 'week' ? AppTheme.primary : AppTheme.soft).fontColor(this.view.filter === 'week' ? '#FFFFFF' : AppTheme.primary).fontSize(AppTheme.font(11, this.largeSimpleMode)).onClick(() => { this.controller?.setFilter('week'); })
           Button('待补日期').margin({ right: 6, bottom: 6 }).fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-board-undated').backgroundColor(this.view.filter === 'undated' ? AppTheme.primary : AppTheme.soft).fontColor(this.view.filter === 'undated' ? '#FFFFFF' : AppTheme.primary).fontSize(AppTheme.font(11, this.largeSimpleMode)).onClick(() => { this.controller?.setFilter('undated'); })
           Button('全部').margin({ right: 6, bottom: 6 }).fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-board-all').backgroundColor(this.view.filter === 'all' ? AppTheme.primary : AppTheme.soft).fontColor(this.view.filter === 'all' ? '#FFFFFF' : AppTheme.primary).fontSize(AppTheme.font(11, this.largeSimpleMode)).onClick(() => { this.controller?.setFilter('all'); })
@@ -365,7 +369,8 @@ Row({ space: 12 }) {
                 Text(row.section).fontSize(AppTheme.font(11, this.largeSimpleMode)).fontColor(row.section === '已逾期' ? '#A15028' : AppTheme.primary)
                 Text(row.task.title).fontSize(AppTheme.font(17, this.largeSimpleMode)).fontWeight(FontWeight.Medium)
                 Text(row.deadlineText).fontSize(AppTheme.font(13, this.largeSimpleMode)).fontColor(AppTheme.muted)
-                Text((row.task.course || '课程未提供') + ' · ' + this.status(row.task.status)).fontSize(AppTheme.font(12, this.largeSimpleMode)).fontColor(AppTheme.muted)
+                Text((row.task.course || '课程未提供') + ' · ' + row.completionLabel).fontSize(AppTheme.font(12, this.largeSimpleMode)).fontColor(AppTheme.muted)
+                if (row.totalItems > 0) { Text(String(row.preparedItems) + '/' + String(row.totalItems) + ' 项已完成').fontSize(AppTheme.font(12, this.largeSimpleMode)).fontColor(AppTheme.primary) }
                 Button('查看详情').fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-board-open-' + row.task.id).fontSize(AppTheme.font(12, this.largeSimpleMode))
                   .enabled(!this.view.loading && !this.view.stale && !this.actions.busy).onClick(() => { this.controller?.select(row.task.id); })
               }.width('100%').alignItems(HorizontalAlign.Start).padding(18).backgroundColor(AppTheme.surface).borderRadius(20).border({ width: 1, color: AppTheme.border })

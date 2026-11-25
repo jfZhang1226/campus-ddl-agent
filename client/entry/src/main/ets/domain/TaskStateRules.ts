@@ -4,16 +4,18 @@ import { requireArgument } from './TaskValidation';
 
 /** Formal task writes enforce readiness and protect terminal declarations. No platform submission is inferred. */
 export function validateTaskTransition(before: Task | null, after: TaskDraft, materials: ChecklistItem[],
-  confirmSubmission: boolean = false, hasMaterialChanges: boolean = false): void {
+  confirmSubmission: boolean = false, hasMaterialChanges: boolean = false, appendOnly: boolean = false): void {
   if (before === null) {
     requireArgument(after.status === 'todo' || after.status === 'in_progress', '新任务请先记录为待办或进行中，再核对材料与完成状态。');
     requireArgument(!confirmSubmission, '不能在新建时跳过材料核对声明已提交。');
     return;
   }
-  if (['submitted', 'done', 'cancelled'].includes(before.status)) {
+  const reopening: boolean = before.status === 'done' && after.status === 'in_progress' && appendOnly &&
+    hasMaterialChanges && after.remainingMinutes === null && !confirmSubmission;
+  if (['submitted', 'done', 'cancelled'].includes(before.status) && !reopening) {
     requireArgument(after.status === before.status, '任务已进入终态，修改截止或要求不能抹去原有提交/完成/取消状态。');
   }
-  if (['done', 'cancelled'].includes(before.status)) requireArgument(!hasMaterialChanges, '已完成或已取消任务的材料历史不再改写；新增工作请建立后续任务。');
+  if (before.status === 'cancelled' || (before.status === 'done' && !reopening)) requireArgument(!hasMaterialChanges, '已结束任务不能改写原事项；追加新事项需明确重新开始。');
   const hasRequirements: boolean = materials.length > 0 || after.submissionChannel !== null;
   const allPrepared: boolean = materials.every(item => item.state === 'prepared');
   if (after.status === 'ready' && (before.status !== 'ready' || materials.some(item => item.state !== 'prepared'))) {

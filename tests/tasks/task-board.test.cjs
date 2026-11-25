@@ -45,3 +45,23 @@ test('UTC offset crosses local midnight correctly and invalid clock is explicit'
  const t=task('x',null);Object.assign(t,{deadlinePrecision:'exact',dueAt:'2026-11-16T18:00:00Z'});const s=setup([t],'2026-11-16T17:00:00Z');await s.c.reload();assert.match(s.c.snapshot().rows[0].deadlineText,/2026-11-17 02:00/);assert.equal(s.c.snapshot().rows[0].section,'今天到期');
  const invalid=setup([t],'bad-clock');await invalid.c.reload();assert.match(invalid.c.snapshot().error,/时间无效/);
 });
+
+test('saved current checklist drives active/completed filters; adding or unchecking reopens the list without status writes',async()=>{
+ const a=task('a','2026-11-17'),b=task('b',null),cancelled=task('cancelled',null,'cancelled'),declared=task('declared',null,'submitted');
+ const s=setup([a,b,cancelled,declared]);let progress=[{taskId:'a',total:2,prepared:2},{taskId:'b',total:1,prepared:0},{taskId:'cancelled',total:1,prepared:1},{taskId:'declared',total:2,prepared:1}];
+ s.port.list=async function(){this.reads++;return ok({tasks:clone([a,b,cancelled,declared]),progress:clone(progress),revision:this.reads});};
+ await s.c.reload();assert.deepEqual(s.c.snapshot().rows.map(r=>r.task.id).sort(),['b','declared']);
+ s.c.setFilter('completed');assert.deepEqual(s.c.snapshot().rows.map(r=>r.task.id),['a']);assert.equal(s.c.snapshot().rows[0].completionLabel,'已完成');assert.equal(s.c.snapshot().rows[0].preparedItems,2);
+ s.c.setFilter('week');assert.equal(s.c.snapshot().rows.length,0);
+ progress[0]={taskId:'a',total:3,prepared:2};await s.c.reload();s.c.setFilter('active');assert.ok(s.c.snapshot().rows.some(r=>r.task.id==='a'));
+ progress[0]={taskId:'a',total:2,prepared:1};await s.c.reload();assert.ok(s.c.snapshot().rows.some(r=>r.task.id==='a'));assert.equal(s.port.gets,0);assert.equal(a.status,'todo');assert.equal(declared.status,'submitted');
+ progress[0]={taskId:'a',total:2,prepared:2};await s.c.reload();s.c.setFilter('completed');assert.deepEqual(s.c.snapshot().rows.map(r=>r.task.id),['a']);assert.equal(s.port.reads,4);
+});
+test('empty checklist does not imply completion; existing explicit completion remains visible separately from cancellation',async()=>{
+ const {taskIsComplete,checklistProgress}=require('../../client/entry/src/main/ets/tasks/TaskCompletion.ts');
+ for(const state of ['todo','in_progress','ready'])assert.equal(taskIsComplete(task('x',null,state),{taskId:'x',total:0,prepared:0}),false);
+ assert.equal(taskIsComplete(task('x',null,'done'),{taskId:'x',total:0,prepared:0}),true);
+ assert.equal(taskIsComplete(task('x',null,'submitted'),{taskId:'x',total:0,prepared:0}),true);
+ assert.equal(taskIsComplete(task('x',null,'cancelled'),{taskId:'x',total:1,prepared:1}),false);
+ assert.deepEqual({...checklistProgress('a',[{taskId:'a',state:'prepared'},{taskId:'b',state:'pending'}])},{taskId:'a',total:1,prepared:1});
+});

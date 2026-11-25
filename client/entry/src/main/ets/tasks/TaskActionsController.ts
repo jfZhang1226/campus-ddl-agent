@@ -96,7 +96,7 @@ export class TaskActionsController {
       if (actual.task.version !== selected.task.version || JSON.stringify(actual.checklistItems) !== JSON.stringify(selected.checklistItems)) {
         throw new StorageFailure('VERSION_CONFLICT', '任务或材料已变化，请刷新后重新核对。');
       }
-      if (['done', 'cancelled'].includes(actual.task.status) && mode !== 'edit') throw new StorageFailure('TASK_FINISHED', '此任务已结束，新增工作请建立后续任务，原历史会保留。');
+      if (actual.task.status === 'cancelled' || (actual.task.status === 'done' && mode !== 'add' && mode !== 'edit')) throw new StorageFailure('TASK_FINISHED', '此任务已结束；已完成任务可追加新事项后继续。');
       const draft = new TaskDraft();
       draft.title = actual.task.title; draft.course = actual.task.course; draft.kind = actual.task.kind;
       draft.deadlinePrecision = actual.task.deadlinePrecision; draft.deadlineDate = actual.task.deadlineDate; draft.dueAt = actual.task.dueAt;
@@ -107,6 +107,10 @@ export class TaskActionsController {
       if (mode === 'add') {
         if (label.trim().length === 0 || label.length > 200) throw new StorageFailure('INVALID_ARGUMENT', '材料名称须为1至200字。');
         change.checklistCreates = [{ label: label.trim(), sourceNoticeId: null }];
+        if (draft.status === 'done') {
+          if ((change.checklistUpdates || []).length > 0) throw new StorageFailure('INVALID_ARGUMENT', '追加新事项不能同时改写已完成的旧事项。');
+          draft.status = 'in_progress'; draft.remainingMinutes = null;
+        }
       }
       const nextPending: boolean = mode === 'add' || choices.some(item => item.state === 'pending');
       if (draft.status === 'ready' && nextPending) draft.status = 'in_progress';
