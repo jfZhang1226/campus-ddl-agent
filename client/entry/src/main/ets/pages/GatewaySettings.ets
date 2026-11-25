@@ -1,4 +1,4 @@
-import { openAppTab, prepareTabBack } from '../ui/TabNavigation';
+import { openAppTab, prepareTabBack, appTabArrived } from '../ui/TabNavigation';
 import { displayPreferences } from '../ui/UiPreferencesOwner';
 import { AppTheme } from '../ui/AppTheme';
 import { AppTabBar } from '../ui/AppTabBar';
@@ -43,6 +43,7 @@ struct GatewaySettingsPage {
   private configuration(): GatewayConfig { return chatOwner.get(this.context().filesDir).configuration(); }
   private connection(): GatewaySettings { return chatOwner.settings(this.context().filesDir); }
   private applyConfiguration(config: GatewayConfig): boolean { return this.connection().save(config); }
+  onPageShow(): void { appTabArrived('pages/GatewaySettings'); }
   aboutToAppear(): void {
     const uiContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
     displayPreferences(uiContext.filesDir).restore().then(() => {

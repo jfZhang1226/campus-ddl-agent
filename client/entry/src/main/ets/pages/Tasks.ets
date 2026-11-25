@@ -1,4 +1,4 @@
-import { openAppTab, prepareTabBack } from '../ui/TabNavigation';
+import { openAppTab, prepareTabBack, appTabArrived } from '../ui/TabNavigation';
 import { displayPreferences } from '../ui/UiPreferencesOwner';
 import { AppTheme } from '../ui/AppTheme';
 import { AppTabBar } from '../ui/AppTabBar';
@@ -53,6 +53,7 @@ struct TasksPage {
   private controller: TaskBoardController | null = null;
   private reminderController: TaskReminderController | null = null;
   private actionsController: TaskActionsController | null = null;
+  onPageShow(): void { appTabArrived('pages/Tasks'); }
   aboutToAppear(): void {
     const uiContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
     displayPreferences(uiContext.filesDir).restore();

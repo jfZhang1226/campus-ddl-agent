@@ -13,6 +13,7 @@ const navigator: TabNavigator = new TabNavigator();
 const port: ArkTabRoutePort = new ArkTabRoutePort();
 
 export function openAppTab(from: string, to: string): Promise<void> { return navigator.go(from, to, port); }
+export function appTabArrived(page: string): void { navigator.arrived(page); }
 
 /** Call only after the current page's dirty/busy guards allow a real back. */
 export function prepareTabBack(from: string): void {

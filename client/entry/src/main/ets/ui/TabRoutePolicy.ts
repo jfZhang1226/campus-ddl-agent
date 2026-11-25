@@ -15,13 +15,24 @@ export interface TabRoutePort {
 
 export class TabNavigator {
   private busy: boolean = false;
+  private generation: number = 0;
+  private target: string = '';
+  arrived(page: string): void {
+    if (page !== this.target) return;
+    this.generation += 1; this.target = ''; this.busy = false;
+  }
   async go(from: string, to: string, port: TabRoutePort): Promise<void> {
     const direction: number = tabDirection(from, to);
     if (direction === 0 || this.busy) return;
-    this.busy = true;
+    this.busy = true; this.target = to;
+    const generation: number = ++this.generation;
     try {
       port.direction(direction);
       await port.open(to);
-    } finally { this.busy = false; }
+    } catch (error) {
+      if (generation === this.generation) throw error;
+    } finally {
+      if (generation === this.generation) { this.busy = false; this.target = ''; }
+    }
   }
 }

@@ -2,7 +2,7 @@ import { MessageBubble } from '../ui/MessageBubble';
 import { BrandCover } from '../ui/BrandCover';
 import { AssistantMascot } from '../ui/AssistantMascot';
 import { assistantMode, shouldFinishWriting } from '../ui/AssistantMotion';
-import { openAppTab, prepareTabBack } from '../ui/TabNavigation';
+import { openAppTab, prepareTabBack, appTabArrived } from '../ui/TabNavigation';
 import { displayPreferences } from '../ui/UiPreferencesOwner';
 import { AppTheme } from '../ui/AppTheme';
 import { AppTabBar } from '../ui/AppTabBar';
@@ -78,7 +78,7 @@ struct TaskAssistantPage {
     const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
     this.controller?.configure(chatOwner.get(context.filesDir).configuration());
   }
-  onPageShow(): void { this.mascotActive = true; this.syncGateway(); }
+  onPageShow(): void { appTabArrived('pages/TaskAssistant'); this.mascotActive = true; this.syncGateway(); }
   private openPage(page: string): void {
     if (!this.idle()) return;
     taskAgentOwner.pause();

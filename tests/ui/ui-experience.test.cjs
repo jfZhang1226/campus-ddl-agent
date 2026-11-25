@@ -34,6 +34,22 @@ test('failed routing releases navigation lock and a retry computes its own direc
   await nav.go(APP_TABS[3],APP_TABS[0],{direction:d=>trace.push(d),open:async()=>{}});
   assert.deepEqual(trace,[1,-1]);
 });
+test('visible single-mode page releases a pending route promise without letting a stale completion unlock a newer route',async()=>{
+  const nav=new TabNavigator(),trace=[];let finishOld,finishNew;
+  const old=nav.go(APP_TABS[0],APP_TABS[1],{direction:d=>trace.push(d),open:()=>new Promise(r=>finishOld=r)});
+  nav.arrived(APP_TABS[1]);
+  const newer=nav.go(APP_TABS[1],APP_TABS[3],{direction:d=>trace.push(d),open:()=>new Promise(r=>finishNew=r)});
+  finishOld();await old;
+  await nav.go(APP_TABS[3],APP_TABS[0],{direction:d=>trace.push(d),open:async()=>{throw Error('Must stay locked until new destination arrives');}});
+  assert.deepEqual(trace,[1,1]);nav.arrived(APP_TABS[3]);finishNew();await newer;
+  await nav.go(APP_TABS[3],APP_TABS[0],{direction:d=>trace.push(d),open:async()=>{}});assert.deepEqual(trace,[1,1,-1]);
+});
+test('unrelated page lifecycle notifications do not release a pending tab navigation',async()=>{
+  const nav=new TabNavigator(),trace=[];let finish;
+  const request=nav.go(APP_TABS[0],APP_TABS[1],{direction:d=>trace.push(d),open:()=>new Promise(r=>finish=r)});
+  nav.arrived(APP_TABS[0]);await nav.go(APP_TABS[0],APP_TABS[3],{direction:d=>trace.push(d),open:async()=>{}});
+  assert.deepEqual(trace,[1]);nav.arrived(APP_TABS[1]);finish();await request;
+});
 test('fresh display preferences default to normal without writing a file',async()=>{
   const {controller,files,published}=make();await controller.restore();
   assert.equal(controller.enabled,false);assert.equal(controller.loaded,true);assert.deepEqual(published,[false]);assert.deepEqual(files.writes,[]);
@@ -87,6 +103,7 @@ test('actual pages wire both route directions, shared preference and unchanged b
     assert.equal((s.match(/PageTransitionEnter\(/g)||[]).length,2);assert.equal((s.match(/PageTransitionExit\(/g)||[]).length,2);
     assert.match(s,/RouteType.Push/);assert.match(s,/RouteType.Pop/);
     assert.match(s,/displayPreferences\(uiContext.filesDir\).restore/);
+    assert.match(s,new RegExp("appTabArrived\\('pages/"+name+"'\\)"));
   }
   const assistant=fs.readFileSync(path.join(root,'pages/TaskAssistant.ets'),'utf8');
   assert.equal((assistant.match(/AssistantMascot\(/g)||[]).length,1);assert.match(assistant,/edge: this.largeSimpleMode \? 96 : 104/);

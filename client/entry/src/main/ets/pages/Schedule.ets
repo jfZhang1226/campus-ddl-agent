@@ -1,5 +1,5 @@
 import { AvailabilityEditor } from '../ui/AvailabilityEditor';
-import { openAppTab, prepareTabBack } from '../ui/TabNavigation';
+import { openAppTab, prepareTabBack, appTabArrived } from '../ui/TabNavigation';
 import { displayPreferences } from '../ui/UiPreferencesOwner';
 import { AppTheme } from '../ui/AppTheme';
 import { AppTabBar } from '../ui/AppTabBar';
@@ -32,6 +32,7 @@ struct Schedule {
   }
   private originalAvailability: string = '';
   private controller: PlanningController | null = null;
+  onPageShow(): void { appTabArrived('pages/Schedule'); }
   aboutToAppear(): void {
     const uiContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
     displayPreferences(uiContext.filesDir).restore();

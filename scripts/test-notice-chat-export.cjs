@@ -140,7 +140,7 @@ check('one native gateway owner serves settings and task page without duplicate 
   assert.match(settings,/gateway-clear-confirm/);
   assert.match(settings,/current.token/);assert.match(settings,/validateConfig/);
   assert.doesNotMatch(read('entry/src/main/ets/pages/VoiceChat.ets'),/voice-gateway-token|voice-configure/);
-  assert.match(read('entry/src/main/ets/pages/TaskAssistant.ets'),/onPageShow\(\): void \{ this.mascotActive = true; this.syncGateway\(\); \}/);
+  assert.match(read('entry/src/main/ets/pages/TaskAssistant.ets'),/onPageShow\(\): void \{ appTabArrived\('pages\/TaskAssistant'\); this.mascotActive = true; this.syncGateway\(\); \}/);
   assert.match(read('entry/src/main/ets/pages/TaskAssistant.ets'),/AppTabBar/);
   assert.match(read('entry/src/main/ets/ui/AppTabBar.ets'),/pages\/Tasks/);
   assert.match(read('entry/src/main/ets/ui/AppTabBar.ets'),/pages\/Schedule/);
