@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-25",
+  "baseline": "b8a6a9d5583bfa1bfb7b36395714d7ebd9ad7cab",
+  "sourceCommit": "8984b5c",
+  "candidateVersion": "0.9.1/901",
+  "bundle": "com.campusddl.noticeprobe",
+  "checks": {
+    "taskAssistant": 39,
+    "secureSettings": 10,
+    "assistantMotion": 7,
+    "nativeExport": 16,
+    "sharedExport": 12,
+    "totalPassed": 84,
+    "newSourceStructureChecks": 2,
+    "settingsNonViewMethodsEqualToBaseline": true
+  },
+  "sdk": {
+    "completed": false,
+    "installableHapProduced": false,
+    "initialDependencyRestore": "EPERM creating dependency link",
+    "cachedDependencyBuild": "EPERM creating default Hvigor workspace",
+    "customCacheAttempt": "Stopped during cache preparation; no compiler result",
+    "exportedSourceHashesVerified": 89,
+    "exportedClientFiles": 180
+  },
+  "remoteReadback": {
+    "pr": 18,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "b8a6a9d5583bfa1bfb7b36395714d7ebd9ad7cab"
+  },
+  "device": {
+    "verified": false,
+    "updated": false,
+    "screenshotsCaptured": 0,
+    "businessWrites": 0,
+    "modelRequests": 0,
+    "audioOperations": 0,
+    "remindersTriggered": 0,
+    "gatewayRestored": false,
+    "blocker": "Execution sandbox cannot connect to the host HDC server; device connection and installed state could not be verified"
+  },
+  "limits": [
+    "Previous device screenshots and build results are not evidence for this candidate.",
+    "New export checks inspect source wiring; they are not interactive device tests.",
+    "No current business snapshot or unsent input was read, backed up or changed."
+  ]
+}
