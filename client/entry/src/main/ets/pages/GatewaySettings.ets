@@ -77,39 +77,39 @@ struct GatewaySettingsPage {
               .id('settings-state').fontSize(13).lineHeight(21).fontColor(AppTheme.muted)
           }.width('100%').alignItems(HorizontalAlign.Start).padding(16).backgroundColor(AppTheme.soft).borderRadius(18)
           Column({ space: 12 }) {
-          Text('助手连接').fontSize(18).fontWeight(FontWeight.Medium).fontColor(AppTheme.ink)
-          Text('服务地址').fontSize(13).fontColor(AppTheme.muted)
-          TextInput({ text: this.baseUrl, placeholder: 'http://127.0.0.1:8000' }).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14).id('gateway-url').maxLength(500)
-            .height(48).caretColor(AppTheme.primary).border({ width: 1, color: AppTheme.border })
-            .onChange((text: string) => { this.baseUrl = text; })
-          Text('访问凭证').fontSize(13).fontColor(AppTheme.muted)
-          TextInput({ text: this.projectToken, placeholder: this.configured ? '已设置，留空保留原凭证' : '填写团队项目凭证' }).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14)
-            .height(48).caretColor(AppTheme.primary).border({ width: 1, color: AppTheme.border })
-            .id('gateway-token').type(InputType.Password).maxLength(1000).onChange((text: string) => { this.projectToken = text; })
-          Button('保存连接设置').fontColor(AppTheme.onPrimary).backgroundColor(AppTheme.primary).borderRadius(AppTheme.controlRadius).id('gateway-apply').width('100%').height(46).fontSize(15).onClick(() => { this.apply(); })
-          if (this.notice.length > 0) { Text(this.notice).id('settings-notice').fontSize(13).fontColor(AppTheme.amber) }
-          if (this.secure.errorCode === 'READ_FAILED') {
-            Button('重新读取连接').id('gateway-reload').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).height(44).onClick(() => { this.restore(); })
-          }
+            Text('助手连接').fontSize(18).fontWeight(FontWeight.Medium).fontColor(AppTheme.ink)
+            Text('服务地址').fontSize(13).fontColor(AppTheme.muted)
+            TextInput({ text: this.baseUrl, placeholder: 'http://127.0.0.1:8000' }).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14).id('gateway-url').maxLength(500)
+              .height(48).caretColor(AppTheme.primary).border({ width: 1, color: AppTheme.border })
+              .onChange((text: string) => { this.baseUrl = text; })
+            Text('访问凭证').fontSize(13).fontColor(AppTheme.muted)
+            TextInput({ text: this.projectToken, placeholder: this.configured ? '已设置，留空保留原凭证' : '填写团队项目凭证' }).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14)
+              .height(48).caretColor(AppTheme.primary).border({ width: 1, color: AppTheme.border })
+              .id('gateway-token').type(InputType.Password).maxLength(1000).onChange((text: string) => { this.projectToken = text; })
+            Button('保存连接设置').fontColor(AppTheme.onPrimary).backgroundColor(AppTheme.primary).borderRadius(AppTheme.controlRadius).id('gateway-apply').width('100%').height(46).fontSize(15).onClick(() => { this.apply(); })
+            if (this.notice.length > 0) { Text(this.notice).id('settings-notice').fontSize(13).fontColor(AppTheme.amber) }
+            if (this.secure.errorCode === 'READ_FAILED') {
+              Button('重新读取连接').id('gateway-reload').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).height(44).onClick(() => { this.restore(); })
+            }
           }.width('100%').alignItems(HorizontalAlign.Start)
           Column({ space: 10 }) {
-          Button(this.helpOpen ? '收起连接帮助' : '连接帮助与隐私说明').fontColor(AppTheme.primary).backgroundColor(AppTheme.surface).borderRadius(AppTheme.controlRadius).id('settings-help').width('100%').height(44).fontSize(13).onClick(() => { this.helpOpen = !this.helpOpen; })
-          if (this.helpOpen) {
-            Text('电脑连接方式').fontSize(15).fontColor(AppTheme.ink)
-            Text('地址为 127.0.0.1 时，需要电脑启动团队网关，并通过 USB 数据线恢复转发。仅连接数据线不会自动恢复模型服务。').fontSize(13).lineHeight(21).fontColor(AppTheme.muted)
-            Text(this.secure.supported ? '地址和项目凭证保存在本机安全存储中，重启自动恢复，不上传同步。清除连接不会删除任务；卸载应用后需重新配置。' : '当前平台尚未接入安全存储，连接仅在本次运行生效。').fontSize(13).lineHeight(21).fontColor(AppTheme.muted)
-          }
-          if (this.secure.saved || this.configured || this.secure.errorCode === 'READ_FAILED') {
-            Button('清除连接信息').id('gateway-clear').fontColor(AppTheme.amber).backgroundColor(Color.Transparent).borderRadius(AppTheme.controlRadius).width('100%').height(44).fontSize(13).border({ width: 1, color: AppTheme.border }).onClick(() => { this.confirmClear = true; })
-          }
-          if (this.confirmClear) {
-            Text('清除后需要重新填写连接信息。任务和聊天记录会保留。').fontSize(13).lineHeight(21).fontColor(AppTheme.ink)
-            Row({ space: 10 }) {
-              Button('取消').id('gateway-clear-cancel').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).height(44).layoutWeight(1).onClick(() => { this.confirmClear = false; })
-              Button('确认清除').id('gateway-clear-confirm').fontColor(AppTheme.onPrimary).backgroundColor(AppTheme.primary).borderRadius(AppTheme.controlRadius).height(44).layoutWeight(1).onClick(() => { this.clear(); })
-            }.width('100%')
-          }
-          if (this.dirty()) { Button('放弃输入并返回').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('settings-discard').fontSize(12).onClick(() => { this.projectToken = ''; router.back(); }) }
+            Button(this.helpOpen ? '收起连接帮助' : '连接帮助与隐私说明').fontColor(AppTheme.primary).backgroundColor(AppTheme.surface).borderRadius(AppTheme.controlRadius).id('settings-help').width('100%').height(44).fontSize(13).onClick(() => { this.helpOpen = !this.helpOpen; })
+            if (this.helpOpen) {
+              Text('电脑连接方式').fontSize(15).fontColor(AppTheme.ink)
+              Text('地址为 127.0.0.1 时，需要电脑启动团队网关，并通过 USB 数据线恢复转发。仅连接数据线不会自动恢复模型服务。').fontSize(13).lineHeight(21).fontColor(AppTheme.muted)
+              Text(this.secure.supported ? '地址和项目凭证保存在本机安全存储中，重启自动恢复，不上传同步。清除连接不会删除任务；卸载应用后需重新配置。' : '当前平台尚未接入安全存储，连接仅在本次运行生效。').fontSize(13).lineHeight(21).fontColor(AppTheme.muted)
+            }
+            if (this.secure.saved || this.configured || this.secure.errorCode === 'READ_FAILED') {
+              Button('清除连接信息').id('gateway-clear').fontColor(AppTheme.amber).backgroundColor(Color.Transparent).borderRadius(AppTheme.controlRadius).width('100%').height(44).fontSize(13).border({ width: 1, color: AppTheme.border }).onClick(() => { this.confirmClear = true; })
+            }
+            if (this.confirmClear) {
+              Text('清除后需要重新填写连接信息。任务和聊天记录会保留。').fontSize(13).lineHeight(21).fontColor(AppTheme.ink)
+              Row({ space: 10 }) {
+                Button('取消').id('gateway-clear-cancel').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).height(44).layoutWeight(1).onClick(() => { this.confirmClear = false; })
+                Button('确认清除').id('gateway-clear-confirm').fontColor(AppTheme.onPrimary).backgroundColor(AppTheme.primary).borderRadius(AppTheme.controlRadius).height(44).layoutWeight(1).onClick(() => { this.clear(); })
+              }.width('100%')
+            }
+            if (this.dirty()) { Button('放弃输入并返回').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('settings-discard').fontSize(12).onClick(() => { this.projectToken = ''; router.back(); }) }
           }.width('100%').alignItems(HorizontalAlign.Start)
           Button('调试工具').fontColor(AppTheme.muted).backgroundColor(Color.Transparent).borderRadius(AppTheme.controlRadius).id('open-debug-tools').height(44).width('100%').fontSize(12).enabled(!this.dirty())
             .onClick(() => { router.pushUrl({ url: 'pages/DebugTools' }).catch(() => { this.notice = '无法打开调试工具。'; }); })
