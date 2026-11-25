@@ -41,6 +41,13 @@
     "gatewayRestored": false,
     "blocker": "Execution sandbox cannot connect to the host HDC server; device connection and installed state could not be verified"
   },
+  "publication": {
+    "pushed": false,
+    "terminalPush": "getaddrinfo() thread failed to start",
+    "connectorWrite": "403 Resource not accessible by integration",
+    "prUpdated": false,
+    "merged": false
+  },
   "limits": [
     "Previous device screenshots and build results are not evidence for this candidate.",
     "New export checks inspect source wiring; they are not interactive device tests.",
