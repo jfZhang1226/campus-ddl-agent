@@ -17,7 +17,9 @@ export struct AppTabBar {
         .fontColor(this.active === tab ? AppTheme.primary : AppTheme.muted)
     }.layoutWeight(1).height(50).justifyContent(FlexAlign.Center).borderRadius(18)
       .backgroundColor(this.active === tab ? AppTheme.userMessage : Color.Transparent)
-      .id('tab-' + tab).enabled(this.enabledTabs).onClick(() => { if (this.active !== tab && this.enabledTabs) this.onSelect(page); })
+      .id('tab-' + tab).accessibilityGroup(true)
+      .accessibilityText(label + (this.active === tab ? '，当前页面' : ''))
+      .enabled(this.enabledTabs).onClick(() => { if (this.active !== tab && this.enabledTabs) this.onSelect(page); })
   }
   build() {
     Column() {

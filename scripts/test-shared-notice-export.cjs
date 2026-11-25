@@ -46,7 +46,7 @@ check('shared and native entry exports contain the exact same confirmation imple
   const f='entry/src/main/ets/'+file;assert.equal(hash(path.join(output,f)),hash(path.join(nativeOutput,f)),file);
  }
  assert.equal(fs.existsSync(path.join(nativeOutput,'entry/src/main/ets/pages/NoticeConfirmedWriter.ts')),false);
- assert.equal(native.versionCode,900);
+ assert.equal(native.versionCode,901);
 });
 check('recovery diagnostics remain isolated and do not import production application storage',()=>{
  const page=read('entry/src/main/ets/pages/CommitCheck.ets'),probe=read('entry/src/main/ets/data/diagnostics/NoticeRecoveryProbe.ts');

@@ -68,7 +68,7 @@ check('production pages and client files are preserved except explicit export co
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
 check('manifest matches actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,900);assert.equal(Object.keys(manifest.hashes).length,89);
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,901);assert.equal(Object.keys(manifest.hashes).length,89);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
@@ -144,5 +144,24 @@ check('one native gateway owner serves settings and task page without duplicate 
   assert.match(read('entry/src/main/ets/pages/TaskAssistant.ets'),/AppTabBar/);
   assert.match(read('entry/src/main/ets/ui/AppTabBar.ets'),/pages\/Tasks/);
   assert.match(read('entry/src/main/ets/ui/AppTabBar.ets'),/pages\/Schedule/);
+});
+check('composer expansion only changes presentation and retains the actual draft binding and send guards',()=>{
+  const page=read('entry/src/main/ets/pages/TaskAssistant.ets');
+  assert.match(page, /TextArea\(\{ text: this.view.input,/);
+  assert.match(page, /height\(this.composerExpanded \? 160 : 70\)/);
+  assert.match(page, /id\('task-agent-expand-input'\)[\s\S]*?onClick\(\(\) => \{ this.composerExpanded = !this.composerExpanded; \}\)/);
+  assert.match(page, /onChange\(\(text: string\) => \{ this.controller\?\.edit\(text\); \}\)/);
+  assert.match(page, /this.idle\(\) && this.view.configured && !this.view.historyPending && !this.view.recoveryRequired && this.view.input.trim\(\).length > 0/);
+});
+check('settings retains the secure owner and confirmation controls with a full-width shared tab bar',()=>{
+  const settings=read('entry/src/main/ets/pages/GatewaySettings.ets');
+  assert.match(settings,/this.connection\(\).restore\(\)/);
+  assert.match(settings,/this.connection\(\).clear\(\)/);
+  assert.match(settings,/gateway-clear-cancel/); assert.match(settings,/gateway-clear-confirm/);
+  assert.match(settings,/type\(InputType.Password\)/);
+  assert.doesNotMatch(settings,/text: (?:current|config)\.token/);
+  assert.match(settings,/Button\('保存连接设置'\)\.fontColor\(AppTheme.onPrimary\)\.backgroundColor\(AppTheme.primary\)/);
+  assert.match(settings,/\}\.(?:width\('100%'\))\.height\('100%'\)\.backgroundColor\(AppTheme.canvas\)/);
+  assert.match(read('entry/src/main/ets/ui/AppTabBar.ets'),/accessibilityText\(label \+ \(this.active === tab \? '，当前页面' : ''\)\)/);
 });
 console.log(`${count} T19 source-export checks passed. No signing, network, microphone or device calls.`);

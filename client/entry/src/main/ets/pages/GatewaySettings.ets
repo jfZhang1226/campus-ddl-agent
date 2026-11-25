@@ -61,51 +61,62 @@ struct GatewaySettingsPage {
     if (this.configured) { this.baseUrl = config.baseUrl; this.appliedUrl = config.baseUrl; }
   }
   build() {
-    Column({ space: 12 }) {
+    Column() {
       Row({ space: 10 }) {
         Button('返回').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('settings-back').fontSize(12).onClick(() => { if (!this.onBackPress()) router.back(); })
-        Text('设置').fontSize(23).fontWeight(FontWeight.Bold).layoutWeight(1)
-      }.width('100%')
+        Text('设置').fontSize(23).fontWeight(FontWeight.Medium).fontColor(AppTheme.ink).layoutWeight(1)
+      }.width('100%').padding({ left: 18, right: 18, top: 16, bottom: 12 })
       Scroll() {
-        Column({ space: 12 }) {
-          Text('连接你的助手').fontSize(24).fontWeight(FontWeight.Medium)
-          Text(this.configured ? (this.secure.saved ? '连接信息已安全保存，下次打开自动恢复。' : '本次连接已应用。') : '连接助手，开始整理通知。')
-            .id('settings-state').fontSize(14).fontColor(AppTheme.primary)
-          Text('连接助手后即可分析通知；你的任务和草案保存在本机。').fontSize(13)
-          Text('服务地址').fontSize(15)
+        Column({ space: 18 }) {
+          Column({ space: 9 }) {
+            Row({ space: 8 }) {
+              Circle().width(7).height(7).fill(this.configured ? AppTheme.primary : AppTheme.amber)
+              Text(this.configured ? '连接已配置' : '尚未配置连接').fontSize(13).fontWeight(FontWeight.Medium).fontColor(AppTheme.primary)
+            }
+            Text(this.configured ? (this.secure.saved ? '连接信息已安全保存，下次打开自动恢复。' : '本次连接已应用。') : '连接助手，开始整理通知。')
+              .id('settings-state').fontSize(13).lineHeight(21).fontColor(AppTheme.muted)
+          }.width('100%').alignItems(HorizontalAlign.Start).padding(16).backgroundColor(AppTheme.soft).borderRadius(18)
+          Column({ space: 12 }) {
+          Text('助手连接').fontSize(18).fontWeight(FontWeight.Medium).fontColor(AppTheme.ink)
+          Text('服务地址').fontSize(13).fontColor(AppTheme.muted)
           TextInput({ text: this.baseUrl, placeholder: 'http://127.0.0.1:8000' }).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14).id('gateway-url').maxLength(500)
+            .height(48).caretColor(AppTheme.primary).border({ width: 1, color: AppTheme.border })
             .onChange((text: string) => { this.baseUrl = text; })
-          Text('访问凭证').fontSize(15)
+          Text('访问凭证').fontSize(13).fontColor(AppTheme.muted)
           TextInput({ text: this.projectToken, placeholder: this.configured ? '已设置，留空保留原凭证' : '填写团队项目凭证' }).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14)
+            .height(48).caretColor(AppTheme.primary).border({ width: 1, color: AppTheme.border })
             .id('gateway-token').type(InputType.Password).maxLength(1000).onChange((text: string) => { this.projectToken = text; })
-          Button('保存连接设置').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('gateway-apply').width('100%').onClick(() => { this.apply(); })
+          Button('保存连接设置').fontColor(AppTheme.onPrimary).backgroundColor(AppTheme.primary).borderRadius(AppTheme.controlRadius).id('gateway-apply').width('100%').height(46).fontSize(15).onClick(() => { this.apply(); })
           if (this.notice.length > 0) { Text(this.notice).id('settings-notice').fontSize(13).fontColor(AppTheme.amber) }
           if (this.secure.errorCode === 'READ_FAILED') {
-            Button('重新读取连接').id('gateway-reload').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.restore(); })
+            Button('重新读取连接').id('gateway-reload').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).height(44).onClick(() => { this.restore(); })
+          }
+          }.width('100%').alignItems(HorizontalAlign.Start)
+          Column({ space: 10 }) {
+          Button(this.helpOpen ? '收起连接帮助' : '连接帮助与隐私说明').fontColor(AppTheme.primary).backgroundColor(AppTheme.surface).borderRadius(AppTheme.controlRadius).id('settings-help').width('100%').height(44).fontSize(13).onClick(() => { this.helpOpen = !this.helpOpen; })
+          if (this.helpOpen) {
+            Text('电脑连接方式').fontSize(15).fontColor(AppTheme.ink)
+            Text('地址为 127.0.0.1 时，需要电脑启动团队网关，并通过 USB 数据线恢复转发。仅连接数据线不会自动恢复模型服务。').fontSize(13).lineHeight(21).fontColor(AppTheme.muted)
+            Text(this.secure.supported ? '地址和项目凭证保存在本机安全存储中，重启自动恢复，不上传同步。清除连接不会删除任务；卸载应用后需重新配置。' : '当前平台尚未接入安全存储，连接仅在本次运行生效。').fontSize(13).lineHeight(21).fontColor(AppTheme.muted)
           }
           if (this.secure.saved || this.configured || this.secure.errorCode === 'READ_FAILED') {
-            Button('清除连接信息').id('gateway-clear').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).onClick(() => { this.confirmClear = true; })
+            Button('清除连接信息').id('gateway-clear').fontColor(AppTheme.amber).backgroundColor(Color.Transparent).borderRadius(AppTheme.controlRadius).width('100%').height(44).fontSize(13).border({ width: 1, color: AppTheme.border }).onClick(() => { this.confirmClear = true; })
           }
           if (this.confirmClear) {
-            Text('清除后需要重新填写连接信息。任务和聊天记录会保留。').fontSize(12).fontColor(AppTheme.muted)
+            Text('清除后需要重新填写连接信息。任务和聊天记录会保留。').fontSize(13).lineHeight(21).fontColor(AppTheme.ink)
             Row({ space: 10 }) {
-              Button('取消').id('gateway-clear-cancel').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.confirmClear = false; })
-              Button('确认清除').id('gateway-clear-confirm').fontColor(AppTheme.onPrimary).backgroundColor(AppTheme.primary).onClick(() => { this.clear(); })
-            }
+              Button('取消').id('gateway-clear-cancel').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).height(44).layoutWeight(1).onClick(() => { this.confirmClear = false; })
+              Button('确认清除').id('gateway-clear-confirm').fontColor(AppTheme.onPrimary).backgroundColor(AppTheme.primary).borderRadius(AppTheme.controlRadius).height(44).layoutWeight(1).onClick(() => { this.clear(); })
+            }.width('100%')
           }
           if (this.dirty()) { Button('放弃输入并返回').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('settings-discard').fontSize(12).onClick(() => { this.projectToken = ''; router.back(); }) }
-          Button(this.helpOpen ? '收起连接帮助' : '连接帮助与隐私说明').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('settings-help').width('100%').fontSize(13).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.helpOpen = !this.helpOpen; })
-          if (this.helpOpen) {
-          Text('电脑连接方式').fontSize(18)
-          Text('地址为 127.0.0.1 时，需要电脑启动团队网关，并通过 USB 数据线恢复转发。仅连接数据线不会自动恢复模型服务。').fontSize(13)
-          Text(this.secure.supported ? '地址和项目凭证保存在本机安全存储中，重启自动恢复，不上传同步。清除连接不会删除任务；卸载应用后需重新配置。' : '当前平台尚未接入安全存储，连接仅在本次运行生效。').fontSize(13)
-          }
-          Text('课事清 · 将校园通知整理成可确认的任务').fontSize(12).fontColor(AppTheme.muted)
-          Button('调试工具').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('open-debug-tools').fontSize(12).enabled(!this.dirty())
+          }.width('100%').alignItems(HorizontalAlign.Start)
+          Button('调试工具').fontColor(AppTheme.muted).backgroundColor(Color.Transparent).borderRadius(AppTheme.controlRadius).id('open-debug-tools').height(44).width('100%').fontSize(12).enabled(!this.dirty())
             .onClick(() => { router.pushUrl({ url: 'pages/DebugTools' }).catch(() => { this.notice = '无法打开调试工具。'; }); })
-        }.width('100%').alignItems(HorizontalAlign.Start)
+          Text('课事清 · 校园里的事，一件件安排好').fontSize(11).fontColor(AppTheme.muted).width('100%').textAlign(TextAlign.Center)
+        }.width('100%').alignItems(HorizontalAlign.Start).padding({ left: 18, right: 18, top: 4, bottom: 20 })
       }.layoutWeight(1).width('100%').align(Alignment.Top)
       AppTabBar({ active: 'settings', onSelect: (page: string): void => { this.navigate(page); } })
-    }.padding({ left: 18, right: 18, top: 16 }).width('100%').height('100%').backgroundColor(AppTheme.canvas)
+    }.width('100%').height('100%').backgroundColor(AppTheme.canvas)
   }
 }

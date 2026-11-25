@@ -105,7 +105,7 @@ function prepare(output) {
   fs.writeFileSync(nativeModulePath,JSON.stringify(nativeModule,null,2)+'\n');
   const appFile=path.join(result.output,'AppScope/app.json5');
   const app=JSON.parse(fs.readFileSync(appFile,'utf8'));
-  app.app.bundleName='com.campusddl.noticeprobe';app.app.versionName='0.9.0';app.app.versionCode=900;
+  app.app.bundleName='com.campusddl.noticeprobe';app.app.versionName='0.9.1';app.app.versionCode=901;
   fs.writeFileSync(appFile,JSON.stringify(app,null,2)+'\n');
   const stringsFile=path.join(result.output,'entry/src/main/resources/base/element/string.json');
   const strings=JSON.parse(fs.readFileSync(stringsFile,'utf8'));
@@ -148,7 +148,7 @@ function prepare(output) {
     'AppScope/resources/base/media/assistant_idle.png','AppScope/resources/base/media/brand_mark.svg','AppScope/resources/base/element/string.json','AppScope/resources/zh_CN/element/string.json','AppScope/resources/en_US/element/string.json',
     'entry/src/main/resources/base/element/color.json','entry/src/main/module.json5','entry/src/main/resources/base/element/string.json','entry/src/main/resources/zh_CN/element/string.json','entry/src/main/resources/en_US/element/string.json'])
     hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
-  const manifest={...result,scope:'T19-local-integration',bundleName:app.app.bundleName,versionCode:900,formalSaveEnabled:true,hashes};
+  const manifest={...result,scope:'T19-local-integration',bundleName:app.app.bundleName,versionCode:901,formalSaveEnabled:true,hashes};
   write('T19-source-manifest.json',JSON.stringify(manifest,null,2)+'\n');
   return manifest;
 }

@@ -26,6 +26,7 @@ struct TaskAssistantPage {
   @State expandedSavedTaskId: string = '';
   @State voiceOpen: boolean = false;
   @State inputFocused: boolean = false;
+  @State composerExpanded: boolean = false;
   @State mascotMode: string = 'idle';
   @State mascotHint: string = '';
   @State mascotActive: boolean = true;
@@ -373,12 +374,16 @@ struct TaskAssistantPage {
           this.voiceControls()
           if (this.view.proposal !== null) { Text('发送补充会取消当前未保存方案并重新整理，仍需再次确认保存。').fontSize(11).fontColor(AppTheme.amber) }
           TextArea({ text: this.view.input, placeholder: '输入通知，或继续补充…' }).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14)
-            .id('task-agent-input').height(70).fontSize(15).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).caretColor(AppTheme.primary).backgroundColor(Color.Transparent).borderRadius(0).maxLength(4000).enabled(this.view.phase === 'idle' && !this.view.historyPending && !this.view.recoveryRequired)
+            .id('task-agent-input').height(this.composerExpanded ? 160 : 70).fontSize(15).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).caretColor(AppTheme.primary).backgroundColor(Color.Transparent).borderRadius(0).maxLength(4000).enabled(this.view.phase === 'idle' && !this.view.historyPending && !this.view.recoveryRequired)
             .onChange((text: string) => { this.controller?.edit(text); })
             .onFocus(() => { this.inputFocused = true; }).onBlur(() => { this.inputFocused = false; })
           Row({ space: 10 }) {
             Button(this.voiceOpen ? '收起语音' : '语音输入').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-agent-voice-mode').fontSize(12).height(38).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft)
               .enabled(this.view.speechEnabled && !this.view.speech.busy).onClick(() => { this.voiceOpen = !this.voiceOpen; })
+            Button(this.composerExpanded ? '收起输入' : '展开输入').id('task-agent-expand-input')
+              .fontSize(12).height(38).fontColor(AppTheme.primary).backgroundColor(Color.Transparent)
+              .borderRadius(AppTheme.controlRadius).enabled(this.idle())
+              .onClick(() => { this.composerExpanded = !this.composerExpanded; })
             Blank().layoutWeight(1)
             Button('发送').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-agent-send').width(68).height(38).backgroundColor(AppTheme.primary).fontColor(AppTheme.onPrimary).fontColor('#FFFFFF').fontSize(14)
               .enabled(this.idle() && this.view.configured && !this.view.historyPending && !this.view.recoveryRequired && this.view.input.trim().length > 0)
