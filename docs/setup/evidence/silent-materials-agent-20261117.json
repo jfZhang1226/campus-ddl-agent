@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-17",
+  "runtimeCommit": "4e2ac2098fa11283f3702fc99c455e2d029c6723",
+  "scope": "Harmony native build; deterministic host checks; real provider through unchanged gateway handler and shared client with synthetic memory files",
+  "build": {
+    "copiedClientFiles": 140,
+    "sourceHashesUnchanged": 35,
+    "unsignedBuildTime": "17 s 811 ms",
+    "signedBuildTime": "16 s 210 ms",
+    "unsignedSha256": "b0e374c4a8a08296cb9b0f490762ab0ef6941ed61605a072613e3214f6a0a598",
+    "signedSha256": "6d3788587315726ab84caed9aa139daa231f5b2d6dbbf202bb9953912c4eaef2",
+    "abcSha256": "911202efaed6f280345164265b5d471a21702693ee7891a2d9cf0c35d5841460",
+    "signedMatchesUnsignedAbc": true
+  },
+  "deterministicChecks": {
+    "materialsAndManualController": 26,
+    "originalCommitHostFiles": 92,
+    "taskAgentAndRecovery": 32,
+    "agentToolsAndLoop": 15,
+    "reminders": 20,
+    "taskBoard": 8,
+    "sharedExport": 12,
+    "nativeExport": 10,
+    "strictTypeScript": true
+  },
+  "realModelDevelopment": {
+    "cases": [
+      { "name": "one synthetic notice creates two tasks with distinct deadlines and bound materials", "passed": true },
+      { "name": "follow-up adds one requirement to original task preserving existing material and source", "passed": true },
+      { "name": "same-name query waits for explicit test choice and updates only chosen ID", "passed": true }
+    ],
+    "modelCalls": 8,
+    "observedTotalTokens": 20148,
+    "confirmation": "explicit synthetic harness event via original client confirmation service, not a human screen observation",
+    "holdout": false,
+    "accuracyOrAverageCostClaim": false,
+    "earlierAttempts": [
+      { "modelCalls": 8, "observedTotalTokens": 19070, "issue": "private bridge output encoding corrupted Chinese; two cases rejected, not counted as passes" },
+      { "modelCalls": 7, "observedTotalTokens": 16154, "issue": "after bridge correction, two exact-deadline cases rejected redundant deadlineDate; same-name case passed" }
+    ],
+    "repair": "explicit exact/date_only/unknown schema policy and maximum one protocol repair per user turn; no weakening validation"
+  },
+  "device": {
+    "currentRuntime": "ce293922763da5e5bd8d008a1d7d903ec6099889",
+    "newBuildInstalled": false,
+    "reason": "waiting for user's notification-permission decision; keep current phone page intact",
+    "v3SaveAndColdReadVerified": false,
+    "realReminderRegistrationVerified": false,
+    "realReminderDeliveryVerified": false
+  },
+  "audioOperations": 0,
+  "androidOrIosValidatedThisIncrement": false,
+  "productionDataOrHumanTrialClaim": false
+}

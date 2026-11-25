@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-18",
+  "scope": "HarmonyOS demo finishing, no Android or complete acceptance claim",
+  "bundleName": "com.campusddl.noticeprobe",
+  "versionCode": 500,
+  "versionName": "0.5.0",
+  "desktopLabel": "课事清",
+  "runtimeCommit": "852775f0ab43aaa823ecd671700e4ef48d732536",
+  "previousRuntimeCommit": "5a38762642861582481d6804b11a8e1ed66a3bc9",
+  "build": {
+    "clientFiles": 154,
+    "fingerprints": 57,
+    "unsignedTime": "19 s 88 ms",
+    "signedTime": "17 s 202 ms",
+    "sameAbc": true,
+    "signedHapSha256": "beaddf12e8ea3ae832ffce502692a5ccb026fd907171bc79d99f7373ac9e299b"
+  },
+  "hostChecks": {
+    "nativeExport": 14,
+    "sharedExport": 12,
+    "taskAgent": 33,
+    "powershellParse": true
+  },
+  "deviceChecks": {
+    "samePackageRetainDataInstall": true,
+    "reuseExistingSignature": true,
+    "launcherExactLabelAndTap": true,
+    "startTaskAssistant": true,
+    "visibleOfflineGuide": true,
+    "tasksScheduleSettingsNavigation": true,
+    "debugEntryAndBack": true,
+    "invalidGatewayConfigRejected": true,
+    "settingReturnPreservesInputAndApplies": true,
+    "existingSubmissionHistoryCount": 1,
+    "existingDoneBlocks": 2,
+    "realModelDateOnlyTaskMaterials": true,
+    "pendingRetainedAcrossUpdate": true,
+    "offlineExplicitSave": true,
+    "realProcessColdSameTaskRead": true,
+    "finalPackageRealDeepSeekConnectionReply": true
+  },
+  "modelEvidence": {
+    "analysisRuntime": "5a38762",
+    "recoveryAndSaveRuntime": "852775f",
+    "finalConnectionRuntime": "852775f",
+    "date": "2026-12-25",
+    "precision": "date_only",
+    "materials": [
+      "PDF报告",
+      "原型截图"
+    ],
+    "originalNoticeSynthetic": true,
+    "unknownTimeNotGuessed": true,
+    "taskCountCreated": 1,
+    "usageMeasured": false
+  },
+  "preservation": {
+    "packageUnchanged": true,
+    "noUninstallOrClear": true,
+    "teammateLabelUntouched": true,
+    "businessAndProtocolCoreChanged": false
+  },
+  "gateway": {
+    "existingDeepSeekOnly": true,
+    "phoneCredential": "project token in runtime memory only",
+    "computerUsbRequiredForCurrentDeployment": true,
+    "launcherStartupAndCtrlCCleanupObserved": true,
+    "deliverySessionRunning": true,
+    "afterColdStartReapplyProjectToken": true
+  },
+  "excluded": {
+    "recordingStarted": false,
+    "ttsStarted": false,
+    "nearReminderTriggered": false,
+    "newAudioRetest": false,
+    "actualReminderDeliveryVerified": false,
+    "androidAcceptance": false,
+    "autoScanChats": false,
+    "schoolPlatformSubmission": false
+  }
+}

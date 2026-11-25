@@ -1,0 +1,185 @@
+{
+  "date": "2026-11-25",
+  "bundle": "com.campusddl.noticeprobe",
+  "version": "0.7.0",
+  "versionCode": 700,
+  "runtimeCommit": "a42fcdac350d85e566bdcc012f4c93c444ec3645",
+  "build": {
+    "unsigned": {
+      "runtimeCommit": "a42fcdac350d85e566bdcc012f4c93c444ec3645",
+      "sourceHashesUnchanged": 77,
+      "copiedClientFiles": 174,
+      "phase": "unsigned",
+      "hapBytes": 6544996,
+      "hapSha256": "430bbc5f62b2d6f747292db2e01d790265917539c91aac228c3b1d8a5036dcca",
+      "abcSha256": "a50ae56d3f6de9d0a6784c039fb7da22908753f6c1de006602b34cb88c55ec0f",
+      "buildTime": "21 s 704 ms",
+      "deviceValidated": false,
+      "audioOperations": 0
+    },
+    "signed": {
+      "runtimeCommit": "a42fcdac350d85e566bdcc012f4c93c444ec3645",
+      "sourceHashesUnchanged": 77,
+      "copiedClientFiles": 174,
+      "phase": "signed",
+      "hapBytes": 6592799,
+      "hapSha256": "266691fca703ee69e8dbe293ba8083821c037fa8b7d6d941f4e1018fc04160a9",
+      "abcSha256": "a50ae56d3f6de9d0a6784c039fb7da22908753f6c1de006602b34cb88c55ec0f",
+      "buildTime": "18 s 650 ms",
+      "deviceValidated": false,
+      "audioOperations": 0,
+      "matchesUnsignedAbc": true
+    },
+    "runtimeDeviceInstallChecked": true,
+    "note": "Build records are host-stage records; device evidence is recorded separately below."
+  },
+  "tests": {
+    "motion": 7,
+    "taskAgent": 37,
+    "nativeExport": 14,
+    "sharedExport": 12,
+    "total": 70
+  },
+  "device": {
+    "replacementInstallPreservedData": true,
+    "coldRestartBusinessSnapshotEqual": true,
+    "taskCount": 6,
+    "checklistCount": 16,
+    "animation": {
+      "homeGreeting": [
+        "mascot-sprite-brand-wave-3",
+        "mascot-sprite-brand-idle-0",
+        "mascot-sprite-brand-idle-2"
+      ],
+      "greetingReturnedIdle": true,
+      "idle": {
+        "observedFrames": [
+          "mascot-sprite-preview-idle-0"
+        ],
+        "samples": 7
+      },
+      "wave": {
+        "observedFrames": [
+          "mascot-sprite-preview-wave-1",
+          "mascot-sprite-preview-wave-2",
+          "mascot-sprite-preview-wave-3"
+        ],
+        "samples": 7
+      },
+      "think": {
+        "observedFrames": [
+          "mascot-sprite-preview-think-1",
+          "mascot-sprite-preview-think-2",
+          "mascot-sprite-preview-think-3"
+        ],
+        "samples": 7
+      },
+      "write": {
+        "observedFrames": [
+          "mascot-sprite-preview-write-1",
+          "mascot-sprite-preview-write-3"
+        ],
+        "samples": 7
+      },
+      "navigationReturnedToAssistant": true
+    },
+    "audioOperations": 0,
+    "modelRequests": 0,
+    "taskWrites": 0,
+    "recentRemindersTriggered": 0,
+    "labelAppTouched": false
+  },
+  "assets": {
+    "assistant_blink_sheet.png": {
+      "sha256": "700d3a2d7e12cc504694105df0baecca49ca6a428c2081c32eabff86b1fc1f90",
+      "bytes": 1105916,
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "alpha": true
+    },
+    "assistant_idle.png": {
+      "sha256": "b870daa3aae84791d57ccb4e4a728dec7f8633201445d1a386bc18916e5bc003",
+      "bytes": 779271,
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "alpha": true
+    },
+    "assistant_think_sheet.png": {
+      "sha256": "daa814ef2e441beb80945763f2ebd6f70429c6fe2d7f88fbb3adc4300be765b0",
+      "bytes": 1053428,
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "alpha": true
+    },
+    "assistant_wave_sheet.png": {
+      "sha256": "05b5c63cc8e4b62c23fc7a56766773d48e174510b96a3b1cdb32268c5c4d9f00",
+      "bytes": 1082449,
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "alpha": true
+    },
+    "assistant_write_sheet.png": {
+      "sha256": "71641d192425195e56aabdf7e88c105784ad53c74debc0dbfc6b325411d5be4e",
+      "bytes": 1108421,
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "alpha": true
+    }
+  },
+  "gif": [
+    {
+      "file": "blink.gif",
+      "frames": 4,
+      "uniqueFrames": 4,
+      "durationMs": 2180,
+      "loop": 0,
+      "sha256": "a8adee8696130fa5ebeebbde4a4574e5908ad82e375810daf6acd37636bd901a"
+    },
+    {
+      "file": "wave.gif",
+      "frames": 4,
+      "uniqueFrames": 4,
+      "durationMs": 600,
+      "loop": 0,
+      "sha256": "91b6240f91a396fa816d451e2acea96f87b67d36336617f739b1cfb1d4c2c903"
+    },
+    {
+      "file": "think.gif",
+      "frames": 4,
+      "uniqueFrames": 4,
+      "durationMs": 1760,
+      "loop": 0,
+      "sha256": "4bcf60afbb6f32830efbb6d88b1d7bba7a4c3e1fadbd8d08af7063659eb5e8bf"
+    },
+    {
+      "file": "write.gif",
+      "frames": 4,
+      "uniqueFrames": 4,
+      "durationMs": 640,
+      "loop": 0,
+      "sha256": "aa44dad985bee69311915d55aa9eff4ed67a041a07f5ffe46623f4b82c296717"
+    },
+    {
+      "file": "all-actions.gif",
+      "frames": 40,
+      "uniqueFrames": 16,
+      "durationMs": 11600,
+      "loop": 0,
+      "sha256": "bd3ee9a466caacc3b6a2edc9f488368c3dfad1e88c0d68acc7fc44c82d3a9503"
+    }
+  ],
+  "limits": [
+    "Device checks previewed actual image frames and header greeting without changing tasks. Live model/save animation binding was covered by deterministic phase/receipt tests, not a new model/save device turn.",
+    "No background CPU/power profiling, new audio test, reminder-delivery test or cross-platform acceptance."
+  ]
+}

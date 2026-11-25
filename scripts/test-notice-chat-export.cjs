@@ -15,11 +15,11 @@ const before = cp.execFileSync('git',['status','--porcelain','--','client/'],{cw
 const manifest = prepare(output);
 let count=0;
 function check(name,run) {run();count++;console.log('PASS '+name);}
-check('independent bundle, empty signing, and only microphone/internet permissions',()=>{
+check('independent bundle, empty signing and explicit mic/internet/reminder permissions',()=>{
   assert.equal(json('AppScope/app.json5').app.bundleName,'com.campusddl.noticeprobe');
   assert.deepEqual(json('build-profile.json5').app.signingConfigs,[]);
   assert.deepEqual(json('entry/src/main/module.json5').module.requestPermissions.map(x=>x.name).sort(),
-    ['ohos.permission.INTERNET','ohos.permission.MICROPHONE']);
+    ['ohos.permission.INTERNET','ohos.permission.MICROPHONE','ohos.permission.PUBLISH_AGENT_REMINDER','ohos.permission.READ_CALENDAR','ohos.permission.WRITE_CALENDAR']);
 });
 check('actual page assembly wires trusted confirmation, recovery and readback without base CRUD',()=>{
   const page=read('entry/src/main/ets/pages/NoticeChat.ets');
@@ -38,9 +38,9 @@ check('record, end, cancel, manual draft playback and immediate stop are reachab
   const page=read('entry/src/main/ets/pages/NoticeChat.ets');
   for(const id of ['notice-record','notice-finish','notice-cancel-voice','notice-speak','notice-stop-speech'])
     assert.ok(page.includes(".id('"+id+"')"));
-  assert.match(read('entry/src/main/ets/pages/VoiceChat.ets'),/pages\/NoticeChat/);
+  assert.match(read('entry/src/main/ets/pages/DebugTools.ets'),/pages\/NoticeChat/);
   assert.deepEqual(json('entry/src/main/resources/base/profile/main_pages.json').src,
-    ['pages/VoiceChat','pages/NoticeChat','pages/TaskAssistant','pages/SpeechProbe']);
+    ['pages/TaskAssistant','pages/Tasks','pages/Schedule','pages/GatewaySettings','pages/DebugTools','pages/MascotPreview','pages/CoverPreview','pages/StylePreview','pages/VoiceChat','pages/NoticeChat','pages/SpeechProbe']);
 });
 check('native owner and lifecycle release are confined to the exported assembly',()=>{
   const ability=read('entry/src/main/ets/entryability/EntryAbility.ets');
@@ -60,20 +60,28 @@ check('production pages and client files are preserved except explicit export co
   const changed=new Set(['build-profile.json5','.arkui-x/arkui-x-config.json5','AppScope/app.json5',
     'entry/src/main/module.json5','entry/src/main/resources/base/element/string.json',
     'entry/src/main/ets/entryability/EntryAbility.ets','entry/src/main/resources/base/profile/main_pages.json',
-    'entry/src/main/ets/pages/TaskAssistant.ets']);
+    'entry/src/main/ets/pages/TaskAssistant.ets','entry/src/main/ets/pages/Tasks.ets',
+    'entry/src/main/ets/pages/GatewaySettings.ets','entry/src/main/ets/pages/DebugTools.ets']);
   const files=cp.execFileSync('git',['ls-files','-z','client/'],{cwd:root,encoding:'utf8'}).split('\0').filter(Boolean);
   for(const file of files)if(!changed.has(file.slice(7)))
     assert.equal(hash(path.join(root,file)),hash(path.join(output,file.slice(7))),file);
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
-check('manifest matches seventeen actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,400);assert.equal(Object.keys(manifest.hashes).length,17);
+check('manifest matches actual source outputs and existing export is refused without overwrite',()=>{
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,1100);assert.equal(Object.keys(manifest.hashes).length,97);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
   assert.equal(hash(path.join(output,'T19-source-manifest.json')),prior);
   assert.equal(fs.existsSync(path.join(output,'T15-source-manifest.json')),false);
   assert.match(read('T19-NOTICE-INTERACTION-ONLY.txt'),/Explicit client confirmation uses T16 v2/);
+});
+check('reminder capability stays native while default shared page and journal use existing storage',()=>{
+  assert.match(read('entry/src/main/ets/pages/Tasks.ets'),/nativeReminderOwner as reminderOwner/);
+  const port=read('entry/src/main/ets/pages/HarmonyReminderPort.ets');
+  assert.match(port,/getAllValidReminders/);assert.match(port,/TimeZoneType.FIXED_TIME_ZONE/);
+  assert.doesNotMatch(port,/cancelAllReminders/);
+  assert.match(read('entry/src/main/ets/entryability/EntryAbility.ets'),/onForeground.*nativeReminderOwner.refresh/);
 });
 check('task dialogue native owner supplies speech while shared business, validation and explicit confirmation stay identical',()=>{
   const page=read('entry/src/main/ets/pages/TaskAssistant.ets'),owner=read('entry/src/main/ets/pages/TaskAgentSpeechOwner.ets');
@@ -83,5 +91,77 @@ check('task dialogue native owner supplies speech while shared business, validat
   for(const file of ['agent/TaskAgentController.ts','agent/TaskAgentSession.ts'])assert.equal(read('entry/src/main/ets/'+file),fs.readFileSync(path.join(root,'client/entry/src/main/ets',file),'utf8'));
   const ability=read('entry/src/main/ets/entryability/EntryAbility.ets');
   assert.match(ability,/onBackground.*taskAgentSpeechOwner.pause/);assert.match(ability,/onDestroy.*taskAgentSpeechOwner.destroy/);
+});
+check('task detail and candidate choices call actual controllers without bypassing confirmation',()=>{
+  const page=read('entry/src/main/ets/pages/Tasks.ets'),dialogue=read('entry/src/main/ets/pages/TaskAssistant.ets');
+  assert.match(page,/new TaskActionsController\(storage.local, storage.tasks, storage.commits\)/);
+  assert.match(read('entry/src/main/ets/ui/TaskChangeDialog.ets'),/task-action-confirm/);assert.match(page,/this.actionsController\?\.confirm\(\)/);
+  assert.match(page,/hasLocalChanges/);assert.match(page,/submissionChannel/);assert.match(page,/entry.materials/);
+  assert.match(dialogue,/task-agent-choose-/);assert.match(dialogue,/this.controller\?\.chooseTask\(task.id\)/);
+  assert.match(dialogue,/selectedTask.notices/);
+  assert.match(page,/item.itemId \+ ':' \+ item.state \+ ':' \+ item.originalState/);
+});
+check('calendar access uses explicit app account and narrow permissions; shared owner remains unavailable by default',()=>{
+  const access=read('entry/src/main/ets/pages/HarmonyCalendarAccess.ets');
+  assert.match(access,/getCalendar\(this.account\)/);assert.match(access,/EventFilter.filterById/);assert.match(access,/ensureLegacyClear/);
+  assert.doesNotMatch(access,/getAllCalendars|getCalendar\(\)|getCalendar\(undefined/);
+  assert.doesNotMatch(access,/getEvents\(undefined/);
+  assert.match(access,/EventFilter.filterByTime\(0, 4102444800000\)/);
+  assert.match(read('entry/src/main/ets/pages/NativeReminderOwner.ets'),/new CalendarReminderPort\(new HarmonyCalendarAccess\(context\)\)/);
+  assert.doesNotMatch(JSON.stringify(json('entry/src/main/module.json5')),/WHOLE_CALENDAR/);
+  const permissions=json('entry/src/main/module.json5').module.requestPermissions;
+  assert.ok(permissions.filter(p=>/READ_CALENDAR|WRITE_CALENDAR/.test(p.name)).every(p=>p.reason==='$string:calendar_reminder_permission_reason'&&p.usedScene.when==='inuse'));
+});
+check('work schedule route shares original storage and screen confirmation without model or direct writes',()=>{
+  assert.ok(json('entry/src/main/resources/base/profile/main_pages.json').src.includes('pages/Schedule'));
+  const page=read('entry/src/main/ets/pages/Schedule.ets');
+  assert.match(page,/new PlanningController\(storage.local, storage.commits\)/);
+  assert.match(page,/id\('plan-confirm'\)/);assert.match(page,/this.controller\?\.confirm\(\)/);
+  assert.match(read('entry/src/main/ets/pages/Tasks.ets'),/openAppTab\('pages\/Tasks', 'pages\/Schedule'\)/);
+  assert.doesNotMatch(page,/\.local.save\(|\.tasks.update\(|fetch\(/);
+});
+check('all launcher locales survive consecutive fresh exports and root uses the task assistant',()=>{
+  for(const scope of ['AppScope/resources','entry/src/main/resources'])for(const locale of ['base','zh_CN','en_US']) {
+    const file=scope+'/'+locale+'/element/string.json';
+    for(const name of ['app_name','EntryAbility_label']) {
+      assert.equal(json(file).string.find(x=>x.name===name).value,'课事清');
+      assert.equal(JSON.parse(fs.readFileSync(path.join(root,'client',file),'utf8')).string.find(x=>x.name===name).value,'课事清');
+    }
+  }
+  assert.match(read('entry/src/main/ets/entryability/EntryAbility.ets'),/loadContent\('pages\/TaskAssistant'\)/);
+  const second=path.join(testRoot,'second-export'); prepare(second);
+  for(const file of Object.keys(manifest.hashes))assert.equal(hash(path.join(second,file)),hash(path.join(output,file)));
+});
+check('one native gateway owner serves settings and task page without duplicate credential forms',()=>{
+  const settings=read('entry/src/main/ets/pages/GatewaySettings.ets');
+  assert.match(settings,/voiceChatOwner.get\(this.context\(\)\).configuration\(\)/);
+  assert.match(settings,/voiceChatOwner.settings\(this.context\(\)\)/);
+  assert.match(settings,/this.connection\(\).save\(config\)/);
+  assert.match(settings,/gateway-clear-confirm/);
+  assert.match(settings,/current.token/);assert.match(settings,/validateConfig/);
+  assert.doesNotMatch(read('entry/src/main/ets/pages/VoiceChat.ets'),/voice-gateway-token|voice-configure/);
+  assert.match(read('entry/src/main/ets/pages/TaskAssistant.ets'),/onPageShow\(\): void \{ appTabArrived\('pages\/TaskAssistant'\); this.mascotActive = true; this.syncGateway\(\); \}/);
+  assert.match(read('entry/src/main/ets/pages/TaskAssistant.ets'),/AppTabBar/);
+  assert.match(read('entry/src/main/ets/ui/AppTabBar.ets'),/pages\/Tasks/);
+  assert.match(read('entry/src/main/ets/ui/AppTabBar.ets'),/pages\/Schedule/);
+});
+check('composer expansion only changes presentation and retains the actual draft binding and send guards',()=>{
+  const page=read('entry/src/main/ets/pages/TaskAssistant.ets');
+  assert.match(page, /TextArea\(\{ text: this.view.input,/);
+  assert.match(page, /height\(this.largeSimpleMode \? 110 : this.composerExpanded \? 160 : 70\)/);
+  assert.match(page, /id\('task-agent-expand-input'\)[\s\S]*?onClick\(\(\) => \{ this.composerExpanded = !this.composerExpanded; \}\)/);
+  assert.match(page, /onChange\(\(text: string\) => \{ this.controller\?\.edit\(text\); \}\)/);
+  assert.match(page, /this.idle\(\) && this.view.configured && !this.view.historyPending && !this.view.recoveryRequired && this.view.input.trim\(\).length > 0/);
+});
+check('settings retains the secure owner and confirmation controls with a full-width shared tab bar',()=>{
+  const settings=read('entry/src/main/ets/pages/GatewaySettings.ets');
+  assert.match(settings,/this.connection\(\).restore\(\)/);
+  assert.match(settings,/this.connection\(\).clear\(\)/);
+  assert.match(settings,/gateway-clear-cancel/); assert.match(settings,/gateway-clear-confirm/);
+  assert.match(settings,/type\(InputType.Password\)/);
+  assert.doesNotMatch(settings,/text: (?:current|config)\.token/);
+  assert.match(settings,/Button\('保存连接设置'\)[^\n]*\.fontColor\(AppTheme.onPrimary\)\.backgroundColor\(AppTheme.primary\)/);
+  assert.match(settings,/\}\.(?:width\('100%'\))\.height\('100%'\)\.backgroundColor\(AppTheme.canvas\)/);
+  assert.match(read('entry/src/main/ets/ui/AppTabBar.ets'),/accessibilityText\(label \+ \(this.active === tab \? '，当前页面' : ''\)\)/);
 });
 console.log(`${count} T19 source-export checks passed. No signing, network, microphone or device calls.`);

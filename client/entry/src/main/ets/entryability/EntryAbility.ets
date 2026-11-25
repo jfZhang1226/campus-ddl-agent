@@ -1,3 +1,4 @@
+import { AppTheme } from '../ui/AppTheme';
 import AbilityConstant from '@ohos.app.ability.AbilityConstant';
 import hilog from '@ohos.hilog';
 import UIAbility from '@ohos.app.ability.UIAbility';
@@ -6,14 +7,17 @@ import window from '@ohos.window';
 import { chatOwner } from '../chat/ChatOwner';
 import { noticeImportOwner } from '../notice/NoticeImportOwner';
 import { taskAgentOwner } from '../agent/TaskAgentOwner';
+import { reminderOwner } from '../reminders/ReminderOwner';
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam) {
     chatOwner.get(this.context.filesDir);
+    reminderOwner.get(this.context);
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
   }
 
   onDestroy() {
+    reminderOwner.destroy();
     taskAgentOwner.destroy();
     noticeImportOwner.destroy();
     chatOwner.destroy();
@@ -24,6 +28,7 @@ export default class EntryAbility extends UIAbility {
     // Main window is created, set main page for this ability
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
 
+    try { windowStage.getMainWindowSync().setWindowSystemBarProperties({ statusBarColor: AppTheme.canvas, statusBarContentColor: AppTheme.ink, navigationBarColor: AppTheme.canvas, navigationBarContentColor: AppTheme.ink }).catch(() => {}); } catch (_) {}
     windowStage.loadContent('pages/Index', (err, data) => {
       if (err.code) {
         hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
@@ -42,6 +47,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   onForeground() {
+    reminderOwner.refresh();
     // Ability has brought to foreground
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onForeground');
   }

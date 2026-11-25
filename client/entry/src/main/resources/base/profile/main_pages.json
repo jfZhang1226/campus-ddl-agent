@@ -3,9 +3,16 @@
     "pages/Index",
     "pages/NoticeImport",
     "pages/TaskAssistant",
+    "pages/Tasks",
+    "pages/Schedule",
+    "pages/GatewaySettings",
+    "pages/DebugTools",
     "pages/StorageCheck",
     "pages/TaskCheck",
     "pages/HistoryCheck",
-    "pages/CommitCheck"
+    "pages/CommitCheck",
+    "pages/MascotPreview",
+    "pages/CoverPreview",
+    "pages/StylePreview"
   ]
 }

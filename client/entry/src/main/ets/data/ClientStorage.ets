@@ -6,6 +6,7 @@ import { SessionStore } from './SessionStore';
 import { TaskRepository } from './TaskRepository';
 import { SessionRepository } from './SessionRepository';
 import { CommitServices } from './CommitServices';
+import { ReminderSettingsRepository } from '../reminders/ReminderSettings';
 
 export class ClientStorage {
   local: LocalStore;
@@ -13,6 +14,7 @@ export class ClientStorage {
   tasks: TaskRepository;
   history: SessionRepository;
   commits: CommitServices;
+  reminderSettings: ReminderSettingsRepository;
 
   constructor(coordinator: StorageCoordinator) {
     this.local = new LocalStore(coordinator);
@@ -20,6 +22,7 @@ export class ClientStorage {
     this.tasks = new TaskRepository(this.local);
     this.history = new SessionRepository(this.sessions);
     this.commits = new CommitServices(this.local);
+    this.reminderSettings = new ReminderSettingsRepository(coordinator);
   }
 }
 

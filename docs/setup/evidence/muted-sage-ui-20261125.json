@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-25",
+  "bundle": "com.campusddl.noticeprobe",
+  "versionName": "0.8.2",
+  "versionCode": 802,
+  "runtimeCommit": "f70d21ce44bd1ecdd9adeb3380e9069cadc5b006",
+  "hostBuild": {
+    "unsigned": {
+      "runtimeCommit": "f70d21ce44bd1ecdd9adeb3380e9069cadc5b006",
+      "sourceHashesUnchanged": 83,
+      "copiedClientFiles": 179,
+      "phase": "unsigned",
+      "hapBytes": 7774862,
+      "hapSha256": "23f09bb660f7968ede07df59e751a6cb24b0a62b0c9b8d43950e67410c543d14",
+      "abcSha256": "ca40d31f0b1c90626720072a44913a94744ec78b823107992abaad2afe8e26b9",
+      "buildTime": "24 s 949 ms",
+      "deviceValidated": false,
+      "audioOperations": 0
+    },
+    "signed": {
+      "runtimeCommit": "f70d21ce44bd1ecdd9adeb3380e9069cadc5b006",
+      "sourceHashesUnchanged": 83,
+      "copiedClientFiles": 179,
+      "phase": "signed",
+      "hapBytes": 7827485,
+      "hapSha256": "87ba80717204095c1b1bad7bbd35f5d1297d640305e28ec91aa9c839327d7438",
+      "abcSha256": "ca40d31f0b1c90626720072a44913a94744ec78b823107992abaad2afe8e26b9",
+      "buildTime": "20 s 838 ms",
+      "deviceValidated": false,
+      "audioOperations": 0,
+      "matchesUnsignedAbc": true
+    }
+  },
+  "device": {
+    "tasksVisible": true,
+    "scheduleVisible": true,
+    "settingsVisible": true,
+    "syntheticStylePreviewVisible": true,
+    "composerFocusChecked": true,
+    "staleGatewayPromptAbsent": true,
+    "debugToolsThemeChecked": true,
+    "returnedToAssistant": true,
+    "runtimeConfigurationRestored": true,
+    "unsentInputRestored": false,
+    "audioOperations": 0,
+    "modelRequests": 0,
+    "taskWrites": 0
+  },
+  "dataPreserved": {
+    "entireBusinessSnapshotEqual": true,
+    "tasks": 6,
+    "materials": 16
+  },
+  "checks": {
+    "taskAgent": 39,
+    "motion": 7,
+    "nativeExport": 14,
+    "sharedExport": 12,
+    "total": 72
+  },
+  "regressions": [
+    "Correcting all three local configuration errors clears only the stale local settings error, without model/storage writes.",
+    "Actual request failures remain visible through valid/invalid configuration changes and are not resent."
+  ],
+  "limits": [
+    "Synthetic style preview uses the actual message component but static example card/composer; it is not a model or save test.",
+    "No new model, audio, reminder delivery or cross-platform validation.",
+    "Private business snapshots, unsent input and actual conversation screenshots excluded."
+  ]
+}

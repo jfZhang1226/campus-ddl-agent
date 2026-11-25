@@ -1,0 +1,92 @@
+{
+  "date": "2026-11-26",
+  "bundle": "com.campusddl.noticeprobe",
+  "versionName": "0.11.0",
+  "versionCode": 1100,
+  "sourceCommit": "038a3d0a9419692629922588802f768189eb814e",
+  "build": {
+    "unsigned": {
+      "sourceCommit": "038a3d0a9419692629922588802f768189eb814e",
+      "exitCode": 0,
+      "sourceHashesVerified": 97,
+      "copiedFiles": 188,
+      "signed": false,
+      "duration": "23 s 60 ms",
+      "hapBytes": 8032715,
+      "hapSha256": "daa05de45f76fb5c07ad1dbff5619f73402a35db330d3c5b1c6d47600fec49f5",
+      "abcSha256": "f2c79f5c350394b002eb1725ff51747f6bb0456920b738b7fa64d3a50bf8240e"
+    },
+    "signed": {
+      "sourceCommit": "038a3d0a9419692629922588802f768189eb814e",
+      "exitCode": 0,
+      "sourceHashesVerified": 97,
+      "copiedFiles": 188,
+      "signed": true,
+      "duration": "19 s 267 ms",
+      "hapBytes": 8088760,
+      "hapSha256": "bbeeb70b303ae94354938633ca4b1cd51218c0d435275198e3bc2c451bc7b7df",
+      "abcSha256": "f2c79f5c350394b002eb1725ff51747f6bb0456920b738b7fa64d3a50bf8240e",
+      "matchesUnsignedAbc": true
+    }
+  },
+  "hostTests": {
+    "taskBoard": 10,
+    "materialsAndState": 38,
+    "commitAndPersistence": 93,
+    "nativeExport": 16
+  },
+  "device": {
+    "audioOperations": 0,
+    "modelRequests": 0,
+    "taskWrites": 0,
+    "remindersTriggered": 0,
+    "filters": {
+      "active": {
+        "savedCount": 6,
+        "uiCount": 6,
+        "visibleCardsAgree": true
+      },
+      "completed": {
+        "savedCount": 1,
+        "uiCount": 1,
+        "visibleCardsAgree": true
+      },
+      "all": {
+        "savedCount": 7,
+        "uiCount": 7,
+        "visibleCardsAgree": true
+      }
+    },
+    "deadlineModalOpened": true,
+    "invalidDateStaysInModal": true,
+    "deadlineCancelReturnsToDetail": true,
+    "changeModalOpened": true,
+    "backRetainsPendingReview": true,
+    "pendingCanReopen": true,
+    "coldRestartRecoversPendingModal": true,
+    "cancelClosesModal": true,
+    "tasksUnchanged": true,
+    "materialsUnchanged": true,
+    "previousOperationsUnchanged": true,
+    "oneCancelledPreviewOnly": true
+  },
+  "retainedDataInstall": {
+    "tasks": 7,
+    "materials": 17,
+    "entireBusinessEqual": true
+  },
+  "gateway": {
+    "hostHealthHttp": 200,
+    "phoneUsbLoopbackHttp": 200,
+    "projectCredentialUnchanged": true,
+    "modelRequests": 0
+  },
+  "notPerformed": [
+    "confirm task/material modification on phone",
+    "new real-model request or draft",
+    "audio",
+    "new reminder delivery",
+    "full device reboot",
+    "Android/iOS acceptance"
+  ]
+}

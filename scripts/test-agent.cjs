@@ -61,11 +61,17 @@ const fullDraft = (over) => Object.assign({ title: '交作业', course: null, ki
 const createChange = (checklistCreates) => ({ action: 'create', taskId: null, expectedVersion: null,
   draft: fullDraft(), checklistCreates: checklistCreates || [] });
 
-test('validateParams 拒绝编辑变化携带材料，允许创建型材料', () => {
+test('validateParams 允许创建或编辑追加材料，但拒绝状态注入和非法材料', () => {
   const update = { sessionId: 's1', expectedRevision: 0, notices: [],
     changes: [{ action: 'update', taskId: 't1', expectedVersion: 1, draft: fullDraft(),
       checklistCreates: [{ label: 'PDF', sourceNoticeId: null }] }] };
-  assert.equal(tools.validateParams('propose_task_changes', update), tools.TOOL_ERRORS.INVALID_ARGUMENT);
+  assert.equal(tools.validateParams('propose_task_changes', update), '');
+  for (const item of [null, { label: '', sourceNoticeId: null }, { label: 'PDF', sourceNoticeId: null, state: 'prepared' }]) {
+    const invalid = JSON.parse(JSON.stringify(update)); invalid.changes[0].checklistCreates = [item];
+    assert.equal(tools.validateParams('propose_task_changes', invalid), tools.TOOL_ERRORS.INVALID_ARGUMENT);
+  }
+  const injected = JSON.parse(JSON.stringify(update)); injected.changes[0].confirmSubmission = true;
+  assert.equal(tools.validateParams('propose_task_changes', injected), tools.TOOL_ERRORS.INVALID_ARGUMENT);
   assert.equal(tools.validateParams('propose_task_changes',
     { sessionId: 's1', expectedRevision: 0, notices: [], changes: [createChange([{ label: 'PDF', sourceNoticeId: null }])] }), '');
   assert.equal(tools.validateParams('propose_task_changes',

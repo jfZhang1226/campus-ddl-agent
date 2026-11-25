@@ -1,0 +1,58 @@
+{
+  "date": "2026-11-17",
+  "runtimeCommit": "0f0ce9d4981cc8ec9e185195a29c845a881bd08e",
+  "bundle": "com.campusddl.noticeprobe",
+  "versionCode": 400,
+  "dataPreservingUpdate": true,
+  "build": {
+    "copiedClientFiles": 142,
+    "sourceHashesUnchanged": 40,
+    "unsignedBuildTime": "20 s 221 ms",
+    "signedBuildTime": "16 s 467 ms",
+    "unsignedSha256": "7469ac16ee2a7305eca4d2b6017faec950f420768e9232160e53edc8d052dc6c",
+    "signedSha256": "10351797cc442b8ca5409f547d8c4a55d23afad796df4a6faef997a39a46a31c",
+    "abcSha256": "f813e9b3d9e6f69bed5d8eefaef38efdb87690cc1396aa6f86b56824ae8e2419",
+    "signedMatchesUnsignedAbc": true,
+    "earlierFailure": "025c1f0 native .ets object projection lacked explicit interface; corrected before new successful export"
+  },
+  "syntheticTask": {
+    "title": "合成提醒与材料验收任务",
+    "deadlineAt": "2026-12-30T18:00:00+08:00",
+    "createdByRealModelAndScreenConfirmation": true,
+    "materialCount": 2,
+    "sameTaskIdAfterUpdateAndColdRead": true
+  },
+  "actualDeviceChecks": {
+    "originalPendingV3RestoredAfterPackageUpdate": true,
+    "pendingNotAutomaticallyConfirmed": true,
+    "explicitScreenMaterialConfirmation": true,
+    "bothMaterialsPreparedAfterRealReadback": true,
+    "checkboxRenderToggleAndRevertUpdatesImmediately": true,
+    "unsavedEffortBlocksAccidentalLeave": true,
+    "explicitConfirmedEffortMinutes": 60,
+    "realProcessColdPidChanged": true,
+    "offlineColdReadPreparedMaterials": 2,
+    "offlineColdReadEffortMinutes": 60,
+    "noUnexpectedPendingAfterColdRead": true,
+    "readyStatusSeparatelyScreenConfirmed": true,
+    "readyStatusReadback": true,
+    "readyStatusColdRead": false,
+    "deadlineUnchanged": true
+  },
+  "reminderBoundary": {
+    "notificationPermissionGrantedByUser": true,
+    "oldAgentPreviewAt": "2026-12-30T17:00:00+08:00",
+    "oldAgentPublishError": "REMINDER_PUBLISH_1700002",
+    "oldAgentPublishVerified": false,
+    "oldAgentIntentCancelledAndQueried": true,
+    "calendarPermission": "awaiting personal decision",
+    "calendarRegistrationVerified": false,
+    "calendarDeliveryVerified": false,
+    "calendarOrReminderToneHeard": false
+  },
+  "gatewayStopped": true,
+  "exactUsb8000MappingRemoved": true,
+  "credentialsEmptyAfterColdRestart": true,
+  "audioOperations": 0,
+  "notProductionOrFullCrossPlatformAcceptance": true
+}

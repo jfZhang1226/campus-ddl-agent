@@ -1,0 +1,154 @@
+{
+  "date": "2026-11-25",
+  "bundle": "com.campusddl.noticeprobe",
+  "versionName": "0.10.0",
+  "versionCode": 1000,
+  "sourceCommit": "35bc991da2d07dea9abf217de27627f86b65519d",
+  "build": {
+    "unsigned": {
+      "sourceCommit": "35bc991da2d07dea9abf217de27627f86b65519d",
+      "exitCode": 0,
+      "sourceHashesVerified": 93,
+      "copiedFiles": 184,
+      "signed": false,
+      "deviceValidated": false,
+      "duration": "23 s 710 ms",
+      "hapBytes": 7987575,
+      "hapSha256": "55941f3d34c38243da08bd5b9677977c88b91245a17596d9c9854879960cac98",
+      "abcSha256": "2c44288041c2564acf7e7fda03146034f1108d09829cb400121511be4a1d9b03"
+    },
+    "signed": {
+      "sourceCommit": "35bc991da2d07dea9abf217de27627f86b65519d",
+      "exitCode": 0,
+      "sourceHashesVerified": 93,
+      "copiedFiles": 184,
+      "signed": true,
+      "deviceValidated": false,
+      "duration": "20 s 76 ms",
+      "hapBytes": 8039025,
+      "hapSha256": "50ae19dfdbacc6b20ef6e43a295b017241fdb6fbe3b95bfae8f489538ad21bb1",
+      "abcSha256": "2c44288041c2564acf7e7fda03146034f1108d09829cb400121511be4a1d9b03",
+      "matchesUnsignedAbc": true
+    }
+  },
+  "hostChecks": {
+    "uiExperience": 14,
+    "taskAgent": 39,
+    "secureSettings": 10,
+    "assistantMotion": 7,
+    "taskBoard": 8,
+    "materials": "passed",
+    "planning": 29,
+    "nativeExport": 16,
+    "sharedExport": 12
+  },
+  "device": {
+    "modelRequests": 0,
+    "audioOperations": 0,
+    "businessWrites": 0,
+    "remindersTriggered": 0,
+    "repeatTaskReturnRoute": true,
+    "largeModeCollapsedConnection": true,
+    "largeMascotPixelWidth": 324,
+    "largeModeColdRestart": {
+      "differentPid": true
+    },
+    "largeModeRestored": true,
+    "navigationPairs": [
+      [
+        "assistant",
+        "tasks"
+      ],
+      [
+        "assistant",
+        "schedule"
+      ],
+      [
+        "assistant",
+        "settings"
+      ],
+      [
+        "tasks",
+        "assistant"
+      ],
+      [
+        "tasks",
+        "schedule"
+      ],
+      [
+        "tasks",
+        "settings"
+      ],
+      [
+        "schedule",
+        "assistant"
+      ],
+      [
+        "schedule",
+        "tasks"
+      ],
+      [
+        "schedule",
+        "settings"
+      ],
+      [
+        "settings",
+        "assistant"
+      ],
+      [
+        "settings",
+        "tasks"
+      ],
+      [
+        "settings",
+        "schedule"
+      ]
+    ],
+    "navigationCheckedSource": "ac9249ea7be4bee7e292c398a72ac67ade9e0a5e",
+    "finalSourceCommit": "35bc991da2d07dea9abf217de27627f86b65519d",
+    "keyboardSwipeDismissed": {
+      "focusCleared": true,
+      "inputPreserved": true,
+      "viewportRestored": true
+    },
+    "connectionPrioritized": true,
+    "displayOptionBelowConnection": true,
+    "largeSendButtonHorizontal": true,
+    "largeSendButtonPixelWidth": 324,
+    "secureConnectionControlsReachable": true,
+    "normalModeRestored": true,
+    "normalModeColdRestart": {
+      "differentPid": true
+    },
+    "normalModeColdRestore": true,
+    "secureGatewayAutomaticallyRestored": true,
+    "finalFourTabSmoke": true,
+    "finalNormalMode": true,
+    "returnedToAssistant": true,
+    "mascotReturnedIdle": true
+  },
+  "business": {
+    "entireSnapshotEqual": true,
+    "tasks": 6,
+    "materials": 16,
+    "allPrivateBusinessFilesEqual": true,
+    "comparedPrivateFiles": 6
+  },
+  "gateway": {
+    "hostHealthHttp": 200,
+    "usb8000MappingPresent": true,
+    "modelRequestSent": false
+  },
+  "publication": {
+    "pushed": false,
+    "terminalPush": "Cannot connect to github.com:443",
+    "connectorWrite": "403 Resource not accessible by integration",
+    "merged": false
+  },
+  "limits": [
+    "Device checks cover navigation destinations and readable layouts, not frame-by-frame motion measurements.",
+    "Mode cold restart used aa force-stop with different PIDs; no whole-phone restart or uninstall.",
+    "No new model, voice, reminder-delivery, Android/iOS or end-user-study acceptance.",
+    "Published assistant screenshots show the existing synthetic task; no new task was created for this verification."
+  ]
+}

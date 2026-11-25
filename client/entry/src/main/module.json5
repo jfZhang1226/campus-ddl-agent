@@ -11,16 +11,18 @@
     "installationFree": false,
     "pages": "$profile:main_pages",
     "requestPermissions": [
-      { "name": "ohos.permission.INTERNET" }
+      {
+        "name": "ohos.permission.INTERNET"
+      }
     ],
     "abilities": [
       {
         "name": "EntryAbility",
         "srcEntry": "./ets/entryability/EntryAbility.ets",
         "description": "$string:EntryAbility_desc",
-        "icon": "$media:icon",
+        "icon": "$media:assistant_idle",
         "label": "$string:EntryAbility_label",
-        "startWindowIcon": "$media:icon",
+        "startWindowIcon": "$media:assistant_idle",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
         "skills": [

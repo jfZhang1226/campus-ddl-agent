@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-25",
+  "bundle": "com.campusddl.noticeprobe",
+  "versionName": "0.9.0",
+  "versionCode": 900,
+  "runtimeCommit": "3b08d0e09dea5d9211f92e1a59775c8d137fc38f",
+  "hostBuild": {
+    "unsigned": {
+      "runtimeCommit": "3b08d0e09dea5d9211f92e1a59775c8d137fc38f",
+      "sourceHashesUnchanged": 89,
+      "copiedClientFiles": 180,
+      "phase": "unsigned",
+      "hapBytes": 7811645,
+      "hapSha256": "9f9a0aaa662423080bcd6c05cb44d838d86884568cf323121fdff93c37ae8a0c",
+      "abcSha256": "f4b15d126c2ab67e1baa1518bb0ff06094212f8aa78a21887a832fc465911297",
+      "buildTime": "25 s 643 ms",
+      "deviceValidated": false,
+      "audioOperations": 0
+    },
+    "signed": {
+      "runtimeCommit": "3b08d0e09dea5d9211f92e1a59775c8d137fc38f",
+      "sourceHashesUnchanged": 89,
+      "copiedClientFiles": 180,
+      "phase": "signed",
+      "hapBytes": 7864757,
+      "hapSha256": "f1e9f1d192e3759d4f4602500dea1d86b738d9cd6a515ba4f94356a548de1785",
+      "abcSha256": "f4b15d126c2ab67e1baa1518bb0ff06094212f8aa78a21887a832fc465911297",
+      "buildTime": "20 s 616 ms",
+      "deviceValidated": false,
+      "audioOperations": 0,
+      "matchesUnsignedAbc": true
+    }
+  },
+  "device": {
+    "firstSave": true,
+    "restoreAfterProcessDeath": {
+      "differentPid": true
+    },
+    "automaticallyRestored": true,
+    "clearCancelPreservedConnection": true,
+    "restartAfterClear": {
+      "differentPid": true
+    },
+    "clearedConnectionNotRestored": true,
+    "finalRestoreWithoutTyping": {
+      "differentPid": true
+    },
+    "finalSavedAndRestored": true,
+    "returnedToAssistant": true,
+    "audioOperations": 0,
+    "modelRequests": 0,
+    "taskWrites": 0
+  },
+  "business": {
+    "entireSnapshotEqual": true,
+    "tasks": 6,
+    "materials": 16,
+    "checkedBusinessFiles": 6,
+    "projectTokenPlaintextInBusinessFiles": false
+  },
+  "hostChecks": {
+    "secureSettings": 10,
+    "taskAgent": 39,
+    "chat": 29,
+    "voiceController": 16,
+    "nativeExport": 14,
+    "sharedExport": 12,
+    "voiceExport": 7,
+    "total": 127
+  },
+  "gateway": {
+    "hostHealthHttp": 200,
+    "usbReverse8000Restored": true,
+    "modelRequestSent": false
+  },
+  "limits": [
+    "Cold restart used aa force-stop and verified different PIDs, not a manual recent-app swipe or whole-phone power cycle.",
+    "Did not uninstall, verify OS backup/restore, new audio, reminder delivery or other platforms.",
+    "No new model request; checks establish secure persistence and automatic client configuration, not new model connectivity acceptance."
+  ]
+}

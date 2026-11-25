@@ -67,6 +67,8 @@ export class VoiceChatController {
   subscribe(observer: (view: VoiceChatView) => void): void { this.observer = observer; this.emit(); }
   detach(): void { this.observer = undefined; }
   private emit(): void { if (!this.disposed && this.observer) this.observer(this.snapshot()); }
+  canConfigure(): boolean { return !this.disposed && !this.speechView.busy && this.chat.canConfigure(); }
+  clearConfiguration(): boolean { return this.canConfigure() && this.chat.clearConfiguration(); }
   configure(config: GatewayConfig): boolean {
     if (this.disposed || this.speechView.busy) return false;
     return this.chat.configure(config);

@@ -1,0 +1,22 @@
+import { readableFont, readableLineHeight } from './UiPreferences';
+
+export class AppTheme {
+  static font(size: number, large: boolean): number { return readableFont(size, large); }
+  static line(height: number, large: boolean): number { return readableLineHeight(height, large); }
+  static readonly ink: string = '#25342D';
+  static readonly muted: string = '#58685C';
+  static readonly primary: string = '#345F4E';
+  static readonly soft: string = '#E7EBE1';
+  static readonly canvas: string = '#F4F4EE';
+  static readonly surface: string = '#EEEFE7';
+  static readonly card: string = '#E8ECE2';
+  static readonly userMessage: string = '#E1E7DB';
+  static readonly composer: string = '#DEE4D7';
+  static readonly composerBorder: string = '#BBC8B3';
+  static readonly onPrimary: string = '#F7F8F3';
+  static readonly border: string = '#D9DED3';
+  static readonly amber: string = '#886B3F';
+  static readonly warning: string = '#F1ECDC';
+  static readonly controlRadius: number = 14;
+  static readonly cardRadius: number = 20;
+}

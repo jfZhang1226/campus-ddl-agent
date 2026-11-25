@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-25",
+  "bundle": "com.campusddl.noticeprobe",
+  "versionName": "0.7.1",
+  "versionCode": 701,
+  "runtimeCommit": "5e9c1cedf8b11d2d8f6fccfa066a24f9af1e9ba1",
+  "hostBuild": {
+    "unsigned": {
+      "runtimeCommit": "5e9c1cedf8b11d2d8f6fccfa066a24f9af1e9ba1",
+      "sourceHashesUnchanged": 81,
+      "copiedClientFiles": 177,
+      "phase": "unsigned",
+      "hapBytes": 7715952,
+      "hapSha256": "70a48d826db7a28711e6e00725ca608a0865f8d6e7fce81b490d4d567574b909",
+      "abcSha256": "8b8a29340d4ab4f7a164b2bfc1d19d483a03eee242213610320cf4b3925067eb",
+      "buildTime": "31 s 899 ms",
+      "deviceValidated": false,
+      "audioOperations": 0
+    },
+    "signed": {
+      "runtimeCommit": "5e9c1cedf8b11d2d8f6fccfa066a24f9af1e9ba1",
+      "sourceHashesUnchanged": 81,
+      "copiedClientFiles": 177,
+      "phase": "signed",
+      "hapBytes": 7763436,
+      "hapSha256": "45973941b40621dc3de222a59727dff0c091c45e2c7c89070e84597bbf1efeb0",
+      "abcSha256": "8b8a29340d4ab4f7a164b2bfc1d19d483a03eee242213610320cf4b3925067eb",
+      "buildTime": "20 s 881 ms",
+      "deviceValidated": false,
+      "audioOperations": 0,
+      "matchesUnsignedAbc": true
+    }
+  },
+  "device": {
+    "customerCopyChecked": true,
+    "legacyStoredReceiptDisplayedNaturally": true,
+    "removedTechnicalFooterAndCardWarnings": true,
+    "coverPreviewVisible": true,
+    "returnedToAssistantWithRuntimeConfiguration": true,
+    "audioOperations": 0,
+    "modelRequests": 0,
+    "taskWrites": 0
+  },
+  "dataPreserved": {
+    "entireBusinessSnapshotEqual": true,
+    "tasks": 6,
+    "checklistItems": 16,
+    "pendingAndHistoryPreserved": true
+  },
+  "checks": {
+    "taskAgent": 37,
+    "motion": 7,
+    "nativeExport": 14,
+    "sharedExport": 12,
+    "total": 70
+  },
+  "gateway": {
+    "hostHealthHttp": 200,
+    "usbReverse8000Restored": true,
+    "runtimeProjectCredentialReapplied": true,
+    "modelRequestSentForVerification": false
+  },
+  "asset": {
+    "file": "assistant_cover_v1.png",
+    "sha256": "45aff76346fbc29e9aded923144a02361b1afd6add55c9224ed8a824989bb269",
+    "generatedBy": "built-in image_gen",
+    "editedPixels": false
+  },
+  "limits": [
+    "Actual device checked cover preview and existing task/chat presentation; no new live model or save turn.",
+    "Startup cover is bound to real local initialization, with no artificial minimum duration. Brief cold starts may show it only briefly.",
+    "No new voice, reminder-delivery or cross-platform validation."
+  ]
+}

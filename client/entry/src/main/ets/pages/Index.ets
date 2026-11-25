@@ -124,6 +124,11 @@ struct Index {
   @Builder
   header() {
     Column({ space: 12 }) {
+      Button('我的任务').id('task-board-entry').fontSize(12).enabled(!this.view.busy)
+        .onClick(() => {
+          chatOwner.pause();
+          router.pushUrl({ url: 'pages/Tasks' }).catch(() => { this.storageNavigationError = '无法打开任务列表。'; });
+        })
       Row({ space: 12 }) {
       Column({ space: 3 }) {
         Text('校园 DDL').fontSize(23).fontWeight(FontWeight.Bold).fontColor('#142C43')

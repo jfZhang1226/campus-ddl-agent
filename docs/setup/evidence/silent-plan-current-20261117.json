@@ -1,0 +1,21 @@
+{
+  "runtimeCommit": "449cef7cacbe62bfb2aea483b3cb99285642e200",
+  "sourceHashesUnchanged": 46,
+  "copiedClientFiles": 148,
+  "buildTime": "17 s 440 ms",
+  "hapSha256": "e92a0b9fde3c46e4bd3e5d0578b2e73339d357cf28973682045b3fd9a7a54be6",
+  "abcSha256": "64e4c301a633fca9321e4a08a621820e3cc2061d98a47784d5bed90edb75e158",
+  "matchesUnsignedAbc": true,
+  "unsignedBuildTime": "20 s 278 ms",
+  "sameBundleUpdatedKeepingData": true,
+  "finalRealColdReadTwoDoneBlocks": true,
+  "finalSubmittedTaskAndDisabledReminderReadback": true,
+  "businessNativeCoreFingerprintsMatchTested86": true,
+  "changedFrom86": [
+    "Schedule.ets visible effort warning and concise titles"
+  ],
+  "fullWorkflowEvidence": "silent-plan-submission-device-20261117.json",
+  "audioOperations": 0,
+  "actualReminderDeliveryTested": false,
+  "realModelPlanningTested": false
+}

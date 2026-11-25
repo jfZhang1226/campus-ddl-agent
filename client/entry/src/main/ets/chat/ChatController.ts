@@ -143,6 +143,12 @@ export class ChatController {
     }
   }
 
+  canConfigure(): boolean { return !this.disposed && !this.state.busy; }
+  clearConfiguration(): boolean {
+    if (!this.canConfigure()) return false;
+    this.config = new GatewayConfig(); this.state.configured = false;
+    this.state.errorCode = ''; this.state.notice = ''; this.state.requestId = ''; this.publish(); return true;
+  }
   configure(config: GatewayConfig): boolean {
     if (this.disposed || this.state.busy) return false;
     const error = validateConfig(config);
