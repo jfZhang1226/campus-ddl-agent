@@ -87,9 +87,18 @@ export class TaskAgentController {
   configure(config: GatewayConfig): boolean {
     if (this.busy() && this.view.phase !== 'initializing') return false;
     const code: string = validateConfig(config);
-    if (code.length > 0) { this.view.configured = false; this.fail(code); return false; }
+    if (code.length > 0) {
+      this.view.configured = false;
+      if (this.view.errorCode.length === 0 || ['CONFIG_URL', 'CONFIG_TOKEN', 'CONFIG_TIMEOUT'].includes(this.view.errorCode)) this.fail(code);
+      else this.publish();
+      return false;
+    }
     this.config = new GatewayConfig(config.baseUrl.trim(), config.token, config.timeoutMs);
-    this.view.configured = true; this.publish(); return true;
+    this.view.configured = true;
+    if (['CONFIG_URL', 'CONFIG_TOKEN', 'CONFIG_TIMEOUT'].includes(this.view.errorCode)) {
+      this.view.errorCode = ''; this.view.notice = '';
+    }
+    this.publish(); return true;
   }
   edit(text: string): void {
     if (this.disposed || this.view.phase !== 'idle') return;

@@ -32,6 +32,30 @@ function proposal(ctx,date='2026-12-04'){
 }
 function controller(h,respond,speech){const calls=[];const transport={start(config,body){const req=JSON.parse(body),call={req,cancelled:0,cancel(){this.cancelled++;}};call.result=new Promise((resolve,reject)=>{call.resolve=resolve;call.reject=reject;});calls.push(call);if(respond)Promise.resolve().then(()=>respond(req,calls.length,call)).then(reply=>{if(reply)call.resolve(new GatewayResponse(200,JSON.stringify(reply)));},call.reject);return call;}};const clock=new Clock();const c=new TaskAgentController(h.session,transport,h.tasks,h.store,clock,speech);return {c,calls,clock};}
 const send=async(c,text)=>{c.edit(text);await c.send();};
+test('valid configuration clears stale local settings errors without model or storage writes',async()=>{
+ const h=setup(),s=controller(h);await s.c.initialize();const before=h.files.writes;
+ const valid=new GatewayConfig('https://synthetic.example','synthetic-token',30000);
+ for(const [bad,code] of [
+  [new GatewayConfig('','synthetic-token',30000),'CONFIG_URL'],
+  [new GatewayConfig('https://synthetic.example','',30000),'CONFIG_TOKEN'],
+  [new GatewayConfig('https://synthetic.example','synthetic-token',1),'CONFIG_TIMEOUT']]){
+  assert.equal(s.c.configure(bad),false);assert.equal(s.c.snapshot().errorCode,code);
+  assert.equal(s.c.configure(valid),true);assert.equal(s.c.snapshot().configured,true);
+  assert.equal(s.c.snapshot().errorCode,'');assert.equal(s.c.snapshot().notice,'');
+ }
+ assert.equal(h.files.writes,before);assert.equal(s.calls.length,0);s.c.dispose();
+});
+test('applying valid settings does not erase an actual request failure or resend it',async()=>{
+ const h=setup(),s=controller(h);await s.c.initialize();
+ const valid=new GatewayConfig('https://synthetic.example','synthetic-token',30000);s.c.configure(valid);
+ s.c.edit('查询合成任务');const pending=s.c.send();while(s.calls.length===0)await tick();
+ s.calls[0].resolve(new GatewayResponse(401,'{}'));await pending;
+ const before=s.c.snapshot(),writes=h.files.writes;assert.equal(before.errorCode,'UNAUTHORIZED');
+ assert.equal(s.c.configure(new GatewayConfig()),false);assert.equal(s.c.snapshot().configured,false);
+ assert.equal(s.c.snapshot().errorCode,before.errorCode);assert.equal(s.c.snapshot().notice,before.notice);
+ assert.equal(s.c.configure(valid),true);assert.equal(s.c.snapshot().errorCode,before.errorCode);
+ assert.equal(s.c.snapshot().notice,before.notice);assert.equal(s.calls.length,1);assert.equal(h.files.writes,writes);s.c.dispose();
+});
 function updateFor(ctx,task,date='2026-12-10') {
  const p=proposal(ctx,date),draft=p.changes[0].draft;
  for(const key of Object.keys(new TaskDraft()))draft[key]=clone(task[key]);

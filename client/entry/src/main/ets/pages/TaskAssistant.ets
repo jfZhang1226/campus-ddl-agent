@@ -343,7 +343,9 @@ struct TaskAssistantPage {
       } else {
         Scroll(this.scroller) {
           Column({ space: 12 }) {
-            if (this.view.notice.length > 0) { Text(this.view.notice).id('task-agent-notice').fontSize(13).fontColor(AppTheme.muted) }
+            if (this.view.notice.length > 0 && !['CONFIG_URL', 'CONFIG_TOKEN', 'CONFIG_TIMEOUT'].includes(this.view.errorCode)) {
+              Text(this.view.notice).id('task-agent-notice').fontSize(13).fontColor(AppTheme.muted)
+            }
             if (this.view.messages.length === 0) {
               Column({ space: 12 }) {
                 AssistantMascot({ mode: 'idle', active: this.mascotActive, edge: 112, tag: 'hero' })
@@ -361,7 +363,7 @@ struct TaskAssistantPage {
             if (this.view.historyPending) {
               Button('重试保存对话记录').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-agent-retry-history').enabled(this.idle()).onClick(() => { this.controller?.retryHistory(); })
             }
-            if (this.view.recoveryRequired || this.view.errorCode.length > 0) {
+            if (this.view.recoveryRequired || (this.view.errorCode.length > 0 && !['CONFIG_URL', 'CONFIG_TOKEN', 'CONFIG_TIMEOUT'].includes(this.view.errorCode))) {
               Button('重新加载').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-agent-recover').fontSize(12).enabled(this.idle()).onClick(() => { this.controller?.recover(); })
             }
           }.width('100%').padding({ left: 22, right: 22, top: 12, bottom: 14 }).alignItems(HorizontalAlign.Start)
