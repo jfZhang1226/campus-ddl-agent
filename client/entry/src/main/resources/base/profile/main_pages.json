@@ -11,6 +11,7 @@
     "pages/TaskCheck",
     "pages/HistoryCheck",
     "pages/CommitCheck",
-    "pages/MascotPreview"
+    "pages/MascotPreview",
+    "pages/CoverPreview"
   ]
 }

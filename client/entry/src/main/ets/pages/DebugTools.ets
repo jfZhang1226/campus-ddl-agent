@@ -15,6 +15,7 @@ struct DebugToolsPage {
       Button('提交检查').onClick(() => this.open('pages/CommitCheck'))
       Button('历史检查').onClick(() => this.open('pages/HistoryCheck'))
       Button('小助手动作预览').id('debug-mascot-preview').onClick(() => this.open('pages/MascotPreview'))
+      Button('启动封面预览').id('debug-cover-preview').onClick(() => this.open('pages/CoverPreview'))
       Text(this.notice).fontSize(13)
     }.width('100%').height('100%').padding(18).backgroundColor('#F2F6F7')
   }

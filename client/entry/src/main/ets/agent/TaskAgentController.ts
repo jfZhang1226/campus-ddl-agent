@@ -66,7 +66,7 @@ export class TaskAgentController {
         this.recording = false;
         if (state.phase === 'ready' && this.recordingVersion === this.inputVersion) {
           this.view.input = state.text.slice(0, 4000);
-          this.view.notice = '转写已放入输入框，请核对后点发送。尚未交给模型。';
+          this.view.notice = '转写好了，可以编辑后发送。';
         }
       }
       this.publish();
@@ -109,13 +109,13 @@ export class TaskAgentController {
       const text: string = (this.view.input.length === 0 ? '' : this.view.input + '\n') + choice;
       if (text.length > 4000) throw new StorageFailure('MESSAGE_TOO_LONG', '输入已接近长度上限，请先整理文字再选择任务。');
       this.view.selectedTask = result.data; this.view.input = text; this.inputVersion++;
-      this.view.notice = '已选中实际任务，尚未发给模型或修改任务。请核对下方原文，再点发送。'; this.view.errorCode = '';
+      this.view.notice = '已选好任务，告诉我想怎么改。'; this.view.errorCode = '';
     } catch (error) { this.handle(error as Error); }
     finally { this.view.phase = 'idle'; this.publish(); }
   }
   clearTaskChoice(): void {
     if (this.busy()) return;
-    this.view.selectedTask = null; this.view.notice = '已解除本轮目标限制；输入中的选择文字请按需修改。'; this.publish();
+    this.view.selectedTask = null; this.view.notice = '已取消选择。'; this.publish();
   }
   async record(): Promise<void> {
     if (this.busy() || !this.view.speechEnabled || this.view.historyPending || this.view.recoveryRequired) return;
@@ -261,7 +261,7 @@ export class TaskAgentController {
         const actual = this.session.proposal();
         if (actual === null || actual.id !== outcome.proposalId) throw new StorageFailure('RECOVERY_REQUIRED', '方案结果不一致，请重新读取。');
         this.prior = actual;
-        await this.session.append('assistant', '已整理为待确认方案，尚未保存任务。请核对下方任务、材料及原文，再点确认。');
+        await this.session.append('assistant', '整理好了，看看下面的任务。');
       } else if (outcome.kind === 'answer' || outcome.kind === 'clarification') {
         await this.session.append('assistant', outcome.text, outcome.kind);
       } else {
@@ -284,7 +284,7 @@ export class TaskAgentController {
     if (this.disposed || !['running', 'preparing', 'staging'].includes(this.view.phase)) return;
     this.cancelRequested = reason;
     if (this.view.phase === 'staging' || this.view.phase === 'preparing') {
-      this.view.notice = '正在完成本地步骤，完成后停止后续模型请求。'; this.publish(); return;
+      this.view.notice = '正在收尾，完成后就会停止。'; this.publish(); return;
     }
     const generation: number = ++this.generation;
     this.call?.cancel(); this.call = undefined; this.clock.cancel(this.timer); this.timer = -1;
@@ -300,7 +300,7 @@ export class TaskAgentController {
     try {
       await this.session.editDeadline(taskId, date, time);
       this.view.sources = await this.session.sourceDetails(); this.sourceReady = true;
-      this.view.notice = '截止时间已更新到草案，请核对后确认保存。'; return true;
+      this.view.notice = '截止时间已调整，确认后保存。'; return true;
     } catch (error) { this.handle(error as Error); return false; }
     finally { this.view.phase = 'idle'; this.publish(); }
   }
@@ -311,9 +311,9 @@ export class TaskAgentController {
       this.view.receipt = await this.session.confirm();
       this.view.selectedTask = null; this.view.candidates = []; this.view.candidatesTruncated = false;
       this.prior = null;
-      this.view.notice = '已正式保存，可在下方核对实际回执；用户声明不代表学校平台已收到。';
+      this.view.notice = '任务已保存。';
       await this.readSavedDetails();
-      try { await this.session.append('assistant', '已正式保存，任务编号：' + this.view.receipt.tasks.map(task => task.id).join('、') + '。这是本机回执，不代表学校平台已收到。'); }
+      try { await this.session.append('assistant', '任务已保存，可以在“任务”查看。'); }
       catch (_) { this.view.notice += ' 对话记录保存失败，请重试记录；任务不会重复提交。'; }
     } catch (error) { this.handle(error as Error); }
     finally { this.view.phase = 'idle'; this.publish(); }
@@ -323,21 +323,21 @@ export class TaskAgentController {
     this.view.phase = 'recovering'; this.publish();
     try { await this.session.recover(); this.view.sources = await this.session.sourceDetails(); this.sourceReady = true;
       this.view.receipt = await this.session.latestReceipt(); await this.readSavedDetails();
-      this.view.notice = '已读取实际方案和提交回执；没有自动确认。'; this.view.errorCode = ''; }
+      this.view.notice = '已重新加载。'; this.view.errorCode = ''; }
     catch (error) { this.sourceReady = false; this.handle(error as Error); }
     finally { this.view.phase = 'idle'; this.publish(); }
   }
   async cancelProposal(): Promise<void> {
     if (this.busy()) return;
     this.view.phase = 'cancelling'; this.publish();
-    try { await this.session.cancelPending(); this.view.notice = '已取消未保存方案，原对话保留。'; }
+    try { await this.session.cancelPending(); this.view.notice = '这次先不保存。'; }
     catch (error) { this.handle(error as Error); }
     finally { this.view.phase = 'idle'; this.publish(); }
   }
   async retryHistory(): Promise<void> {
     if (this.busy()) return;
     this.view.phase = 'recovering'; this.publish();
-    try { await this.session.retryHistory(); this.view.notice = '本机对话记录已保存，没有重发模型或提交任务。'; }
+    try { await this.session.retryHistory(); this.view.notice = '对话已保存。'; }
     catch (error) { this.handle(error as Error); }
     finally { this.view.phase = 'idle'; this.publish(); }
   }
