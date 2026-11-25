@@ -45,7 +45,9 @@ struct GatewaySettingsPage {
   private applyConfiguration(config: GatewayConfig): boolean { return this.connection().save(config); }
   aboutToAppear(): void {
     const uiContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-    displayPreferences(uiContext.filesDir).restore().then(() => { this.syncDisplaySwitch(); });
+    displayPreferences(uiContext.filesDir).restore().then(() => {
+      this.syncDisplaySwitch(); this.displayNotice = displayPreferences(uiContext.filesDir).notice;
+    });
     const config = this.configuration();
     this.configured = validateConfig(config).length === 0;
     this.secure = this.connection().snapshot(); this.notice = this.secure.notice;
@@ -100,7 +102,7 @@ struct GatewaySettingsPage {
           Column({ space: 10 }) {
             Row({ space: 12 }) {
               Text('大字简洁模式').fontSize(AppTheme.font(18, this.largeSimpleMode)).fontColor(AppTheme.ink).fontWeight(FontWeight.Medium).layoutWeight(1)
-              Toggle({ type: ToggleType.Switch, isOn: this.displaySelection }).id('settings-large-simple').height(48)
+              Toggle({ type: ToggleType.Switch, isOn: this.displaySelection }).id('settings-large-simple').width(64).height(40)
                 .selectedColor(AppTheme.primary).enabled(!this.displayBusy)
                 .accessibilityText('大字简洁模式')
                 .onChange((value: boolean) => { if (value !== this.largeSimpleMode) { this.displaySelection = value; this.changeDisplay(value); } })
@@ -113,8 +115,10 @@ struct GatewaySettingsPage {
               Circle().width(7).height(7).fill(this.configured ? AppTheme.primary : AppTheme.amber)
               Text(this.configured ? '连接已配置' : '尚未配置连接').fontSize(AppTheme.font(13, this.largeSimpleMode)).fontWeight(FontWeight.Medium).fontColor(AppTheme.primary)
             }
-            Text(this.configured ? (this.secure.saved ? '连接信息已安全保存，下次打开自动恢复。' : '本次连接已应用。') : '连接助手，开始整理通知。')
-              .id('settings-state').fontSize(AppTheme.font(13, this.largeSimpleMode)).lineHeight(AppTheme.line(21, this.largeSimpleMode)).fontColor(AppTheme.muted)
+            if (!this.largeSimpleMode) {
+              Text(this.configured ? (this.secure.saved ? '连接信息已安全保存，下次打开自动恢复。' : '本次连接已应用。') : '连接助手，开始整理通知。')
+                .id('settings-state').fontSize(AppTheme.font(13, this.largeSimpleMode)).lineHeight(AppTheme.line(21, this.largeSimpleMode)).fontColor(AppTheme.muted)
+            }
           }.width('100%').alignItems(HorizontalAlign.Start).padding(16).backgroundColor(AppTheme.soft).borderRadius(18)
           if (this.largeSimpleMode && this.configured) {
             Button(this.connectionExpanded ? '收起连接设置' : '连接设置').id('settings-expand-connection')
