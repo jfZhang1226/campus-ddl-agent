@@ -109,6 +109,9 @@ test('actual pages wire both route directions, shared preference and unchanged b
   assert.equal((assistant.match(/AssistantMascot\(/g)||[]).length,1);assert.match(assistant,/edge: this.largeSimpleMode \? 96 : 104/);
   assert.match(assistant,/this.controller\?\.confirm\(\)/);assert.match(assistant,/this.view.input/);
   assert.match(assistant,/id\('task-agent-send'\)\.width\(this.largeSimpleMode \? 96 : 68\)/);
+  const settings=fs.readFileSync(path.join(root,'pages/GatewaySettings.ets'),'utf8');
+  assert.ok(settings.indexOf("id('gateway-apply')")<settings.indexOf("id('settings-large-simple')"),'connection controls precede the separate display option');
+  assert.ok(settings.indexOf("id('gateway-clear')")<settings.indexOf("id('settings-large-simple')"),'display mode remains below connection maintenance');
   const owner=fs.readFileSync(path.join(root,'ui/UiPreferencesOwner.ets'),'utf8');assert.match(owner,/ArkFilePort\(filesDir, 'campus-ui'\)/);
   assert.doesNotMatch(owner,/getClientStorage|GatewaySecret|token|task-store/);
 });

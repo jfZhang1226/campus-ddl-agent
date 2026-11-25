@@ -100,17 +100,6 @@ struct GatewaySettingsPage {
       }.width('100%').padding({ left: 18, right: 18, top: 16, bottom: 12 })
       Scroll() {
         Column({ space: 18 }) {
-          Column({ space: 10 }) {
-            Row({ space: 12 }) {
-              Text('大字简洁模式').fontSize(AppTheme.font(18, this.largeSimpleMode)).fontColor(AppTheme.ink).fontWeight(FontWeight.Medium).layoutWeight(1)
-              Toggle({ type: ToggleType.Switch, isOn: this.displaySelection }).id('settings-large-simple').width(64).height(40)
-                .selectedColor(AppTheme.primary).enabled(!this.displayBusy)
-                .accessibilityText('大字简洁模式')
-                .onChange((value: boolean) => { if (value !== this.largeSimpleMode) { this.displaySelection = value; this.changeDisplay(value); } })
-            }.width('100%')
-            if (!this.largeSimpleMode) { Text('字体更大，辅助说明更少。').fontSize(AppTheme.font(13, this.largeSimpleMode)).fontColor(AppTheme.muted) }
-            if (this.displayNotice.length > 0) { Text(this.displayNotice).id('settings-display-notice').fontSize(AppTheme.font(14, this.largeSimpleMode)).fontColor(AppTheme.amber) }
-          }.width('100%').padding(16).backgroundColor(AppTheme.surface).borderRadius(18)
           Column({ space: 9 }) {
             Row({ space: 8 }) {
               Circle().width(7).height(7).fill(this.configured ? AppTheme.primary : AppTheme.amber)
@@ -166,6 +155,17 @@ struct GatewaySettingsPage {
           Button('调试工具').fontSize(AppTheme.font(14, this.largeSimpleMode)).constraintSize({ minHeight: this.largeSimpleMode ? 56 : 0 }).labelStyle({ maxLines: 2 }).fontColor(AppTheme.muted).backgroundColor(Color.Transparent).borderRadius(AppTheme.controlRadius).id('open-debug-tools').height(this.largeSimpleMode ? 56 : 44).width('100%').fontSize(AppTheme.font(12, this.largeSimpleMode)).enabled(!this.dirty())
             .onClick(() => { router.pushUrl({ url: 'pages/DebugTools' }).catch(() => { this.notice = '无法打开调试工具。'; }); })
           }
+          Column({ space: 10 }) {
+            Row({ space: 12 }) {
+              Text('大字简洁模式').fontSize(AppTheme.font(18, this.largeSimpleMode)).fontColor(AppTheme.ink).fontWeight(FontWeight.Medium).layoutWeight(1)
+              Toggle({ type: ToggleType.Switch, isOn: this.displaySelection }).id('settings-large-simple').width(64).height(40)
+                .selectedColor(AppTheme.primary).enabled(!this.displayBusy)
+                .accessibilityText('大字简洁模式')
+                .onChange((value: boolean) => { if (value !== this.largeSimpleMode) { this.displaySelection = value; this.changeDisplay(value); } })
+            }.width('100%')
+            if (!this.largeSimpleMode) { Text('字体更大，辅助说明更少。').fontSize(AppTheme.font(13, this.largeSimpleMode)).fontColor(AppTheme.muted) }
+            if (this.displayNotice.length > 0) { Text(this.displayNotice).id('settings-display-notice').fontSize(AppTheme.font(14, this.largeSimpleMode)).fontColor(AppTheme.amber) }
+          }.width('100%').padding(16).backgroundColor(AppTheme.surface).borderRadius(18)
           if (!this.largeSimpleMode) { Text('课事清 · 校园里的事，一件件安排好').fontSize(AppTheme.font(11, this.largeSimpleMode)).fontColor(AppTheme.muted).width('100%').textAlign(TextAlign.Center) }
         }.width('100%').alignItems(HorizontalAlign.Start).padding({ left: 18, right: 18, top: 4, bottom: 20 })
       }.layoutWeight(1).width('100%').align(Alignment.Top)
