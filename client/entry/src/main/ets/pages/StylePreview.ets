@@ -39,7 +39,7 @@ struct StylePreviewPage {
         Text('输入通知，或继续补充…').fontSize(14).fontColor(AppTheme.muted).layoutWeight(1)
         Text('发送').fontSize(13).fontColor(AppTheme.onPrimary).padding({ left: 18, right: 18, top: 11, bottom: 11 })
           .backgroundColor(AppTheme.primary).borderRadius(13)
-      }.width('92%').padding(15).backgroundColor(AppTheme.surface).borderRadius(23).border({ width: 1, color: AppTheme.border }).margin({ bottom: 15 })
+      }.width('92%').padding(15).backgroundColor(AppTheme.composer).borderRadius(23).border({ width: 1, color: AppTheme.composerBorder }).margin({ bottom: 15 })
     }.width('100%').height('100%').backgroundColor(AppTheme.canvas)
   }
 }

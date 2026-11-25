@@ -25,6 +25,7 @@ struct TaskAssistantPage {
   @State sourcesOpen: boolean = false;
   @State expandedSavedTaskId: string = '';
   @State voiceOpen: boolean = false;
+  @State inputFocused: boolean = false;
   @State mascotMode: string = 'idle';
   @State mascotHint: string = '';
   @State mascotActive: boolean = true;
@@ -371,9 +372,10 @@ struct TaskAssistantPage {
         Column({ space: 10 }) {
           this.voiceControls()
           if (this.view.proposal !== null) { Text('发送补充会取消当前未保存方案并重新整理，仍需再次确认保存。').fontSize(11).fontColor(AppTheme.amber) }
-          TextArea({ text: this.view.input, placeholder: '贴通知，或继续说“截止改为12月5日”…' }).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14)
+          TextArea({ text: this.view.input, placeholder: '输入通知，或继续补充…' }).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14)
             .id('task-agent-input').height(70).fontSize(15).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).caretColor(AppTheme.primary).backgroundColor(Color.Transparent).borderRadius(0).maxLength(4000).enabled(this.view.phase === 'idle' && !this.view.historyPending && !this.view.recoveryRequired)
             .onChange((text: string) => { this.controller?.edit(text); })
+            .onFocus(() => { this.inputFocused = true; }).onBlur(() => { this.inputFocused = false; })
           Row({ space: 10 }) {
             Button(this.voiceOpen ? '收起语音' : '语音输入').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('task-agent-voice-mode').fontSize(12).height(38).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft)
               .enabled(this.view.speechEnabled && !this.view.speech.busy).onClick(() => { this.voiceOpen = !this.voiceOpen; })
@@ -382,8 +384,8 @@ struct TaskAssistantPage {
               .enabled(this.idle() && this.view.configured && !this.view.historyPending && !this.view.recoveryRequired && this.view.input.trim().length > 0)
               .onClick(() => { this.controller?.send(); })
           }.width('100%')
-        }.width('92%').padding(14).backgroundColor(AppTheme.surface).borderRadius(24)
-          .border({ width: 1, color: AppTheme.border }).margin({ top: 5, bottom: 9 })
+        }.width('92%').padding(14).backgroundColor(AppTheme.composer).borderRadius(24)
+          .border({ width: this.inputFocused ? 1.5 : 1, color: this.inputFocused ? AppTheme.primary : AppTheme.composerBorder }).margin({ top: 7, bottom: 9 })
       }
       AppTabBar({ active: 'assistant', enabledTabs: this.idle(), onSelect: (page: string): void => { this.navigate(page); } })
       }

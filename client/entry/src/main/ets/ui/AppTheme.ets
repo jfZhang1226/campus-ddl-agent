@@ -7,6 +7,8 @@ export class AppTheme {
   static readonly surface: string = '#EEEFE7';
   static readonly card: string = '#E8ECE2';
   static readonly userMessage: string = '#E1E7DB';
+  static readonly composer: string = '#DEE4D7';
+  static readonly composerBorder: string = '#BBC8B3';
   static readonly onPrimary: string = '#F7F8F3';
   static readonly border: string = '#D9DED3';
   static readonly amber: string = '#886B3F';
