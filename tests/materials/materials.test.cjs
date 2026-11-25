@@ -248,3 +248,12 @@ test('submitted task with new pending material is active without erasing submiss
  const {taskIsComplete}=require(root+'tasks/TaskCompletion.ts');const s=setup(),a=await seed(s,1);const first=await submitted(s,a.task.id);const history=clone(first.submissionSnapshots);assert.equal(history.length,1);
  const c=await actions(s,a.task.id);await c.prepareAddMaterial('合成补交文件');await c.confirm();const list=ok(await s.tasks.list()),t=list.tasks.find(t=>t.id===a.task.id);assert.equal(t.status,'submitted');assert.equal(taskIsComplete(t,list.progress.find(p=>p.taskId===t.id)),false);assert.deepEqual(ok(await s.commits.confirmation.receipt(first.operationId)).submissionSnapshots,history);
 });
+
+test('cold repository derives completion from persisted current items after confirmed completion and append',async()=>{
+ const {taskIsComplete}=require(root+'tasks/TaskCompletion.ts');const initial=setup(),a=await seed(initial,1),c=await actions(initial,a.task.id);
+ c.toggle(a.items[0].id);await c.prepareMaterials();await c.confirm();c.dispose();
+ const cold=setup(initial.files,initial.runtime);let list=ok(await cold.tasks.list());assert.equal(taskIsComplete(list.tasks[0],list.progress[0]),true);
+ const again=await actions(cold,a.task.id);await again.prepareAddMaterial('合成冷恢复新增事项');await again.confirm();again.dispose();
+ const restarted=setup(initial.files,initial.runtime);list=ok(await restarted.tasks.list());assert.equal(taskIsComplete(list.tasks[0],list.progress[0]),false);assert.equal(list.progress[0].total,2);assert.equal(list.progress[0].prepared,1);
+ assert.equal(list.tasks[0].id,a.task.id);assert.equal(ok(await restarted.tasks.get(a.task.id)).checklistItems[0].state,'prepared');
+});
