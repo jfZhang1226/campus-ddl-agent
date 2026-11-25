@@ -6,8 +6,8 @@ import { DeadlineDialogState } from './DeadlineDialogState';
 export struct DeadlineEditDialog {
   controller: CustomDialogController;
   @Link state: DeadlineDialogState;
-  onApply: (date: string, time: string) => void;
-  onCancel: () => void;
+  onApply: (date: string, time: string) => void = (_date: string, _time: string): void => {};
+  onCancel: () => void = (): void => {};
   build() {
     Scroll() {
       DeadlineEditor({ initialDate: this.state.date, initialTime: this.state.time, error: this.state.error,

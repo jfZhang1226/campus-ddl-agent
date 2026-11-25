@@ -8,9 +8,9 @@ export struct TaskChangeDialog {
   controller: CustomDialogController;
   @StorageLink('largeSimpleMode') largeSimpleMode: boolean = false;
   @Link view: TaskActionsView;
-  onConfirm: () => void;
-  onCancel: () => void;
-  onRecover: () => void;
+  onConfirm: () => void = (): void => {};
+  onCancel: () => void = (): void => {};
+  onRecover: () => void = (): void => {};
   private status(value: string): string {
     if (value === 'ready') return '准备完成';
     if (value === 'submitted') return '已标记提交';
@@ -39,7 +39,7 @@ export struct TaskChangeDialog {
               Text(item.before.label + '：' + (item.before.state === 'prepared' ? '已完成' : '待完成') + ' → ' + (item.state === 'prepared' ? '已完成' : '待完成')).fontSize(AppTheme.font(14, this.largeSimpleMode))
             }, (item: ProposedChecklistState) => item.itemId)
             if ((this.view.pending.checklistItems || []).length > 0) {
-              Text('新增事项：' + this.view.pending.checklistItems.map(item => item.label).join('、')).fontSize(AppTheme.font(14, this.largeSimpleMode))
+              Text('新增事项：' + (this.view.pending.checklistItems || []).map(item => item.label).join('、')).fontSize(AppTheme.font(14, this.largeSimpleMode))
             }
           }
           if (this.view.errorCode.length > 0 || this.view.recoveryRequired) {
