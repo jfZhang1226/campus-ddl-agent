@@ -68,7 +68,7 @@ check('production pages and client files are preserved except explicit export co
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
 check('manifest matches actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,901);assert.equal(Object.keys(manifest.hashes).length,89);
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,1000);assert.equal(Object.keys(manifest.hashes).length,93);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
@@ -117,7 +117,7 @@ check('work schedule route shares original storage and screen confirmation witho
   const page=read('entry/src/main/ets/pages/Schedule.ets');
   assert.match(page,/new PlanningController\(storage.local, storage.commits\)/);
   assert.match(page,/id\('plan-confirm'\)/);assert.match(page,/this.controller\?\.confirm\(\)/);
-  assert.match(read('entry/src/main/ets/pages/Tasks.ets'),/url: 'pages\/Schedule'/);
+  assert.match(read('entry/src/main/ets/pages/Tasks.ets'),/openAppTab\('pages\/Tasks', 'pages\/Schedule'\)/);
   assert.doesNotMatch(page,/\.local.save\(|\.tasks.update\(|fetch\(/);
 });
 check('all launcher locales survive consecutive fresh exports and root uses the task assistant',()=>{
@@ -148,7 +148,7 @@ check('one native gateway owner serves settings and task page without duplicate 
 check('composer expansion only changes presentation and retains the actual draft binding and send guards',()=>{
   const page=read('entry/src/main/ets/pages/TaskAssistant.ets');
   assert.match(page, /TextArea\(\{ text: this.view.input,/);
-  assert.match(page, /height\(this.composerExpanded \? 160 : 70\)/);
+  assert.match(page, /height\(this.largeSimpleMode \? 110 : this.composerExpanded \? 160 : 70\)/);
   assert.match(page, /id\('task-agent-expand-input'\)[\s\S]*?onClick\(\(\) => \{ this.composerExpanded = !this.composerExpanded; \}\)/);
   assert.match(page, /onChange\(\(text: string\) => \{ this.controller\?\.edit\(text\); \}\)/);
   assert.match(page, /this.idle\(\) && this.view.configured && !this.view.historyPending && !this.view.recoveryRequired && this.view.input.trim\(\).length > 0/);
@@ -160,7 +160,7 @@ check('settings retains the secure owner and confirmation controls with a full-w
   assert.match(settings,/gateway-clear-cancel/); assert.match(settings,/gateway-clear-confirm/);
   assert.match(settings,/type\(InputType.Password\)/);
   assert.doesNotMatch(settings,/text: (?:current|config)\.token/);
-  assert.match(settings,/Button\('保存连接设置'\)\.fontColor\(AppTheme.onPrimary\)\.backgroundColor\(AppTheme.primary\)/);
+  assert.match(settings,/Button\('保存连接设置'\)[^\n]*\.fontColor\(AppTheme.onPrimary\)\.backgroundColor\(AppTheme.primary\)/);
   assert.match(settings,/\}\.(?:width\('100%'\))\.height\('100%'\)\.backgroundColor\(AppTheme.canvas\)/);
   assert.match(read('entry/src/main/ets/ui/AppTabBar.ets'),/accessibilityText\(label \+ \(this.active === tab \? '，当前页面' : ''\)\)/);
 });

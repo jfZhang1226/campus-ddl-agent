@@ -2,6 +2,7 @@ import { AppTheme } from './AppTheme';
 
 @Component
 export struct AppTabBar {
+  @StorageLink('largeSimpleMode') largeSimpleMode: boolean = false;
   @Prop active: string = 'assistant';
   @Prop enabledTabs: boolean = true;
   onSelect: (page: string) => void = (_page: string): void => {};
@@ -12,10 +13,10 @@ export struct AppTabBar {
   @Builder
   item(tab: string, label: string, page: string) {
     Column({ space: 5 }) {
-      Image(this.icon(tab)).width(21).height(21).opacity(this.active === tab ? 1 : 0.48)
-      Text(label).fontSize(11).fontWeight(this.active === tab ? FontWeight.Medium : FontWeight.Regular)
+      Image(this.icon(tab)).width(this.largeSimpleMode ? 25 : 21).height(this.largeSimpleMode ? 25 : 21).opacity(this.active === tab ? 1 : 0.48)
+      Text(label).fontSize(AppTheme.font(11, this.largeSimpleMode)).fontWeight(this.active === tab ? FontWeight.Medium : FontWeight.Regular)
         .fontColor(this.active === tab ? AppTheme.primary : AppTheme.muted)
-    }.layoutWeight(1).height(50).justifyContent(FlexAlign.Center).borderRadius(18)
+    }.layoutWeight(1).height(this.largeSimpleMode ? 64 : 50).justifyContent(FlexAlign.Center).borderRadius(18)
       .backgroundColor(this.active === tab ? AppTheme.userMessage : Color.Transparent)
       .id('tab-' + tab).accessibilityGroup(true)
       .accessibilityText(label + (this.active === tab ? '，当前页面' : ''))

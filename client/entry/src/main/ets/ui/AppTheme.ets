@@ -1,4 +1,8 @@
+import { readableFont, readableLineHeight } from './UiPreferences';
+
 export class AppTheme {
+  static font(size: number, large: boolean): number { return readableFont(size, large); }
+  static line(height: number, large: boolean): number { return readableLineHeight(height, large); }
   static readonly ink: string = '#25342D';
   static readonly muted: string = '#58685C';
   static readonly primary: string = '#345F4E';
