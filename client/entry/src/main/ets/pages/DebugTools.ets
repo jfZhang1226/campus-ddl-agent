@@ -1,3 +1,4 @@
+import { AppTheme } from '../ui/AppTheme';
 import router from '@ohos.router';
 @Entry
 @Component
@@ -16,6 +17,7 @@ struct DebugToolsPage {
       Button('历史检查').onClick(() => this.open('pages/HistoryCheck'))
       Button('小助手动作预览').id('debug-mascot-preview').onClick(() => this.open('pages/MascotPreview'))
       Button('启动封面预览').id('debug-cover-preview').onClick(() => this.open('pages/CoverPreview'))
+      Button('对话样式预览').id('debug-style-preview').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => this.open('pages/StylePreview'))
       Text(this.notice).fontSize(13)
     }.width('100%').height('100%').padding(18).backgroundColor('#F2F6F7')
   }

@@ -1,3 +1,4 @@
+import { AppTheme } from '../ui/AppTheme';
 import AbilityConstant from '@ohos.app.ability.AbilityConstant';
 import hilog from '@ohos.hilog';
 import UIAbility from '@ohos.app.ability.UIAbility';
@@ -27,6 +28,7 @@ export default class EntryAbility extends UIAbility {
     // Main window is created, set main page for this ability
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
 
+    try { windowStage.getMainWindowSync().setWindowSystemBarProperties({ statusBarColor: AppTheme.canvas, statusBarContentColor: AppTheme.ink, navigationBarColor: AppTheme.canvas, navigationBarContentColor: AppTheme.ink }).catch(() => {}); } catch (_) {}
     windowStage.loadContent('pages/Index', (err, data) => {
       if (err.code) {
         hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');

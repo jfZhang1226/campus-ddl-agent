@@ -12,20 +12,22 @@ export struct AppTabBar {
   @Builder
   item(tab: string, label: string, page: string) {
     Column({ space: 5 }) {
-      Image(this.icon(tab)).width(22).height(22).opacity(this.active === tab ? 1 : 0.45)
+      Image(this.icon(tab)).width(21).height(21).opacity(this.active === tab ? 1 : 0.48)
       Text(label).fontSize(11).fontWeight(this.active === tab ? FontWeight.Medium : FontWeight.Regular)
         .fontColor(this.active === tab ? AppTheme.primary : AppTheme.muted)
-    }.layoutWeight(1).height(52).justifyContent(FlexAlign.Center).borderRadius(14)
-      .backgroundColor(this.active === tab ? AppTheme.soft : '#FFFFFF')
+    }.layoutWeight(1).height(50).justifyContent(FlexAlign.Center).borderRadius(18)
+      .backgroundColor(this.active === tab ? AppTheme.userMessage : Color.Transparent)
       .id('tab-' + tab).enabled(this.enabledTabs).onClick(() => { if (this.active !== tab && this.enabledTabs) this.onSelect(page); })
   }
   build() {
-    Row({ space: 12 }) {
-      this.item('assistant', '助手', 'pages/TaskAssistant')
-      this.item('tasks', '任务', 'pages/Tasks')
-      this.item('schedule', '安排', 'pages/Schedule')
-      this.item('settings', '设置', 'pages/GatewaySettings')
-    }.width('100%').padding({ left: 24, right: 24, top: 10, bottom: 10 }).backgroundColor('#FFFFFF')
-      .border({ width: { top: 1 }, color: AppTheme.border })
+    Column() {
+      Row({ space: 5 }) {
+        this.item('assistant', '助手', 'pages/TaskAssistant')
+        this.item('tasks', '任务', 'pages/Tasks')
+        this.item('schedule', '安排', 'pages/Schedule')
+        this.item('settings', '设置', 'pages/GatewaySettings')
+      }.width('100%').padding(6).backgroundColor(AppTheme.surface).borderRadius(24)
+        .border({ width: 1, color: AppTheme.border })
+    }.width('100%').padding({ left: 16, right: 16, top: 5, bottom: 10 }).backgroundColor(AppTheme.canvas)
   }
 }

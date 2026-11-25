@@ -12,6 +12,7 @@
     "pages/HistoryCheck",
     "pages/CommitCheck",
     "pages/MascotPreview",
-    "pages/CoverPreview"
+    "pages/CoverPreview",
+    "pages/StylePreview"
   ]
 }

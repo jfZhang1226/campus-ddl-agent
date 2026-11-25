@@ -45,7 +45,7 @@ struct GatewaySettingsPage {
   build() {
     Column({ space: 12 }) {
       Row({ space: 10 }) {
-        Button('返回').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('settings-back').fontSize(12).onClick(() => { if (!this.onBackPress()) router.back(); })
+        Button('返回').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('settings-back').fontSize(12).onClick(() => { if (!this.onBackPress()) router.back(); })
         Text('设置').fontSize(23).fontWeight(FontWeight.Bold).layoutWeight(1)
       }.width('100%')
       Scroll() {
@@ -55,22 +55,22 @@ struct GatewaySettingsPage {
             .id('settings-state').fontSize(14).fontColor(AppTheme.primary)
           Text('连接助手后即可分析通知；你的任务和草案保存在本机。').fontSize(13)
           Text('服务地址').fontSize(15)
-          TextInput({ text: this.baseUrl, placeholder: 'http://127.0.0.1:8000' }).id('gateway-url').maxLength(500)
+          TextInput({ text: this.baseUrl, placeholder: 'http://127.0.0.1:8000' }).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14).id('gateway-url').maxLength(500)
             .onChange((text: string) => { this.baseUrl = text; })
           Text('访问凭证').fontSize(15)
-          TextInput({ text: this.projectToken, placeholder: this.configured ? '留空保留本次已配置的项目凭证' : '填写团队项目凭证' })
+          TextInput({ text: this.projectToken, placeholder: this.configured ? '留空保留本次已配置的项目凭证' : '填写团队项目凭证' }).fontColor(AppTheme.ink).placeholderColor(AppTheme.muted).backgroundColor(AppTheme.surface).borderRadius(14)
             .id('gateway-token').type(InputType.Password).maxLength(1000).onChange((text: string) => { this.projectToken = text; })
-          Button('保存连接设置').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('gateway-apply').width('100%').onClick(() => { this.apply(); })
-          if (this.notice.length > 0) { Text(this.notice).id('settings-notice').fontSize(13).fontColor('#9A541B') }
-          if (this.dirty()) { Button('放弃输入并返回').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('settings-discard').fontSize(12).onClick(() => { this.projectToken = ''; router.back(); }) }
-          Button(this.helpOpen ? '收起连接帮助' : '连接帮助与隐私说明').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('settings-help').width('100%').fontSize(13).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.helpOpen = !this.helpOpen; })
+          Button('保存连接设置').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('gateway-apply').width('100%').onClick(() => { this.apply(); })
+          if (this.notice.length > 0) { Text(this.notice).id('settings-notice').fontSize(13).fontColor(AppTheme.amber) }
+          if (this.dirty()) { Button('放弃输入并返回').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('settings-discard').fontSize(12).onClick(() => { this.projectToken = ''; router.back(); }) }
+          Button(this.helpOpen ? '收起连接帮助' : '连接帮助与隐私说明').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('settings-help').width('100%').fontSize(13).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.helpOpen = !this.helpOpen; })
           if (this.helpOpen) {
           Text('电脑连接方式').fontSize(18)
           Text('地址为 127.0.0.1 时，需要电脑启动团队网关，并通过 USB 数据线恢复转发。仅连接数据线不会自动恢复模型服务。').fontSize(13)
           Text('设置仅保留在本次运行内存中。完全关闭或重启应用后，需要重新填写并应用项目凭证；任务、草案和安排不会因此删除。').fontSize(13)
           }
           Text('课事清 · 将校园通知整理成可确认的任务').fontSize(12).fontColor(AppTheme.muted)
-          Button('调试工具').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(12).id('open-debug-tools').fontSize(12).enabled(!this.dirty())
+          Button('调试工具').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('open-debug-tools').fontSize(12).enabled(!this.dirty())
             .onClick(() => { router.pushUrl({ url: 'pages/DebugTools' }).catch(() => { this.notice = '无法打开调试工具。'; }); })
         }.width('100%').alignItems(HorizontalAlign.Start)
       }.layoutWeight(1).width('100%')

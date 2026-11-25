@@ -36,18 +36,18 @@ export struct AvailabilityEditor {
   build() {
     Column({ space: 12 }) {
       Text('哪段时间有空？').fontSize(18).fontWeight(FontWeight.Medium).fontColor(AppTheme.ink)
-      Button(this.day || '选择日期').id('availability-pick-date').height(44).width('100%').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.pickDay(); })
+      Button(this.day || '选择日期').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('availability-pick-date').height(44).width('100%').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.pickDay(); })
       Row({ space: 10 }) {
-        Button(this.start || '开始时刻').id('availability-pick-start').layoutWeight(1).height(44).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.pickTime(true); })
+        Button(this.start || '开始时刻').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('availability-pick-start').layoutWeight(1).height(44).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.pickTime(true); })
         Text('至').fontSize(13).fontColor(AppTheme.muted)
-        Button(this.end || '结束时刻').id('availability-pick-end').layoutWeight(1).height(44).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.pickTime(false); })
+        Button(this.end || '结束时刻').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('availability-pick-end').layoutWeight(1).height(44).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.pickTime(false); })
       }
       if (this.error.length > 0) { Text(this.error).id('availability-error').fontSize(12).fontColor(AppTheme.amber) }
       Text('添加后先核对保存，再生成安排。').fontSize(12).fontColor(AppTheme.muted)
       Row({ space: 10 }) {
-        Button('取消').id('availability-cancel').layoutWeight(1).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.onCancel(); })
-        Button('添加时段').id('availability-add').layoutWeight(1).backgroundColor(AppTheme.primary).onClick(() => { this.add(); })
+        Button('取消').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('availability-cancel').layoutWeight(1).fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).onClick(() => { this.onCancel(); })
+        Button('添加时段').fontColor(AppTheme.primary).backgroundColor(AppTheme.soft).borderRadius(AppTheme.controlRadius).id('availability-add').layoutWeight(1).backgroundColor(AppTheme.primary).fontColor(AppTheme.onPrimary).onClick(() => { this.add(); })
       }
-    }.width('100%').padding(18).backgroundColor('#FFFFFF').borderRadius(18)
+    }.width('100%').padding(18).backgroundColor(AppTheme.surface).borderRadius(18)
   }
 }
