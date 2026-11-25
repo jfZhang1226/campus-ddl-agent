@@ -18,6 +18,16 @@ export struct TaskChangeDialog {
     if (value === 'cancelled') return '已取消';
     return value === 'in_progress' ? '进行中' : '待办';
   }
+  private progress(change: ProposedTaskChange): string {
+    if (this.view.pending === null) return '';
+    const before = (this.view.pending.checklistBefore || []).filter(item => item.taskId === change.taskId);
+    const added = (this.view.pending.checklistItems || []).filter(item => item.taskId === change.taskId);
+    const updates = this.view.pending.checklistUpdates || [];
+    const total: number = before.length + added.length;
+    if (total === 0) return '';
+    const prepared: number = before.filter(item => (updates.find(update => update.itemId === item.id)?.state || item.state) === 'prepared').length;
+    return prepared === total ? '全部事项已完成，保存后移入已完成' : String(prepared) + '/' + String(total) + ' 项已完成，保存后保留在待办';
+  }
   build() {
     Column({ space: 16 }) {
       Text('确认修改').fontSize(AppTheme.font(22, this.largeSimpleMode)).fontWeight(FontWeight.Bold).fontColor(AppTheme.ink)
@@ -26,7 +36,10 @@ export struct TaskChangeDialog {
           if (this.view.pending !== null) {
             ForEach(this.view.pending.changes, (change: ProposedTaskChange) => {
               Text(change.draft.title).fontSize(AppTheme.font(17, this.largeSimpleMode)).fontWeight(FontWeight.Medium)
-              Text('状态：' + this.status(change.before?.status || 'todo') + ' → ' + this.status(change.draft.status)).fontSize(AppTheme.font(14, this.largeSimpleMode))
+              if (change.before?.status !== change.draft.status) {
+                Text('状态：' + this.status(change.before?.status || 'todo') + ' → ' + this.status(change.draft.status)).fontSize(AppTheme.font(14, this.largeSimpleMode))
+              }
+              if (this.progress(change).length > 0) { Text(this.progress(change)).fontSize(AppTheme.font(14, this.largeSimpleMode)).fontColor(AppTheme.primary) }
               Text('截止：' + (change.before === null ? '待定' : deadlineLabel(change.before)) + ' → ' + deadlineLabel(change.draft)).fontSize(AppTheme.font(14, this.largeSimpleMode)).fontColor(AppTheme.primary)
               Text('提交到：' + (change.draft.submissionChannel || '未填写')).fontSize(AppTheme.font(13, this.largeSimpleMode))
               Text('剩余工时：' + (change.before?.remainingMinutes === null || change.before === null ? '未填写' : String(change.before.remainingMinutes) + '分钟') + ' → ' + (change.draft.remainingMinutes === null ? '未填写' : String(change.draft.remainingMinutes) + '分钟')).fontSize(AppTheme.font(13, this.largeSimpleMode))

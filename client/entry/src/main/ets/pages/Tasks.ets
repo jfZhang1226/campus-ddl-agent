@@ -35,7 +35,7 @@ struct TasksPage {
   @State changeDialogOpen: boolean = false;
   private changeDialog: CustomDialogController = new CustomDialogController({
     builder: TaskChangeDialog({ view: $actions, onConfirm: (): void => { this.saveAction(); },
-      onCancel: (): void => { this.actionsController?.cancel(); }, onRecover: (): void => { this.actionsController?.recover(); } }),
+      onCancel: (): void => { this.cancelAction(); }, onRecover: (): void => { this.actionsController?.recover(); } }),
     customStyle: true, alignment: DialogAlignment.Center, autoCancel: false,
     onWillDismiss: (action: DismissDialogAction): void => {
       if (!this.actions.busy) { action.dismiss(); this.changeDialogOpen = false; }
@@ -133,6 +133,13 @@ struct TasksPage {
     if (await this.actionsController?.confirm()) {
       this.materialLabel = '';
       await this.refreshTask(id, true);
+    }
+  }
+  private async cancelAction(): Promise<void> {
+    await this.actionsController?.cancel();
+    if (this.actions.pending === null && this.actions.errorCode.length === 0 && !this.actions.recoveryRequired) {
+      this.actionsController?.discardLocalChanges();
+      this.materialLabel = ''; this.effortMinutes = this.originalEffort(); this.localHint = '';
     }
   }
   @Builder
