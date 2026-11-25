@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '..');
 function prepare(output) {
   const result = prepareProbe(output);
   const pages = path.join(result.output, 'entry/src/main/ets/pages');
-  for (const name of ['VoiceChat.ets', 'VoiceChatOwner.ets']) {
+  for (const name of ['VoiceChat.ets', 'VoiceChatOwner.ets', 'HarmonyGatewaySecretStore.ets']) {
     fs.copyFileSync(path.join(root, 'probes/harmony-voicechat', name), path.join(pages, name));
   }
   fs.copyFileSync(path.join(root, 'probes/harmony-voicechat/EntryAbility.ets'),
@@ -37,7 +37,8 @@ function prepare(output) {
     'Configure the project token at runtime; provider keys and personal signing settings must stay outside Git.\n');
   const hashes = {};
   for (const file of ['client/entry/src/main/ets/speech/VoiceChatController.ts',
-    'client/entry/src/main/ets/chat/ChatController.ts', 'probes/harmony-voicechat/VoiceChat.ets',
+    'client/entry/src/main/ets/chat/ChatController.ts', 'client/entry/src/main/ets/chat/GatewaySettings.ts',
+    'probes/harmony-voicechat/HarmonyGatewaySecretStore.ets', 'probes/harmony-voicechat/VoiceChat.ets',
     'probes/harmony-voicechat/VoiceChatOwner.ets', 'probes/harmony-voicechat/EntryAbility.ets',
     'probes/harmony-speech/SpeechProbeController.ts', 'probes/harmony-speech/HarmonySpeechPort.ets']) {
     hashes[file] = require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');

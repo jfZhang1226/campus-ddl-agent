@@ -68,7 +68,7 @@ check('production pages and client files are preserved except explicit export co
   assert.equal(cp.execFileSync('git',['status','--porcelain','--','client/'],{cwd:root,encoding:'utf8'}),before);
 });
 check('manifest matches actual source outputs and existing export is refused without overwrite',()=>{
-  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,802);assert.equal(Object.keys(manifest.hashes).length,83);
+  assert.equal(manifest.formalSaveEnabled,true);assert.equal(manifest.versionCode,900);assert.equal(Object.keys(manifest.hashes).length,89);
   for(const [file,expected]of Object.entries(manifest.hashes))assert.equal(hash(path.join(output,file)),expected);
   const prior=hash(path.join(output,'T19-source-manifest.json'));
   assert.throws(()=>prepare(output),/new output directory/);
@@ -135,7 +135,9 @@ check('all launcher locales survive consecutive fresh exports and root uses the 
 check('one native gateway owner serves settings and task page without duplicate credential forms',()=>{
   const settings=read('entry/src/main/ets/pages/GatewaySettings.ets');
   assert.match(settings,/voiceChatOwner.get\(this.context\(\)\).configuration\(\)/);
-  assert.match(settings,/voiceChatOwner.get\(this.context\(\)\).configure\(config\)/);
+  assert.match(settings,/voiceChatOwner.settings\(this.context\(\)\)/);
+  assert.match(settings,/this.connection\(\).save\(config\)/);
+  assert.match(settings,/gateway-clear-confirm/);
   assert.match(settings,/current.token/);assert.match(settings,/validateConfig/);
   assert.doesNotMatch(read('entry/src/main/ets/pages/VoiceChat.ets'),/voice-gateway-token|voice-configure/);
   assert.match(read('entry/src/main/ets/pages/TaskAssistant.ets'),/onPageShow\(\): void \{ this.mascotActive = true; this.syncGateway\(\); \}/);

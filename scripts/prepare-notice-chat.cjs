@@ -29,6 +29,7 @@ function prepare(output) {
   let settingsPage=fs.readFileSync(path.join(root,'client/entry/src/main/ets/pages/GatewaySettings.ets'),'utf8');
   settingsPage=replaceOnce(settingsPage,"import { chatOwner } from '../chat/ChatOwner';", "import { voiceChatOwner } from './VoiceChatOwner';");
   settingsPage=settingsPage.replaceAll('chatOwner.get(this.context().filesDir)', 'voiceChatOwner.get(this.context())');
+  settingsPage=settingsPage.replaceAll('chatOwner.settings(this.context().filesDir)', 'voiceChatOwner.settings(this.context())');
   write(pages+'GatewaySettings.ets',settingsPage);
   write(pages+'DebugTools.ets',fs.readFileSync(path.join(root,'probes/harmony-noticechat/DebugTools.ets'),'utf8'));
   let page=fs.readFileSync(path.join(root,'client/entry/src/main/ets/pages/NoticeImport.ets'),'utf8').replaceAll('\r\n','\n');
@@ -104,7 +105,7 @@ function prepare(output) {
   fs.writeFileSync(nativeModulePath,JSON.stringify(nativeModule,null,2)+'\n');
   const appFile=path.join(result.output,'AppScope/app.json5');
   const app=JSON.parse(fs.readFileSync(appFile,'utf8'));
-  app.app.bundleName='com.campusddl.noticeprobe';app.app.versionName='0.8.2';app.app.versionCode=802;
+  app.app.bundleName='com.campusddl.noticeprobe';app.app.versionName='0.9.0';app.app.versionCode=900;
   fs.writeFileSync(appFile,JSON.stringify(app,null,2)+'\n');
   const stringsFile=path.join(result.output,'entry/src/main/resources/base/element/string.json');
   const strings=JSON.parse(fs.readFileSync(stringsFile,'utf8'));
@@ -139,14 +140,15 @@ function prepare(output) {
     'entry/src/main/ets/planning/PlanningQuery.ts','entry/src/main/ets/agent/AgentExecutor.ts',
     'entry/src/main/ets/domain/OperationIdentity.ts',
     'entry/src/main/ets/reminders/CalendarReminderPort.ts',pages+'HarmonyCalendarAccess.ets',
-    pages+'GatewaySettings.ets',pages+'DebugTools.ets',
+    pages+'GatewaySettings.ets',pages+'DebugTools.ets',pages+'VoiceChatOwner.ets',pages+'HarmonyGatewaySecretStore.ets',
+    ...['chat/GatewaySettings.ts','chat/ChatController.ts','chat/ChatOwner.ets','speech/VoiceChatController.ts'].map(f=>'entry/src/main/ets/'+f),
     ...['ui/AppTheme.ets','ui/AppTabBar.ets','ui/DeadlineEditor.ets','ui/DeadlineInput.ts','ui/AvailabilityEditor.ets','ui/AssistantMotion.ts','ui/AssistantMascot.ets','pages/MascotPreview.ets','ui/BrandCover.ets','pages/CoverPreview.ets','ui/MessageBubble.ets','pages/StylePreview.ets'].map(f=>'entry/src/main/ets/'+f),
     ...['brand_mark','nav_assistant','nav_tasks','nav_schedule','nav_settings'].map(f=>'entry/src/main/resources/base/media/'+f+'.svg'),'AppScope/app.json5',
     ...['assistant_idle','assistant_blink_sheet','assistant_wave_sheet','assistant_think_sheet','assistant_write_sheet','assistant_cover_v1'].map(f=>'entry/src/main/resources/base/media/'+f+'.png'),
     'AppScope/resources/base/media/assistant_idle.png','AppScope/resources/base/media/brand_mark.svg','AppScope/resources/base/element/string.json','AppScope/resources/zh_CN/element/string.json','AppScope/resources/en_US/element/string.json',
     'entry/src/main/resources/base/element/color.json','entry/src/main/module.json5','entry/src/main/resources/base/element/string.json','entry/src/main/resources/zh_CN/element/string.json','entry/src/main/resources/en_US/element/string.json'])
     hashes[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(result.output,file))).digest('hex');
-  const manifest={...result,scope:'T19-local-integration',bundleName:app.app.bundleName,versionCode:802,formalSaveEnabled:true,hashes};
+  const manifest={...result,scope:'T19-local-integration',bundleName:app.app.bundleName,versionCode:900,formalSaveEnabled:true,hashes};
   write('T19-source-manifest.json',JSON.stringify(manifest,null,2)+'\n');
   return manifest;
 }

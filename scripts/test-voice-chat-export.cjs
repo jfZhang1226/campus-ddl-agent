@@ -45,8 +45,8 @@ try {
     assert.ok(json('entry/src/main/resources/base/element/string.json').string
       .some(row => row.name === 'EntryAbility_label' && row.value === '课事清语音联调'));
   });
-  check('seven source fingerprints match both source and exported code', () => {
-    assert.equal(Object.keys(manifest.hashes).length, 7);
+  check('source fingerprints match both source and exported code', () => {
+    assert.equal(Object.keys(manifest.hashes).length, 9);
     for (const [file, expected] of Object.entries(manifest.hashes)) {
       const destination = file.startsWith('client/') ? file.slice('client/'.length)
         : 'entry/src/main/ets/' + (file.endsWith('/EntryAbility.ets') ? 'entryability/' : 'pages/') + path.basename(file);
@@ -68,6 +68,7 @@ try {
       { cwd: root, encoding: 'utf8' }).split('\0').filter(Boolean).map(file => file.slice('client/'.length)));
     for (const file of ['T15-source-manifest.json', 'T15-VOICE-CHAT-ONLY.txt',
       'entry/src/main/ets/pages/VoiceChat.ets', 'entry/src/main/ets/pages/VoiceChatOwner.ets',
+      'entry/src/main/ets/pages/HarmonyGatewaySecretStore.ets',
       'entry/src/main/ets/speech/VoiceChatController.ts', 'entry/src/main/ets/pages/SpeechProbe.ets',
       'entry/src/main/ets/pages/SpeechProbeOwner.ets', 'entry/src/main/ets/pages/SpeechProbeController.ts',
       'entry/src/main/ets/pages/HarmonySpeechPort.ets']) allowed.add(file);

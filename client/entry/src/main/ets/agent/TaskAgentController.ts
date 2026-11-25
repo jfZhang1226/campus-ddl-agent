@@ -88,6 +88,7 @@ export class TaskAgentController {
     if (this.busy() && this.view.phase !== 'initializing') return false;
     const code: string = validateConfig(config);
     if (code.length > 0) {
+      this.config = new GatewayConfig();
       this.view.configured = false;
       if (this.view.errorCode.length === 0 || ['CONFIG_URL', 'CONFIG_TOKEN', 'CONFIG_TIMEOUT'].includes(this.view.errorCode)) this.fail(code);
       else this.publish();
